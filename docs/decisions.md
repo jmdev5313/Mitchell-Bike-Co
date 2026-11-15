@@ -44,3 +44,13 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Decided:** split the work into numbered milestones (M0, M1, ...), each defined by what it delivers.
 - **Rejected:** "days", which read as a schedule commitment; "sprints", a Scrum term for fixed timeboxes with team ceremonies.
 - **Why:** this is a solo project split by deliverable, and milestones map directly onto GitHub Milestones for tracking issues and PRs.
+
+### Keep the cassette as the hero part
+- **Decided:** the hero repair is a worn chain and cassette, and the twist is that the customer's upgraded wheels need a different cassette than the catalog model. Customer-facing text uses plain language ("the gear cluster on your back wheel"); technical names stay in the agent's working notes. A familiar case such as brake pads covers broader evals.
+- **Rejected:** switching the hero to a more familiar part such as tires or brake pads.
+- **Why:** skipping gears is one of the most common shop repairs, and a cassette and freehub is the clearest real case where the obvious part doesn't fit the actual bike. The audience needs to follow the twist, not the part names.
+
+### Diagnose from text, service history, and photos
+- **Decided:** the agent diagnoses from the complaint plus its own follow-up questions, the bike's service notes, and customer photos. It states its confidence and asks for a measurement (such as a chain checker) when evidence is thin.
+- **Rejected:** video and audio input.
+- **Why:** both the Anthropic API and Dust handle images and text natively, so the story runs the same on both runtimes. Dust turns audio and video into speech transcripts rather than analyzing sound or footage, so neither would add real evidence. Grounded, multi-source reasoning also gives the evals concrete things to check.

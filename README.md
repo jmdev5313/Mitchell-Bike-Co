@@ -6,7 +6,9 @@ A fictional bike shop run by AI agents, built to demonstrate agentic workflows o
 
 ## The idea
 
-A customer sends a photo and says "my gears skip under load." A service agent diagnoses the problem, checks which parts fit that customer's actual bike, and finds the cassette is out of stock. A procurement agent drafts a purchase order, which waits for a manager's approval when it is over the spend limit. The customer gets a quote, books a slot, and pays.
+A customer says "my gears skip when I pedal hard" and sends a photo of their back wheel. A service agent asks a couple of follow-up questions, reads the bike's service history, and checks the photo: the chain and the gear cluster on the back wheel (the cassette) are worn out. It says how confident it is, and asks for a measurement when the evidence is thin.
+
+Then comes the twist. The catalog says this bike model takes one cassette, but the customer upgraded their wheels, so it needs a different one. The agent checks fit against the bike the customer actually has, and finds the right part is out of stock. A procurement agent drafts a purchase order, which waits for a manager's approval when it is over the spend limit. The customer gets a quote, books a slot, and pays.
 
 ## How it is put together
 
