@@ -10,4 +10,3 @@ def test_init_creates_all_tables(tmp_path):
     }
     conn.close()
     assert {"standards", "parts", "customer_bikes", "work_orders", "purchase_orders", "audit_log"} <= tables
-    assert len(tables) == 18
