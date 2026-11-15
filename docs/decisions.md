@@ -116,3 +116,7 @@ One entry per choice: what was decided, what was rejected, and why.
 ### The audit log records who called, from the environment
 - **Decided:** every tool call writes the tool, its arguments, and a result summary (or the refusal) to `audit_log`. The runtime and conversation id come from the `AGENT_RUNTIME` and `CONVERSATION_ID` environment variables of the server process.
 - **Why:** the record is written by the server, so it's the same whichever runtime calls. Passing the conversation id per request (in MCP request metadata) can replace the environment variable in M3 if one server process serves many conversations.
+
+### Try it two ways before there's an Agent
+- **Decided:** a committed `.mcp.json` lets Claude Code act as the Agent against the real servers, and `make demo` replays the hero story through the servers as stdio subprocesses, launched the way a runtime launches them. The demo plays the Mechanic's send and the Customer's approval directly through `shop/`, and uses its own database.
+- **Why:** both exercise the tools end to end before M3. The demo is also a test (`tests/test_demo.py`), so the launch path an agent runtime uses is checked in CI, not just the in-memory one.

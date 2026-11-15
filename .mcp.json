@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "mitchell-catalog": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "mcp_servers.catalog"],
+      "env": { "AGENT_RUNTIME": "claude-code" }
+    },
+    "mitchell-work-orders": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "mcp_servers.work_orders"],
+      "env": { "AGENT_RUNTIME": "claude-code" }
+    },
+    "mitchell-procurement": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "mcp_servers.procurement"],
+      "env": { "AGENT_RUNTIME": "claude-code" }
+    }
+  }
+}
