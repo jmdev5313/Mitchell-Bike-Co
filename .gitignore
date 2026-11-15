@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Local database (rebuilt with `make db`)
+*.db
+*.db-journal
+
+# Node
+node_modules/
+web/dist/
+
+# OS and editors
+.DS_Store
+.vscode/
+.idea/
+
+# Unedited photos (may contain location data); commit cropped copies only
+data/photos/raw/
