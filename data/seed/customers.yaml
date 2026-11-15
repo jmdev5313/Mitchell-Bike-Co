@@ -1,5 +1,6 @@
 # Synthetic customers. A bike with a `model` starts from that model's standards
 # and applies `upgrades`; a bike bought elsewhere lists all its `standards`.
+# `history` is past service at this shop, oldest first.
 
 customers:
   - name: Emma Clark              # the hero customer
@@ -10,12 +11,18 @@ customers:
         notes: Upgraded to aftermarket carbon wheels in 2025; original wheels sold.
         upgrades:
           freehub: Shimano HG 8-10 speed
+        history:
+          - {date: 2023-05-20, km: 600, summary: "First-month check: cable tension and bolt torque"}
+          - {date: 2024-07-14, km: 5000, summary: "Replaced chain (worn to 0.75%). Cassette checked, OK"}
+          - {date: 2025-03-08, km: 6900, summary: "Fitted customer's secondhand carbon wheels; they came with an 11-34 cassette already fitted"}
 
   - name: Grace Lee                # same model as the hero, stock wheels
     email: grace.lee@example.com
     bikes:
       - nickname: Gravel bike
         model: halden-arc-2023
+        history:
+          - {date: 2025-09-02, km: 3200, summary: "Basic tune-up"}
 
   - name: Tom Okafor
     email: tom.okafor@example.com
@@ -28,6 +35,9 @@ customers:
     bikes:
       - nickname: Commuter
         model: halden-scout-2021
+        history:
+          - {date: 2024-11-18, km: 8400, summary: "Replaced chain and cassette"}
+          - {date: 2025-10-05, km: 11200, summary: "Brake pads replaced, front and rear"}
 
   - name: Lena Fischer             # bike bought elsewhere
     email: lena.fischer@example.com

@@ -84,3 +84,22 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Decided:** documentation names people by persona, capitalized: Customer, Mechanic, Agent. Seed data keeps realistic names (such as Emma Clark, the hero Customer).
 - **Rejected:** telling the story with a named character.
 - **Why:** personas keep the roles clear as the story grows, and match how the frontend, evals, and docs will refer to each role.
+
+### The Customer approves with an action, not a reply
+- **Decided:** the quote reaches the Customer in a message that carries the locked total, with approve and decline actions. Only the Customer's action records the decision, against that specific sent message. The Agent reads replies to answer questions, but has no tool to record an approval.
+- **Rejected:** the Agent interpreting a free-text reply ("sounds good, though Friday would be better") as approval.
+- **Revises:** "Customer correspondence: the Agent drafts, the Mechanic sends", which had the Agent updating the work order from the Customer's replies.
+- **Why:** this is the one approval the story relies on, so it must not depend on a model reading intent. Tying it to a sent message also guarantees the Customer was shown the amount they approved.
+
+### Who can do what is enforced twice
+- **Decided:** drafting is open to the Agent and the Mechanic; sending a draft is the Mechanic's; recording a decision is the Customer's. The MCP servers leave those last two out of the Agent's tools, and `shop/` refuses them in the wrong state (unsent quote, stale quote, decided work order).
+- **Why:** tool access alone is a configuration that can drift, and state rules alone don't say who acted. Together, a mistake in either still leaves the other in place.
+
+### Service history is structured data
+- **Decided:** a `service_records` table (date, odometer, summary) per bike, seeded from `customers.yaml`.
+- **Rejected:** free-text notes files in `data/service_notes/`.
+- **Why:** the Agent cites specific evidence ("chain replaced at 5,000 km; the cassette came with the wheels at 6,900 km and has not been replaced"), and evals can check it against the same rows.
+
+### Ready dates come from a rule
+- **Decided:** ready date = order date + the slowest supplier's lead time + one repair day, in calendar days (`shop/schedule.py`).
+- **Why:** the Agent may only promise dates the shop can back up, and a rule makes "no promise the lead time can't meet" checkable. Calendar days keep it simple until opening hours matter.

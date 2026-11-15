@@ -6,9 +6,9 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, built to d
 
 ## Personas
 
-- **Customer:** owns the bike and pays for the repair. Talks to the shop through messages and approves the quote.
+- **Customer:** owns the bike and pays for the repair. Talks to the shop through messages, and approves or declines the quote.
 - **Mechanic:** shop staff with the bike on the stand. Works with the Agent and reviews everything it drafts for the Customer.
-- **Agent:** the shop's AI service agent. Diagnoses alongside the Mechanic, checks fit and stock, drafts messages, and orders parts once the Customer approves.
+- **Agent:** the shop's AI service agent. Diagnoses alongside the Mechanic, checks fit and stock, drafts messages, and orders parts once the Customer approves. It cannot send a message or approve on the Customer's behalf.
 
 ## The idea
 
@@ -16,7 +16,7 @@ The Customer brings in a gravel bike: "my gears skip when I pedal hard." The Mec
 
 Then comes the twist. The catalog says this bike model takes one cassette, but the Customer upgraded their wheels, so it needs a different one. The Agent checks fit against the bike the Customer actually has, and finds the right cassette is out of stock.
 
-The Agent adds the parts and labor to the work order (it cannot add a part that doesn't fit) and drafts a message to the Customer in plain language: what is wrong, the total, and when it will be ready. The Mechanic reviews the draft before it is sent. The Customer is the human in the loop: they approve that exact amount, or decline. If they ask a question instead ("can it be ready by Friday?"), the Agent drafts an answer it can back up from the supplier's lead time.
+The Agent adds the parts and labor to the work order (it cannot add a part that doesn't fit) and drafts a message to the Customer in plain language: what is wrong, the total, and when it will be ready. The Mechanic reviews the draft before it is sent. The Customer is the human in the loop: the quote message carries approve and decline buttons for that exact amount, and only the Customer's click records the decision. If they reply with a question instead ("can it be ready by Friday?"), the Agent reads it and drafts an answer it can back up from the supplier's lead time.
 
 Only once the Customer approves can the cassette be ordered. The Agent picks a supplier (faster, or cheaper but slower, to match the date the Customer was promised) and orders exactly what was approved. The shop's own code enforces this: no order before approval, and nothing beyond the approved parts, whatever the Agent asks for. The part arrives, the Mechanic does the repair, and the Customer pays through a payment link.
 

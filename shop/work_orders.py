@@ -78,8 +78,8 @@ def total_cents(conn: sqlite3.Connection, work_order_id: int) -> int:
     return row[0]
 
 
-def send_quote(conn: sqlite3.Connection, work_order_id: int) -> int:
-    """Lock the lines and record the total the customer is being asked to approve."""
+def lock_quote(conn: sqlite3.Connection, work_order_id: int) -> int:
+    """Lock the lines and record the total. The customer sees it in a quote message."""
     _require_status(_get(conn, work_order_id), ("diagnosed",), "quote")
     total = total_cents(conn, work_order_id)
     if total == 0:
@@ -92,26 +92,35 @@ def send_quote(conn: sqlite3.Connection, work_order_id: int) -> int:
     return total
 
 
-def record_customer_decision(
-    conn: sqlite3.Connection, work_order_id: int, approved: bool, total_cents_seen: int
-) -> str:
-    """Record the customer's answer to the quote they were sent.
+def record_customer_decision(conn: sqlite3.Connection, quote_message_id: int, approved: bool) -> str:
+    """Record the customer approving or declining the quote message they were sent.
 
-    `total_cents_seen` is the amount the customer agreed to. It must match the
-    locked quote, so an approval always refers to a specific dollar amount.
+    The customer answers a specific sent message that carries the quote, so an
+    approval always refers to an amount they were shown. Only the customer does
+    this (the MCP servers give the agent no tool for it).
     """
-    wo = _get(conn, work_order_id)
+    msg = conn.execute(
+        "SELECT work_order_id, status, quoted_total_cents FROM customer_messages WHERE id = ?",
+        (quote_message_id,),
+    ).fetchone()
+    if msg is None:
+        raise NotFound(f"no message with id {quote_message_id}")
+    if msg["quoted_total_cents"] is None:
+        raise RuleViolation(f"message {quote_message_id} does not carry a quote")
+    if msg["status"] != "sent":
+        raise RuleViolation(f"message {quote_message_id} has not been sent to the customer")
+    wo = _get(conn, msg["work_order_id"])
     _require_status(wo, ("quoted",), "record the customer's decision")
-    if total_cents_seen != wo["quoted_total_cents"]:
+    if msg["quoted_total_cents"] != wo["quoted_total_cents"]:
         raise RuleViolation(
-            f"customer answered a quote of {_dollars(total_cents_seen)}, "
+            f"customer was shown {_dollars(msg['quoted_total_cents'])}, "
             f"but the quote is {_dollars(wo['quoted_total_cents'])}"
         )
     new_status = "approved" if approved else "declined"
     with conn:
         conn.execute(
             "UPDATE work_orders SET status = ?, decided_at = ? WHERE id = ?",
-            (new_status, datetime.now(timezone.utc).isoformat(timespec="seconds"), work_order_id),
+            (new_status, datetime.now(timezone.utc).isoformat(timespec="seconds"), wo["id"]),
         )
     return new_status
 

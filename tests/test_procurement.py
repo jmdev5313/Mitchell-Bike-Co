@@ -3,7 +3,6 @@ import pytest
 from shop import work_orders as wo
 from shop.errors import NotFound, RuleViolation
 from shop.procurement import create_purchase_order
-from tests.conftest import HERO_QUOTE
 
 
 def supplier_id(conn, name):
@@ -13,12 +12,6 @@ def supplier_id(conn, name):
 @pytest.fixture
 def velo(conn):
     return supplier_id(conn, "Velo Supply Co.")
-
-
-@pytest.fixture
-def approved(conn, quoted):
-    wo.record_customer_decision(conn, quoted, approved=True, total_cents_seen=HERO_QUOTE)
-    return quoted
 
 
 def test_hero_order_after_customer_approval(conn, approved, velo):
@@ -32,8 +25,8 @@ def test_no_order_before_the_customer_approves(conn, quoted, velo):
         create_purchase_order(conn, quoted, velo, [("AD-C11-34W", 1)])
 
 
-def test_no_order_after_the_customer_declines(conn, quoted, velo):
-    wo.record_customer_decision(conn, quoted, approved=False, total_cents_seen=HERO_QUOTE)
+def test_no_order_after_the_customer_declines(conn, quoted, quote_sent, velo):
+    wo.record_customer_decision(conn, quote_sent, approved=False)
     with pytest.raises(RuleViolation, match="is declined"):
         create_purchase_order(conn, quoted, velo, [("AD-C11-34W", 1)])
 
