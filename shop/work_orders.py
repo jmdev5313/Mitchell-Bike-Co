@@ -149,3 +149,47 @@ def _add_line(conn, work_order_id, qty, price, part_id=None, service_id=None) ->
 
 def _dollars(cents: int) -> str:
     return f"${cents // 100:,}.{cents % 100:02d}"
+
+
+def list_services(conn: sqlite3.Connection) -> list[dict]:
+    return [
+        {"name": r["name"], "minutes": r["minutes"], "price_cents": r["price_cents"]}
+        for r in conn.execute("SELECT name, minutes, price_cents FROM services ORDER BY name")
+    ]
+
+
+def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
+    """Everything about a work order the agent or a screen needs to show it."""
+    wo = _get(conn, work_order_id)
+    lines = [
+        {
+            "line_id": r["id"],
+            "kind": "part" if r["sku"] else "service",
+            "sku": r["sku"],
+            "name": r["part_name"] or r["service_name"],
+            "qty": r["qty"],
+            "unit_price_cents": r["unit_price_cents"],
+            "in_stock": None if r["sku"] is None else r["stock_qty"] >= r["qty"],
+        }
+        for r in conn.execute(
+            """SELECT l.id, l.qty, l.unit_price_cents, p.sku, p.name AS part_name, p.stock_qty,
+                      s.name AS service_name
+               FROM work_order_lines l
+               LEFT JOIN parts p ON p.id = l.part_id
+               LEFT JOIN services s ON s.id = l.service_id
+               WHERE l.work_order_id = ? ORDER BY l.id""",
+            (work_order_id,),
+        )
+    ]
+    return {
+        "work_order_id": wo["id"],
+        "customer_bike_id": wo["customer_bike_id"],
+        "status": wo["status"],
+        "complaint": wo["complaint"],
+        "diagnosis": wo["diagnosis"],
+        "lines": lines,
+        "total_cents": total_cents(conn, work_order_id),
+        "quoted_total_cents": wo["quoted_total_cents"],
+        "decided_at": wo["decided_at"],
+        "created_at": wo["created_at"],
+    }
