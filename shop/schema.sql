@@ -49,6 +49,13 @@ CREATE TABLE bike_models (
   stock_qty    INTEGER NOT NULL DEFAULT 0
 );
 
+-- What a bike model ships with. Fit is checked against bike_standards, not this.
+CREATE TABLE bike_model_standards (
+  bike_model_id  INTEGER NOT NULL REFERENCES bike_models(id),
+  standard_id    INTEGER NOT NULL REFERENCES standards(id),
+  PRIMARY KEY (bike_model_id, standard_id)
+);
+
 CREATE TABLE services (           -- labor catalog
   id           INTEGER PRIMARY KEY,
   name         TEXT NOT NULL,
@@ -86,10 +93,12 @@ CREATE TABLE work_orders (
   customer_id       INTEGER NOT NULL REFERENCES customers(id),
   customer_bike_id  INTEGER NOT NULL REFERENCES customer_bikes(id),
   status            TEXT NOT NULL CHECK (status IN (
-                      'intake', 'diagnosed', 'awaiting_parts', 'quoted',
-                      'scheduled', 'in_progress', 'done', 'paid')),
+                      'intake', 'diagnosed', 'quoted', 'approved', 'declined',
+                      'awaiting_parts', 'scheduled', 'in_progress', 'done', 'paid')),
   complaint         TEXT NOT NULL,
   diagnosis         TEXT,
+  quoted_total_cents  INTEGER,    -- locked when the quote goes to the customer
+  decided_at        TEXT,         -- when the customer approved or declined
   scheduled_for     TEXT,
   created_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -129,18 +138,13 @@ CREATE TABLE supplier_parts (
   PRIMARY KEY (supplier_id, part_id)
 );
 
--- The approval queue is purchase orders with status 'pending_approval'.
+-- Parts are ordered for a work order, and only after the customer approves its quote.
 CREATE TABLE purchase_orders (
   id             INTEGER PRIMARY KEY,
   supplier_id    INTEGER NOT NULL REFERENCES suppliers(id),
-  work_order_id  INTEGER REFERENCES work_orders(id),
-  status         TEXT NOT NULL CHECK (status IN (
-                   'draft', 'pending_approval', 'approved',
-                   'rejected', 'sent', 'received')),
+  work_order_id  INTEGER NOT NULL REFERENCES work_orders(id),
+  status         TEXT NOT NULL CHECK (status IN ('ordered', 'received', 'cancelled')),
   total_cents    INTEGER NOT NULL,
-  reason         TEXT,            -- the agent's justification, shown to the approver
-  decided_by     TEXT,
-  decided_at     TEXT,
   created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -155,7 +159,7 @@ CREATE TABLE purchase_order_lines (
 -- Governance ------------------------------------------------------------------
 
 CREATE TABLE settings (
-  key    TEXT PRIMARY KEY,        -- e.g. po_approval_limit_cents
+  key    TEXT PRIMARY KEY,
   value  TEXT NOT NULL
 );
 

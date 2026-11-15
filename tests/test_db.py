@@ -9,4 +9,4 @@ def test_init_creates_all_tables(tmp_path):
         for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
     }
     conn.close()
-    assert {"standards", "parts", "customer_bikes", "work_orders", "purchase_orders", "audit_log"} <= tables
+    assert {"standards", "parts", "customer_bikes", "work_orders", "purchase_orders", "audit_log", "bike_model_standards"} <= tables

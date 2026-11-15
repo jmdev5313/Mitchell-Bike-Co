@@ -1,7 +1,7 @@
 [project]
 name = "mitchell-bike-co"
 version = "0.1.0"
-description = "A fictional bike shop run by AI agents over MCP. Portfolio project."
+description = "A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. Portfolio project."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
