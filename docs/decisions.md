@@ -103,3 +103,16 @@ One entry per choice: what was decided, what was rejected, and why.
 ### Ready dates come from a rule
 - **Decided:** ready date = order date + the slowest supplier's lead time + one repair day, in calendar days (`shop/schedule.py`).
 - **Why:** the Agent may only promise dates the shop can back up, and a rule makes "no promise the lead time can't meet" checkable. Calendar days keep it simple until opening hours matter.
+
+### Three MCP servers on the v2 SDK
+- **Decided:** catalog, work orders, and procurement as three servers built on the official MCP Python SDK v2 (`MCPServer`). Each runs over stdio by default or Streamable HTTP with `--http`. A shared `shop_tool` decorator opens a fresh database connection per call, maps shop errors to tool errors, and writes the audit log.
+- **Rejected:** one combined server; pinning the v1 SDK (`FastMCP`).
+- **Why:** an Agent composing several servers is how MCP is meant to be used, and the shared layer keeps the duplication small. v2 is current, so there's no migration later. HTTP is there from the start because Dust can only reach servers over the web.
+
+### Refusals are tool errors the model can read
+- **Decided:** a `NotFound` or `RuleViolation` from `shop/` becomes a tool result with `is_error` and the rule's own message ("parts can only be ordered after the customer approves the quote"). Any other exception is logged and reaches the model only as a generic error.
+- **Why:** the Agent can correct itself from a clear reason, and evals can check that it did. Unexpected crashes don't leak internals into a conversation.
+
+### The audit log records who called, from the environment
+- **Decided:** every tool call writes the tool, its arguments, and a result summary (or the refusal) to `audit_log`. The runtime and conversation id come from the `AGENT_RUNTIME` and `CONVERSATION_ID` environment variables of the server process.
+- **Why:** the record is written by the server, so it's the same whichever runtime calls. Passing the conversation id per request (in MCP request metadata) can replace the environment variable in M3 if one server process serves many conversations.

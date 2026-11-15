@@ -23,7 +23,7 @@ Only once the Customer approves can the cassette be ordered. The Agent picks a s
 ## How it is put together
 
 - `shop/` holds the business rules and the database. It has no AI code.
-- `mcp_servers/` exposes the shop as MCP tools: catalog, work orders, procurement.
+- `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement). Every tool call is written to an audit log. The Agent gets no tool to send a message or approve a quote.
 - `agents/` holds the agents behind a small runtime interface, so the agent platform can be swapped by configuration.
 - `api/` and `web/` are the backend and the frontend: the Mechanic's workspace and the Customer's message thread.
 - `evals/` holds the scenario suite that measures whether the agents get it right.
@@ -36,6 +36,13 @@ Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
 cp .env.example .env
 make reset   # create the database and load the seed data
 make test
+```
+
+Each MCP server runs over stdio for a local client, or over HTTP for a hosted one:
+
+```
+uv run python -m mcp_servers.catalog          # stdio
+make servers                                  # all three over HTTP on ports 8101-8103
 ```
 
 ## Roadmap

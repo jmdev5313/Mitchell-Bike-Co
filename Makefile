@@ -5,7 +5,7 @@ help:
 	@echo "make seed    Load seed data into the database"
 	@echo "make reset   Delete, rebuild, and seed the database"
 	@echo "make test    Run unit tests"
-	@echo "make servers Run the MCP servers (not built yet)"
+	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
 	@echo "make api     Run the API (not built yet)"
 	@echo "make web     Run the frontend (not built yet)"
 	@echo "make evals   Run the eval suite (not built yet)"
@@ -23,7 +23,10 @@ test:
 	uv run pytest
 
 servers:
-	@echo "Not built yet: M2 (MCP servers)"
+	uv run python -m mcp_servers.catalog --http & \
+	uv run python -m mcp_servers.work_orders --http & \
+	uv run python -m mcp_servers.procurement --http & \
+	wait
 
 api:
 	@echo "Not built yet: M4 (API)"

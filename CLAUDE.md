@@ -6,12 +6,14 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 
 - `make reset` deletes, rebuilds, and seeds `data/shop.db` (`make db` and `make seed` do the two halves)
 - `make test` runs the unit tests
+- `make servers` runs the three MCP servers over HTTP; `uv run python -m mcp_servers.<name>` runs one over stdio
 - Always run Python through `uv run`. The system `python3` is older than the 3.12 the project needs.
 
 ## Rules for this codebase
 
 - **`shop/` has no AI code.** No model, agent SDK, or MCP imports. Every business rule (compatibility, stock, quote approval, ordering) lives here and is unit-tested without tokens.
-- **MCP servers are thin.** `mcp_servers/` wraps `shop/` functions; it does not reimplement rules.
+- **MCP servers are thin.** `mcp_servers/` wraps `shop/` functions; it does not reimplement rules. Register tools with `@shop_tool(server)` from `mcp_servers/common.py`: the function takes `conn` first (hidden from the model), and the decorator maps `NotFound`/`RuleViolation` to tool errors and writes the audit log.
+- **MCP SDK is v2** (`mcp>=2`): the server class is `MCPServer` from `mcp.server.mcpserver`, not v1's `FastMCP`.
 - **Customer approval is enforced server-side.** The Customer approves or declines a sent message that carries the locked quote, and `shop/procurement.py` refuses to order anything for a work order until they have approved, or anything beyond the approved parts. Never rely on an agent platform's approval prompt.
 - **Some actions are not the Agent's.** The Agent drafts messages but only the Mechanic sends them, and only the Customer records an approval. MCP servers must not expose `send_draft` or `record_customer_decision` as Agent tools.
 - **The Agent sits behind `AgentRuntime`.** Anthropic is the default, Dust the second implementation. Code outside `agents/runtime/` must not depend on a specific platform.
