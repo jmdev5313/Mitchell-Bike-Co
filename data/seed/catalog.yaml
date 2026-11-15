@@ -1,0 +1,182 @@
+# Invented brands, products, and prices. Money is integer cents.
+# `requires` and `standards` map a standard kind to a name in standards.yaml.
+
+parts:
+  # Cassettes
+  - sku: AD-C11-28R
+    name: Ardent R11 11-28 cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 6999
+    stock_qty: 3
+    reorder_point: 2
+    requires: {freehub: Shimano HG 11-speed road, drivetrain_speed: 11-speed}
+  - sku: AD-C11-30R
+    name: Ardent R11 11-30 cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 7299
+    stock_qty: 2
+    reorder_point: 2
+    requires: {freehub: Shimano HG 11-speed road, drivetrain_speed: 11-speed}
+  - sku: AD-C11-34W           # the hero part: fits the upgraded wheels, out of stock
+    name: Ardent W11 11-34 wide-range cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 7499
+    stock_qty: 0
+    reorder_point: 3
+    requires: {freehub: Shimano HG 8-10 speed, drivetrain_speed: 11-speed}
+  - sku: AD-C10-32
+    name: Ardent T10 11-32 cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 4999
+    stock_qty: 2
+    reorder_point: 1
+    requires: {freehub: Shimano HG 8-10 speed, drivetrain_speed: 10-speed}
+  - sku: AD-C12-36R
+    name: Ardent X12 10-36 cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 15999
+    stock_qty: 2
+    reorder_point: 1
+    requires: {freehub: SRAM XDR, drivetrain_speed: 12-speed}
+  - sku: AD-C12-44W
+    name: Ardent X12 10-44 wide-range cassette
+    brand: Ardent Drive
+    category: cassette
+    price_cents: 16999
+    stock_qty: 1
+    reorder_point: 1
+    requires: {freehub: SRAM XD, drivetrain_speed: 12-speed}
+
+  # Chains
+  - sku: AD-CH10
+    name: Ardent 10-speed chain
+    brand: Ardent Drive
+    category: chain
+    price_cents: 2999
+    stock_qty: 4
+    reorder_point: 2
+    requires: {drivetrain_speed: 10-speed}
+  - sku: AD-CH11
+    name: Ardent 11-speed chain
+    brand: Ardent Drive
+    category: chain
+    price_cents: 3499
+    stock_qty: 6
+    reorder_point: 3
+    requires: {drivetrain_speed: 11-speed}
+  - sku: AD-CH12
+    name: Ardent 12-speed chain
+    brand: Ardent Drive
+    category: chain
+    price_cents: 4999
+    stock_qty: 4
+    reorder_point: 2
+    requires: {drivetrain_speed: 12-speed}
+
+  # Rotors
+  - sku: FS-RT160-CL
+    name: Fellside 160 mm Centerlock rotor
+    brand: Fellside
+    category: rotor
+    price_cents: 5499
+    stock_qty: 4
+    reorder_point: 2
+    requires: {rotor_mount: Centerlock}
+  - sku: FS-RT160-6B
+    name: Fellside 160 mm 6-bolt rotor
+    brand: Fellside
+    category: rotor
+    price_cents: 3999
+    stock_qty: 5
+    reorder_point: 2
+    requires: {rotor_mount: 6-bolt}
+
+  # Tires
+  - sku: FS-TR700-40
+    name: Fellside Gravel 700x40 tire
+    brand: Fellside
+    category: tire
+    price_cents: 5999
+    stock_qty: 8
+    reorder_point: 4
+    requires: {wheel_size: 700c}
+  - sku: FS-TR650-47
+    name: Fellside Gravel 650bx47 tire
+    brand: Fellside
+    category: tire
+    price_cents: 6299
+    stock_qty: 4
+    reorder_point: 2
+    requires: {wheel_size: 650b}
+
+services:
+  - name: Drivetrain replacement (chain and cassette)
+    minutes: 45
+    price_cents: 6000
+  - name: Basic tune-up
+    minutes: 60
+    price_cents: 8500
+  - name: Brake bleed
+    minutes: 45
+    price_cents: 5500
+  - name: Flat repair
+    minutes: 15
+    price_cents: 1500
+
+bike_models:
+  - key: halden-arc-2023
+    brand: Halden
+    model: Arc
+    year: 2023
+    category: gravel
+    price_cents: 249900
+    stock_qty: 2
+    standards:
+      freehub: Shimano HG 11-speed road
+      drivetrain_speed: 11-speed
+      bb_shell: BSA 68 mm
+      rear_axle: 12x142 thru-axle
+      front_axle: 12x100 thru-axle
+      brake_mount: Flat mount
+      rotor_mount: Centerlock
+      seatpost_diameter: 27.2 mm
+      wheel_size: 700c
+  - key: halden-tempo-2024
+    brand: Halden
+    model: Tempo
+    year: 2024
+    category: road
+    price_cents: 329900
+    stock_qty: 1
+    standards:
+      freehub: SRAM XDR
+      drivetrain_speed: 12-speed
+      bb_shell: T47
+      rear_axle: 12x142 thru-axle
+      front_axle: 12x100 thru-axle
+      brake_mount: Flat mount
+      rotor_mount: Centerlock
+      seatpost_diameter: 27.2 mm
+      wheel_size: 700c
+  - key: halden-scout-2021
+    brand: Halden
+    model: Scout
+    year: 2021
+    category: gravel
+    price_cents: 149900
+    stock_qty: 0
+    standards:
+      freehub: Shimano HG 8-10 speed
+      drivetrain_speed: 10-speed
+      bb_shell: BSA 68 mm
+      rear_axle: 135 mm QR
+      front_axle: 100 mm QR
+      brake_mount: Post mount
+      rotor_mount: 6-bolt
+      seatpost_diameter: 27.2 mm
+      wheel_size: 700c

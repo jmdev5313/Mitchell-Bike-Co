@@ -1,0 +1,24 @@
+# Invented suppliers. `parts` lists what each one carries, by SKU.
+
+suppliers:
+  - name: Velo Supply Co.
+    lead_time_days: 2
+    parts:
+      - {sku: AD-C11-34W, unit_cost_cents: 4250, available_qty: 10}   # hero: faster, pricier
+      - {sku: AD-C11-28R, unit_cost_cents: 3900, available_qty: 12}
+      - {sku: AD-CH11, unit_cost_cents: 1800, available_qty: 30}
+      - {sku: FS-RT160-CL, unit_cost_cents: 2900, available_qty: 8}
+  - name: Northgate Distribution
+    lead_time_days: 5
+    parts:
+      - {sku: AD-C11-34W, unit_cost_cents: 3900, available_qty: 2}    # hero: cheaper, slower
+      - {sku: AD-C10-32, unit_cost_cents: 2600, available_qty: 6}
+      - {sku: AD-CH10, unit_cost_cents: 1500, available_qty: 20}
+      - {sku: FS-TR700-40, unit_cost_cents: 3100, available_qty: 25}
+  - name: Crankshaft Wholesale
+    lead_time_days: 7
+    parts:
+      - {sku: AD-C12-36R, unit_cost_cents: 9200, available_qty: 4}
+      - {sku: AD-C12-44W, unit_cost_cents: 9800, available_qty: 3}
+      - {sku: AD-CH12, unit_cost_cents: 2700, available_qty: 15}
+      - {sku: FS-TR650-47, unit_cost_cents: 3300, available_qty: 10}

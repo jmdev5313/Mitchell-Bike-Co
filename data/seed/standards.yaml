@@ -1,0 +1,55 @@
+# Real interface standards. A bike is the set of standards it has; a part lists
+# the standards it requires.
+
+standards:
+  freehub:
+    - Shimano HG 8-10 speed        # 34.95 mm body
+    - Shimano HG 11-speed road     # 36.75 mm body
+    - SRAM XD
+    - SRAM XDR                     # XD plus 1.85 mm
+    - Shimano Microspline
+    - Campagnolo N3W
+  drivetrain_speed:
+    - 10-speed
+    - 11-speed
+    - 12-speed
+  bb_shell:
+    - BSA 68 mm
+    - BB86
+    - PF30
+    - T47
+  rear_axle:
+    - 12x142 thru-axle
+    - 135 mm QR
+    - 130 mm QR
+  front_axle:
+    - 12x100 thru-axle
+    - 100 mm QR
+  brake_mount:
+    - Flat mount
+    - Post mount
+    - Rim caliper
+  rotor_mount:
+    - Centerlock
+    - 6-bolt
+  seatpost_diameter:
+    - 27.2 mm
+    - 31.6 mm
+  wheel_size:
+    - 700c
+    - 650b
+
+# Exceptions: a part that requires `required` also fits a bike with `satisfied_by`.
+compat:
+  - kind: freehub
+    required: Shimano HG 8-10 speed
+    satisfied_by: Shimano HG 11-speed road
+    note: needs a 1.85 mm spacer behind the cassette
+  - kind: freehub
+    required: SRAM XD
+    satisfied_by: SRAM XDR
+    note: needs a 1.85 mm spacer behind the cassette
+  - kind: rotor_mount
+    required: 6-bolt
+    satisfied_by: Centerlock
+    note: needs a Centerlock-to-6-bolt adapter

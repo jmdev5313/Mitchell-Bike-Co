@@ -1,0 +1,46 @@
+# Synthetic customers. A bike with a `model` starts from that model's standards
+# and applies `upgrades`; a bike bought elsewhere lists all its `standards`.
+
+customers:
+  - name: Emma Clark              # the hero customer
+    email: emma.clark@example.com
+    bikes:
+      - nickname: Arc
+        model: halden-arc-2023
+        notes: Upgraded to aftermarket carbon wheels in 2025; original wheels sold.
+        upgrades:
+          freehub: Shimano HG 8-10 speed
+
+  - name: Grace Lee                # same model as the hero, stock wheels
+    email: grace.lee@example.com
+    bikes:
+      - nickname: Gravel bike
+        model: halden-arc-2023
+
+  - name: Tom Okafor
+    email: tom.okafor@example.com
+    bikes:
+      - nickname: Race bike
+        model: halden-tempo-2024
+
+  - name: Sam Ortiz
+    email: sam.ortiz@example.com
+    bikes:
+      - nickname: Commuter
+        model: halden-scout-2021
+
+  - name: Lena Fischer             # bike bought elsewhere
+    email: lena.fischer@example.com
+    bikes:
+      - nickname: Adventure bike
+        notes: Bought secondhand; 650b wheels with a 12-speed SRAM drivetrain.
+        standards:
+          freehub: SRAM XD
+          drivetrain_speed: 12-speed
+          bb_shell: PF30
+          rear_axle: 12x142 thru-axle
+          front_axle: 12x100 thru-axle
+          brake_mount: Flat mount
+          rotor_mount: 6-bolt
+          seatpost_diameter: 31.6 mm
+          wheel_size: 650b
