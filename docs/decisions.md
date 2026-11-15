@@ -39,3 +39,8 @@ One entry per choice: what was decided, what was rejected, and why.
 ### Real standards, invented products
 - **Decided:** real interface standards, with invented brands, product names, and prices in the shop catalog.
 - **Why:** standards are facts about how bikes are built; invented products avoid implying real prices or stock.
+
+### Milestones, not days or sprints
+- **Decided:** split the work into numbered milestones (M0, M1, ...), each defined by what it delivers.
+- **Rejected:** "days", which read as a schedule commitment; "sprints", a Scrum term for fixed timeboxes with team ceremonies.
+- **Why:** this is a solo project split by deliverable, and milestones map directly onto GitHub Milestones for tracking issues and PRs.

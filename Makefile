@@ -13,19 +13,19 @@ db:
 	uv run python -m shop.db init
 
 seed:
-	@echo "Not built yet: day 1"
+	@echo "Not built yet: M1 (seed data and rules)"
 
 test:
 	uv run pytest
 
 servers:
-	@echo "Not built yet: days 2-3"
+	@echo "Not built yet: M2 (MCP servers)"
 
 api:
-	@echo "Not built yet: day 6"
+	@echo "Not built yet: M4 (API)"
 
 web:
-	@echo "Not built yet: day 8"
+	@echo "Not built yet: M6 (web)"
 
 evals:
-	@echo "Not built yet: day 7"
+	@echo "Not built yet: M5 (evals)"

@@ -26,6 +26,20 @@ make db
 make test
 ```
 
+## Roadmap
+
+Work is split into milestones, each defined by what it delivers rather than how long it takes.
+
+| Milestone | Delivers | Status |
+| --- | --- | --- |
+| M0 | Scaffold, schema, CI, decisions log | Done |
+| M1 | Seed data and core business rules in `shop/` (fit, stock, spend limit) | Next |
+| M2 | MCP servers: catalog, work orders, procurement | |
+| M3 | Agents behind the `AgentRuntime` interface | |
+| M4 | Backend API | |
+| M5 | Eval suite | |
+| M6 | Two-screen web frontend | |
+
 ## Documentation
 
 - [Decisions log](docs/decisions.md)
