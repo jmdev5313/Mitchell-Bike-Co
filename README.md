@@ -45,8 +45,8 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | Milestone | Delivers | Status |
 | --- | --- | --- |
 | M0 | Scaffold, schema, CI, decisions log | Done |
-| M1 | Seed data and core business rules in `shop/` (fit, stock, quote approval, ordering) | Next |
-| M2 | MCP servers: catalog, work orders (including Customer messages), procurement | |
+| M1 | Seed data and core business rules in `shop/` (fit, stock, quote approval, ordering) | Done |
+| M2 | MCP servers: catalog, work orders (including Customer messages), procurement | Next |
 | M3 | The Agent, behind the `AgentRuntime` interface | |
 | M4 | Backend API | |
 | M5 | Eval suite | |
