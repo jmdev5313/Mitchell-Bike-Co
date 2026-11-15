@@ -1,4 +1,4 @@
-.PHONY: help db seed reset test servers api web evals
+.PHONY: help db seed reset test servers demo api web evals
 
 help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
@@ -6,6 +6,7 @@ help:
 	@echo "make reset   Delete, rebuild, and seed the database"
 	@echo "make test    Run unit tests"
 	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
+	@echo "make demo    Run the hero story through the MCP servers"
 	@echo "make api     Run the API (not built yet)"
 	@echo "make web     Run the frontend (not built yet)"
 	@echo "make evals   Run the eval suite (not built yet)"
@@ -27,6 +28,9 @@ servers:
 	uv run python -m mcp_servers.work_orders --http & \
 	uv run python -m mcp_servers.procurement --http & \
 	wait
+
+demo:
+	uv run python -m demo.hero
 
 api:
 	@echo "Not built yet: M4 (API)"

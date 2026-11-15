@@ -45,6 +45,16 @@ uv run python -m mcp_servers.catalog          # stdio
 make servers                                  # all three over HTTP on ports 8101-8103
 ```
 
+## Try it
+
+**Watch the hero story run.** `make demo` launches the three servers and plays the Agent's tool calls in order, including the two the shop refuses (a cassette that doesn't fit, and ordering before the Customer approves). It stands in for the Mechanic sending the quote and the Customer approving it, since neither is an Agent tool. It uses its own database, `data/demo.db`.
+
+**Be the Mechanic, with Claude Code as the Agent.** The repo's `.mcp.json` connects Claude Code to the three servers. Open the project in Claude Code, approve the servers when asked, and try:
+
+> Emma's gravel bike skips under load in the smaller cogs, and the chain checker reads 0.75%. Find her bike, work out what it needs, build the work order and quote, and draft her a message.
+
+The Agent can draft but not send, so the quote stops there. To play the Mechanic and the Customer, use `shop.messages.send_draft` and `shop.work_orders.record_customer_decision` from a Python shell (`uv run python`). The Mechanic's workspace and the Customer's thread arrive with the API and frontend (M4, M6).
+
 ## Roadmap
 
 Work is split into milestones, each defined by what it delivers rather than how long it takes.
@@ -53,8 +63,8 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | --- | --- | --- |
 | M0 | Scaffold, schema, CI, decisions log | Done |
 | M1 | Seed data and core business rules in `shop/` (fit, stock, quote approval, ordering) | Done |
-| M2 | MCP servers: catalog, work orders (including Customer messages), procurement | Next |
-| M3 | The Agent, behind the `AgentRuntime` interface | |
+| M2 | MCP servers: catalog, work orders (including Customer messages), procurement | Done |
+| M3 | The Agent, behind the `AgentRuntime` interface | Next |
 | M4 | Backend API | |
 | M5 | Eval suite | |
 | M6 | Web frontend: Mechanic workspace and Customer thread | |

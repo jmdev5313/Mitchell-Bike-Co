@@ -10,15 +10,13 @@ import sqlite3
 from dataclasses import asdict
 from typing import Any
 
-from mcp.server.mcpserver import MCPServer
-
-from mcp_servers.common import run, shop_tool
+from mcp_servers.common import new_server, run, shop_tool
 from shop import messages
 from shop import work_orders as wo
 
-server = MCPServer(
+server = new_server(
     "mitchell-work-orders",
-    instructions=(
+    (
         "Mitchell Bike Co. work orders. Flow: open a work order, record the diagnosis, add "
         "parts (they must fit the bike) and labor, lock the quote, then draft a message to "
         "the customer that includes the quote. A mechanic reviews and sends your drafts; the "

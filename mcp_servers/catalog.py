@@ -7,14 +7,12 @@ import sqlite3
 from dataclasses import asdict
 from typing import Any
 
-from mcp.server.mcpserver import MCPServer
-
-from mcp_servers.common import run, shop_tool
+from mcp_servers.common import new_server, run, shop_tool
 from shop import compat, garage, stock, work_orders
 
-server = MCPServer(
+server = new_server(
     "mitchell-catalog",
-    instructions=(
+    (
         "Mitchell Bike Co. catalog. Look up a customer's bike before recommending parts: "
         "fit is checked against the bike the customer actually has, which can differ from "
         "its catalog model. Prices are integer cents."

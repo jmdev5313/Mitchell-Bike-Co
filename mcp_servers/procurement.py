@@ -8,15 +8,13 @@ from dataclasses import asdict
 from datetime import date
 from typing import Any, TypedDict
 
-from mcp.server.mcpserver import MCPServer
-
-from mcp_servers.common import run, shop_tool
+from mcp_servers.common import new_server, run, shop_tool
 from shop import procurement, schedule, stock
 from shop.errors import NotFound
 
-server = MCPServer(
+server = new_server(
     "mitchell-procurement",
-    instructions=(
+    (
         "Mitchell Bike Co. procurement. Parts can be ordered only for a work order whose quote "
         "the customer has approved, and only the parts and quantities on that quote. Only "
         "promise the customer a ready date that estimate_ready_date backs up. Prices are "

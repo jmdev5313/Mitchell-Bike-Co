@@ -24,6 +24,11 @@ from shop.errors import NotFound, RuleViolation
 SUMMARY_LIMIT = 500
 
 
+def new_server(name: str, instructions: str) -> MCPServer:
+    """A shop server. MCP_LOG_LEVEL (default INFO) sets how much it logs to stderr."""
+    return MCPServer(name, instructions=instructions, log_level=os.environ.get("MCP_LOG_LEVEL", "INFO"))
+
+
 def shop_tool(server: MCPServer) -> Callable:
     """Register `fn(conn, **args)` as a tool on `server`, with errors mapped and calls audited."""
 
