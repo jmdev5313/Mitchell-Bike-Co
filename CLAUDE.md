@@ -12,7 +12,8 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 
 - **`shop/` has no AI code.** No model, agent SDK, or MCP imports. Every business rule (compatibility, stock, quote approval, ordering) lives here and is unit-tested without tokens.
 - **MCP servers are thin.** `mcp_servers/` wraps `shop/` functions; it does not reimplement rules.
-- **Customer approval is enforced server-side.** The Customer approves the exact quoted total, and `shop/procurement.py` refuses to order anything for a work order until they have, or anything beyond the approved parts. Never rely on an agent platform's approval prompt.
+- **Customer approval is enforced server-side.** The Customer approves or declines a sent message that carries the locked quote, and `shop/procurement.py` refuses to order anything for a work order until they have approved, or anything beyond the approved parts. Never rely on an agent platform's approval prompt.
+- **Some actions are not the Agent's.** The Agent drafts messages but only the Mechanic sends them, and only the Customer records an approval. MCP servers must not expose `send_draft` or `record_customer_decision` as Agent tools.
 - **The Agent sits behind `AgentRuntime`.** Anthropic is the default, Dust the second implementation. Code outside `agents/runtime/` must not depend on a specific platform.
 - **Money is integer cents.** Never floats.
 - **Seed data refers to records by readable keys** (SKU, standard kind and name, bike model key), never by row id.

@@ -1,6 +1,7 @@
 import pytest
 
 from shop import db, seed
+from shop import messages
 from shop import work_orders as wo
 
 
@@ -49,5 +50,18 @@ def quoted(conn, diagnosed):
     wo.add_part(conn, diagnosed, "AD-C11-34W")
     wo.add_part(conn, diagnosed, "AD-CH11")
     wo.add_service(conn, diagnosed, DRIVETRAIN)
-    wo.send_quote(conn, diagnosed)
+    wo.lock_quote(conn, diagnosed)
     return diagnosed
+
+
+@pytest.fixture
+def quote_sent(conn, quoted):
+    """The hero quote, drafted by the agent and sent by the mechanic. Returns the message id."""
+    draft = messages.draft_message(conn, quoted, "Your repair comes to $169.98.", include_quote=True)
+    return messages.send_draft(conn, draft.id).id
+
+
+@pytest.fixture
+def approved(conn, quoted, quote_sent):
+    wo.record_customer_decision(conn, quote_sent, approved=True)
+    return quoted

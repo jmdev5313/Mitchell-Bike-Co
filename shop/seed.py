@@ -162,6 +162,12 @@ def _load_customers(conn, customers: list, models: dict, standards: dict) -> Non
                     "INSERT INTO bike_standards (customer_bike_id, standard_id) VALUES (?, ?)",
                     (bike.lastrowid, std_id),
                 )
+            for record in b.get("history", []):
+                conn.execute(
+                    """INSERT INTO service_records (customer_bike_id, serviced_on, odometer_km, summary)
+                       VALUES (?, ?, ?, ?)""",
+                    (bike.lastrowid, str(record["date"]), record.get("km"), record["summary"]),
+                )
 
 
 def main(argv: list[str]) -> None:

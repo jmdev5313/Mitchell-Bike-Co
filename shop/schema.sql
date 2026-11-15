@@ -86,6 +86,15 @@ CREATE TABLE bike_standards (
   PRIMARY KEY (customer_bike_id, standard_id)
 );
 
+-- What has been done to a customer bike before, newest last.
+CREATE TABLE service_records (
+  id                INTEGER PRIMARY KEY,
+  customer_bike_id  INTEGER NOT NULL REFERENCES customer_bikes(id),
+  serviced_on       TEXT NOT NULL,      -- YYYY-MM-DD
+  odometer_km       INTEGER,
+  summary           TEXT NOT NULL
+);
+
 -- Service ---------------------------------------------------------------------
 
 CREATE TABLE work_orders (
@@ -111,6 +120,22 @@ CREATE TABLE work_order_lines (
   qty               INTEGER NOT NULL DEFAULT 1,
   unit_price_cents  INTEGER NOT NULL,
   CHECK ((part_id IS NULL) <> (service_id IS NULL))   -- exactly one of the two
+);
+
+-- Correspondence with the customer about a work order. The agent can only draft;
+-- a mechanic sends. A message that carries the quote is what the customer approves.
+CREATE TABLE customer_messages (
+  id                  INTEGER PRIMARY KEY,
+  work_order_id       INTEGER NOT NULL REFERENCES work_orders(id),
+  direction           TEXT NOT NULL CHECK (direction IN ('to_customer', 'from_customer')),
+  status              TEXT NOT NULL CHECK (status IN ('draft', 'sent', 'received')),
+  author              TEXT NOT NULL CHECK (author IN ('agent', 'mechanic', 'customer')),
+  body                TEXT NOT NULL,
+  quoted_total_cents  INTEGER,          -- set when the message carries the quote
+  created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  sent_at             TEXT,
+  CHECK ((direction = 'to_customer') = (status IN ('draft', 'sent'))),
+  CHECK (quoted_total_cents IS NULL OR direction = 'to_customer')
 );
 
 CREATE TABLE payments (

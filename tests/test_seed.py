@@ -20,7 +20,7 @@ def bike_specs(conn, bike_id):
 def test_seed_loads_every_area(conn):
     for table in ("standards", "standard_compat", "parts", "part_requirements", "services",
                   "bike_models", "bike_model_standards", "suppliers", "supplier_parts",
-                  "customers", "customer_bikes", "bike_standards"):
+                  "customers", "customer_bikes", "bike_standards", "service_records"):
         assert conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] > 0, table
 
 
@@ -48,3 +48,13 @@ def test_unknown_standard_is_reported(tmp_path):
         seed.load(conn, seed_dir)
     assert conn.execute("SELECT COUNT(*) FROM standards").fetchone()[0] == 0  # rolled back
     conn.close()
+
+
+def test_hero_service_history(conn, bike_of):
+    rows = conn.execute(
+        "SELECT serviced_on, odometer_km FROM service_records WHERE customer_bike_id = ? ORDER BY serviced_on",
+        (bike_of(HERO),),
+    ).fetchall()
+    assert [(r["serviced_on"], r["odometer_km"]) for r in rows] == [
+        ("2023-05-20", 600), ("2024-07-14", 5000), ("2025-03-08", 6900)
+    ]
