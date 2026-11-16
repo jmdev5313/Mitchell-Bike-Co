@@ -148,3 +148,12 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Decided:** M3 ships with the Anthropic runtime only. The Dust runtime (secured web-reachable servers, a public address, a Dust agent set up in its builder) is deferred.
 - **Revises:** "Swappable agent runtime". The `AgentRuntime` interface stays, and so do the servers' HTTP transport and the `DUST_*` settings, so a second platform can be added later without changes elsewhere.
 - **Why:** it needs a Dust workspace with admin rights, plus hosting, and the story is complete without it. The time goes to the API and frontend, which make the project usable.
+
+### The rest of the work order lifecycle
+- **Decided:** after the order, the shop marks the purchase order received (stock goes up), schedules the repair for a date once every part is on the shelf, starts it, and finishes it (stock goes down). The Customer then pays the locked quote: a payment is started (for example, a Stripe checkout) and completed when the money is confirmed, for exactly the quoted amount. Abandoned checkouts stay pending and don't block a retry.
+- **Why:** each step is a rule in `shop/`, so the API, the Agent, and tests all get the same checks. Stock is checked when the repair is scheduled and again when it is finished, but not reserved in between; with one hero story that is enough, and a reservation table can come later if two jobs ever compete for one part.
+
+### The Customer gets a private link, not an account
+- **Decided:** each work order gets an unguessable token (192 bits). The Customer's view of the thread, the quote, and payment is reached only through it.
+- **Rejected:** customer accounts and passwords.
+- **Why:** it matches how shops already reach customers (a text with a link), and it keeps the Customer side to exactly one work order. Accounts would be a lot of work for nothing the story needs.
