@@ -166,3 +166,8 @@ One entry per choice: what was decided, what was rejected, and why.
 ### The Customer sees the conversation, not the workshop
 - **Decided:** the Customer's view has their bike, the quote lines and total, sent messages and their own replies, the schedule, and whether it's paid. It leaves out drafts, the diagnosis notes, purchase orders, and anything about other work orders. A decision on a message from another work order returns 404, the same as a message that doesn't exist.
 - **Why:** drafts are the Mechanic's to review, and internal notes are written for the shop. Answering 404 either way means a link can't be used to probe other work orders.
+
+### Stripe Checkout in test mode, confirmed with Stripe
+- **Decided:** a finished repair is paid through Stripe's hosted Checkout page, for exactly the locked quote. The server starts a pending payment, creates a Checkout session (idempotent per payment), and records it. When the Customer comes back, the server retrieves the session from Stripe and checks that it belongs to this work order, is in USD, and is paid, before completing the payment. `/checkout/confirm` does the same for a Customer who closed the page early. Only test-mode keys are accepted.
+- **Rejected:** webhooks for now; a simulated pay button.
+- **Why:** hosted Checkout keeps card details off this app entirely, and test mode makes it a real Stripe flow without real money. Confirming by retrieving the session needs no public address, unlike webhooks, so it works on a laptop. Webhooks can be added with hosting, as the safety net for Customers who never come back.

@@ -37,6 +37,18 @@ def start_payment(conn: sqlite3.Connection, work_order_id: int, stripe_session_i
     return get_payment(conn, cur.lastrowid)
 
 
+def attach_checkout_session(conn: sqlite3.Connection, payment_id: int, stripe_session_id: str) -> Payment:
+    """Record which Stripe checkout session is collecting a pending payment."""
+    payment = get_payment(conn, payment_id)
+    if payment.status != "pending":
+        raise RuleViolation(f"payment {payment_id} is {payment.status}, not pending")
+    if payment.stripe_session_id and payment.stripe_session_id != stripe_session_id:
+        raise RuleViolation(f"payment {payment_id} already has a checkout session")
+    with conn:
+        conn.execute("UPDATE payments SET stripe_session_id = ? WHERE id = ?", (stripe_session_id, payment_id))
+    return get_payment(conn, payment_id)
+
+
 def complete_payment(conn: sqlite3.Connection, payment_id: int, amount_received_cents: int) -> Payment:
     """The money is confirmed: mark the payment paid and the work order paid."""
     payment = get_payment(conn, payment_id)

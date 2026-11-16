@@ -31,3 +31,20 @@ def require_staff(credentials: HTTPAuthorizationCredentials | None = Depends(bea
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED, "staff passcode required", headers={"WWW-Authenticate": "Bearer"}
         )
+
+
+def get_stripe():
+    """A Stripe client for the test-mode key in STRIPE_SECRET_KEY. Live keys are refused."""
+    import stripe
+
+    key = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not key:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "STRIPE_SECRET_KEY is not set on the server")
+    if not key.startswith(("sk_test_", "rk_test_")):
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "only Stripe test-mode keys are allowed")
+    return stripe.StripeClient(key)
+
+
+def public_base_url() -> str:
+    """Where this API is reached from a browser, for Stripe's return links."""
+    return os.environ.get("PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
