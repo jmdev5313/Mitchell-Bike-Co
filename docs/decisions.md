@@ -138,3 +138,8 @@ One entry per choice: what was decided, what was rejected, and why.
 ### The Mechanic chat stands in for the screens
 - **Decided:** `make agent` is a terminal chat in which the user is the Mechanic. Slash commands perform the actions that are not the Agent's (sending a draft, the Customer's approval or reply), and the Agent hears about them as a short shop update with the next message.
 - **Why:** it makes the whole story playable with the real model before the M4 API and M6 frontend exist, without giving the Agent tools it must not have.
+
+### Judge the Agent by what it did, not what it said
+- **Decided:** `make agent-check` runs the hero story against the real model and checks the shop's state afterwards: work order lines, the locked total, the drafted quote message (total, no part numbers, a date that `estimate_ready_date` can back up for a supplier), no order before approval, then one order from a supplier that meets the promised date. Required checks decide pass or fail. Advisory ones, such as whether the diagnosis cites the measurement or whether an in-stock part was ordered, are reported but don't fail the run. Each run saves its checks, tool calls, tokens, and estimated cost to `evals/results/`.
+- **Rejected:** grading the Agent's replies with another model (for now); running it in CI.
+- **Why:** state checks are deterministic, free to evaluate, and test what matters to the shop. The wording of replies varies from run to run. Running the check costs real money, so it stays opt-in. The same checker runs against a scripted model in the unit tests, so its logic is covered in CI. It is the seed of the M5 scenario suite.
