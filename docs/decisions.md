@@ -143,3 +143,8 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Decided:** `make agent-check` runs the hero story against the real model and checks the shop's state afterwards: work order lines, the locked total, the drafted quote message (total, no part numbers, a date that `estimate_ready_date` can back up for a supplier), no order before approval, then one order from a supplier that meets the promised date. Required checks decide pass or fail. Advisory ones, such as whether the diagnosis cites the measurement or whether an in-stock part was ordered, are reported but don't fail the run. Each run saves its checks, tool calls, tokens, and estimated cost to `evals/results/`.
 - **Rejected:** grading the Agent's replies with another model (for now); running it in CI.
 - **Why:** state checks are deterministic, free to evaluate, and test what matters to the shop. The wording of replies varies from run to run. Running the check costs real money, so it stays opt-in. The same checker runs against a scripted model in the unit tests, so its logic is covered in CI. It is the seed of the M5 scenario suite.
+
+### Defer the Dust runtime
+- **Decided:** M3 ships with the Anthropic runtime only. The Dust runtime (secured web-reachable servers, a public address, a Dust agent set up in its builder) is deferred.
+- **Revises:** "Swappable agent runtime". The `AgentRuntime` interface stays, and so do the servers' HTTP transport and the `DUST_*` settings, so a second platform can be added later without changes elsewhere.
+- **Why:** it needs a Dust workspace with admin rights, plus hosting, and the story is complete without it. The time goes to the API and frontend, which make the project usable.
