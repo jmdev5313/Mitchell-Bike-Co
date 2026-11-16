@@ -251,3 +251,18 @@ def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
         "scheduled_for": wo["scheduled_for"],
         "created_at": wo["created_at"],
     }
+
+
+def list_work_orders(conn: sqlite3.Connection, status: str | None = None) -> list[dict]:
+    """Work orders, newest first, with who and which bike they are for."""
+    rows = conn.execute(
+        f"""SELECT w.id, w.status, w.complaint, w.quoted_total_cents, w.scheduled_for, w.created_at,
+                   c.name AS customer, cb.nickname AS bike, cb.id AS customer_bike_id
+            FROM work_orders w
+            JOIN customers c ON c.id = w.customer_id
+            JOIN customer_bikes cb ON cb.id = w.customer_bike_id
+            {"WHERE w.status = ?" if status else ""}
+            ORDER BY w.id DESC""",
+        (status,) if status else (),
+    ).fetchall()
+    return [{**dict(r), "total_cents": total_cents(conn, r["id"])} for r in rows]

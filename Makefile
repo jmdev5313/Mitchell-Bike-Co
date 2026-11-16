@@ -9,7 +9,7 @@ help:
 	@echo "make demo    Run the hero story through the MCP servers"
 	@echo "make agent   Chat with the Agent as the Mechanic (uses your API key)"
 	@echo "make agent-check  Run the hero story against the real model and check the outcome (spends tokens)"
-	@echo "make api     Run the API (not built yet)"
+	@echo "make api     Run the API on http://127.0.0.1:8000 (docs at /docs)"
 	@echo "make web     Run the frontend (not built yet)"
 	@echo "make evals   Run the eval suite (not built yet)"
 
@@ -41,7 +41,7 @@ agent-check:
 	uv run python -m evals.hero $(ARGS)
 
 api:
-	@echo "Not built yet: M4 (API)"
+	uv run uvicorn api.app:app --reload --port 8000
 
 web:
 	@echo "Not built yet: M6 (web)"

@@ -157,3 +157,12 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Decided:** each work order gets an unguessable token (192 bits). The Customer's view of the thread, the quote, and payment is reached only through it.
 - **Rejected:** customer accounts and passwords.
 - **Why:** it matches how shops already reach customers (a text with a link), and it keeps the Customer side to exactly one work order. Accounts would be a lot of work for nothing the story needs.
+
+### A thin FastAPI app with a staff passcode
+- **Decided:** the API is FastAPI over `shop/`. Staff endpoints (work orders, the thread, editing and sending drafts, receiving parts, scheduling, starting and finishing the repair) need `STAFF_PASSCODE` as a bearer token, and fail closed when it isn't set. Customer endpoints are under `/api/customer/{token}`. A `NotFound` becomes 404, and a `RuleViolation` becomes 409 with the rule's message.
+- **Rejected:** staff accounts and logins for now.
+- **Why:** one passcode keeps the staff side from being open while the app runs locally; real accounts belong with hosting. Keeping rules in `shop/` means the API, the MCP servers, and the tests can't disagree.
+
+### The Customer sees the conversation, not the workshop
+- **Decided:** the Customer's view has their bike, the quote lines and total, sent messages and their own replies, the schedule, and whether it's paid. It leaves out drafts, the diagnosis notes, purchase orders, and anything about other work orders. A decision on a message from another work order returns 404, the same as a message that doesn't exist.
+- **Why:** drafts are the Mechanic's to review, and internal notes are written for the shop. Answering 404 either way means a link can't be used to probe other work orders.
