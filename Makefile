@@ -1,9 +1,10 @@
-.PHONY: help db seed reset test servers demo agent agent-check api web evals
+.PHONY: help db seed reset sample test servers demo agent agent-check api web evals
 
 help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
 	@echo "make seed    Load seed data into the database"
 	@echo "make reset   Delete, rebuild, and seed the database"
+	@echo "make sample  Add a quoted hero work order and print its Customer token"
 	@echo "make test    Run unit tests"
 	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
 	@echo "make demo    Run the hero story through the MCP servers"
@@ -21,6 +22,9 @@ seed:
 
 reset:
 	uv run python -m shop.seed --reset
+
+sample:
+	uv run python -m demo.sample
 
 test:
 	uv run pytest
