@@ -12,6 +12,7 @@ word alone.
 import sqlite3
 from typing import Any
 
+import stripe
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
@@ -110,7 +111,10 @@ def _confirm(conn: sqlite3.Connection, stripe_client: Any, work_order_id: int, s
         raise NotFound(f"no payment for checkout session {session_id}")
     if payment.status != "pending":
         return payment.status
-    session = stripe_client.v1.checkout.sessions.retrieve(session_id)
+    try:
+        session = stripe_client.v1.checkout.sessions.retrieve(session_id)
+    except stripe.StripeError as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"could not check the payment with Stripe: {e.user_message or e}")
     if str(session.client_reference_id) != str(work_order_id) or session.currency != "usd":
         raise HTTPException(status.HTTP_409_CONFLICT, "checkout session does not match this work order")
     if session.payment_status == "paid":
@@ -128,8 +132,17 @@ def start_checkout(
     if view["paid"]:
         raise HTTPException(status.HTTP_409_CONFLICT, "this repair is already paid")
     payment = payments.start_payment(conn, work_order_id)  # refuses unless the repair is done
+    try:
+        session = _create_session(stripe_client, token, work_order_id, view, payment)
+    except stripe.StripeError as e:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Stripe refused the checkout: {e.user_message or e}")
+    payments.attach_checkout_session(conn, payment.id, session.id)
+    return {"checkout_url": session.url, "payment_id": str(payment.id)}
+
+
+def _create_session(stripe_client: Any, token: str, work_order_id: int, view: dict, payment: Any) -> Any:
     base = public_base_url()
-    session = stripe_client.v1.checkout.sessions.create(
+    return stripe_client.v1.checkout.sessions.create(
         {
             "mode": "payment",
             "client_reference_id": str(work_order_id),
@@ -148,10 +161,10 @@ def start_checkout(
             "success_url": f"{base}/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}",
             "cancel_url": f"{base}/api/customer/{token}",
         },
-        {"idempotency_key": f"mitchell-payment-{payment.id}"},
+        # Payment ids restart when the database is rebuilt, and Stripe remembers keys for
+        # 24 hours, so the key also carries the work order's unique link token.
+        {"idempotency_key": f"mitchell-{token}-payment-{payment.id}"},
     )
-    payments.attach_checkout_session(conn, payment.id, session.id)
-    return {"checkout_url": session.url, "payment_id": str(payment.id)}
 
 
 @router.get("/checkout/return", include_in_schema=False)

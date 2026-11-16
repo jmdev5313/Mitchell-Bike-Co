@@ -75,7 +75,8 @@ def test_customer_pays_through_stripe_checkout(client, conn, done, stripe_fake):
     assert params["mode"] == "payment" and params["client_reference_id"] == str(done)
     assert params["line_items"][0]["price_data"]["unit_amount"] == HERO_QUOTE
     assert params["success_url"] == f"http://shop.test/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
-    assert options["idempotency_key"] == f"mitchell-payment-{started['payment_id']}"
+    # The key carries the link token, so a rebuilt database can't reuse an earlier key.
+    assert options["idempotency_key"] == f"mitchell-{token}-payment-{started['payment_id']}"
 
     # Coming back before paying changes nothing.
     back = client.get(f"/api/customer/{token}/checkout/return", params={"session_id": "cs_test_1"},
@@ -131,3 +132,16 @@ def test_only_test_mode_keys(conn, tmp_path, monkeypatch, done):
     assert response.status_code == 503 and "test-mode" in response.json()["detail"]
     monkeypatch.delenv("STRIPE_SECRET_KEY")
     assert client.post(f"/api/customer/{token}/checkout").status_code == 503
+
+
+def test_stripe_errors_come_back_as_502_with_the_reason(client, conn, done, stripe_fake):
+    import stripe
+
+    def refuse(params, options=None):
+        raise stripe.IdempotencyError("Keys for idempotent requests can only be used with the same parameters")
+
+    stripe_fake.create = refuse
+    token = customer_links.link_token(conn, done)
+    response = client.post(f"/api/customer/{token}/checkout")
+    assert response.status_code == 502
+    assert response.json()["detail"].startswith("Stripe refused the checkout: Keys for idempotent requests")
