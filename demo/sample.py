@@ -5,19 +5,28 @@ bike, adds the parts that fit and the labor, locks the quote, drafts the quote
 message, and sends it. Then it prints the Customer link token, which the
 Customer endpoints in the API docs ask for. No model is called.
 
+With --done, it also acts out the rest: the Customer approves, the cassette is
+ordered and received, and the repair is finished, so the work order is ready to
+pay through Stripe Checkout (test mode).
+
 Each run adds another work order. `make reset` starts clean.
 
-Run: make sample
+Run: make sample   (or: make sample ARGS=--done)
 """
+
+import sys
+from datetime import date, timedelta
 
 from agents import config
 from shop import customer_links, db, messages
 from shop import work_orders as wo
+from shop.procurement import create_purchase_order, receive_purchase_order
 
 EMMA = "emma.clark@example.com"
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    done = "--done" in (argv or [])
     config.load_env()
     conn = db.connect()
     bike = conn.execute(
@@ -41,8 +50,23 @@ def main() -> None:
     )
     messages.send_draft(conn, draft.id)
     token = customer_links.link_token(conn, order)
+    if done:
+        wo.record_customer_decision(conn, draft.id, approved=True)
+        velo = conn.execute("SELECT id FROM suppliers WHERE name = 'Velo Supply Co.'").fetchone()[0]
+        receive_purchase_order(conn, create_purchase_order(conn, order, velo, [("AD-C11-34W", 1)]).id)
+        wo.schedule_repair(conn, order, (date.today() + timedelta(days=1)).isoformat())
+        wo.start_repair(conn, order)
+        wo.finish_repair(conn, order)
     conn.close()
 
+    if done:
+        print(f"Added work order {order} for Emma: approved, repaired, ready to pay ${total / 100:.2f}.\n")
+        print(f"Customer token: {token}\n")
+        print("To pay in Stripe test mode (make api, then http://127.0.0.1:8000/docs):")
+        print("  Customer: POST /api/customer/{token}/checkout, then open the checkout_url it returns")
+        print("  Pay with card 4242 4242 4242 4242, any future date, any CVC and postcode")
+        print("  Stripe sends you back to the Customer view, now showing \"paid\": true")
+        return
     print(f"Added work order {order} for Emma, with a sent ${total / 100:.2f} quote (message {draft.id}).\n")
     print(f"Customer token: {token}\n")
     print("In the API docs (make api, then http://127.0.0.1:8000/docs):")
@@ -52,4 +76,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

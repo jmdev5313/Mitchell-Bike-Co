@@ -175,3 +175,8 @@ One entry per choice: what was decided, what was rejected, and why.
 ### Open conversations are kept in a pool, one task each
 - **Decided:** a conversation stays open between turns, keeping its MCP server processes, and closes after 15 idle minutes or when the app stops. Each open conversation is run by its own task, and turns are handed to it one at a time. A second message while a turn runs gets 409.
 - **Why:** reopening three server processes for every message adds noticeable delay. MCP connections have to be closed by the task that opened them, which a request handler can't guarantee, so a long-lived task owns each one.
+
+### Stripe Checkout in test mode, confirmed with Stripe
+- **Decided:** a finished repair is paid through Stripe's hosted Checkout page, for exactly the locked quote. The server starts a pending payment, creates a Checkout session (idempotent per payment), and records it. When the Customer comes back, the server retrieves the session from Stripe and checks that it belongs to this work order, is in USD, and is paid, before completing the payment. `/checkout/confirm` does the same for a Customer who closed the page early. Only test-mode keys are accepted.
+- **Rejected:** webhooks for now; a simulated pay button.
+- **Why:** hosted Checkout keeps card details off this app entirely, and test mode makes it a real Stripe flow without real money. Confirming by retrieving the session needs no public address, unlike webhooks, so it works on a laptop. Webhooks can be added with hosting, as the safety net for Customers who never come back.
