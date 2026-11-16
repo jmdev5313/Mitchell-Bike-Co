@@ -6,6 +6,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 
 - `make reset` deletes, rebuilds, and seeds `data/shop.db` (`make db` and `make seed` do the two halves)
 - `make test` runs the unit tests
+- `make api` runs the API on port 8000 (docs at `/docs`); staff endpoints need `STAFF_PASSCODE` from `.env` as a bearer token
 - `make agent-check` runs the hero story against the real model and checks the database outcome (its own `data/check.db`; spends a few cents)
 - `make agent` chats with the Agent as the Mechanic (needs `ANTHROPIC_API_KEY` in `.env`; spends tokens)
 - `make demo` runs the hero story through the servers (its own `data/demo.db`)
@@ -26,7 +27,8 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **Money is integer cents.** Never floats.
 - **The Customer's only credential is their link** (`shop/customer_links.py`): an unguessable token tied to one work order. Anything that serves the Customer resolves the token to that work order and shows nothing else.
 - **Seed data refers to records by readable keys** (SKU, standard kind and name, bike model key), never by row id.
-- **Rules raise `NotFound` or `RuleViolation`** from `shop/errors.py`; MCP servers turn these into tool errors.
+- **Rules raise `NotFound` or `RuleViolation`** from `shop/errors.py`; MCP servers turn these into tool errors, and the API into 404 and 409 with the rule's message.
+- **The API is thin too.** `api/` wraps `shop/` functions; staff routers depend on `require_staff`, and Customer routes resolve the link token first and check that every id they touch belongs to that work order.
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.
 - **Real standards, invented products.** Interface standards (freehubs, BB shells, axles, etc.) are real; brands, product names, and prices are invented.
 
