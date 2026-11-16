@@ -24,7 +24,7 @@ Only once the Customer approves can the cassette be ordered. The Agent picks a s
 
 - `shop/` holds the business rules and the database. It has no AI code.
 - `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement). Every tool call is written to an audit log. The Agent gets no tool to send a message or approve a quote.
-- `agents/` holds the agents behind a small runtime interface, so the agent platform can be swapped by configuration.
+- `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped by configuration. The Anthropic runtime runs Claude Sonnet 5.5 against the three MCP servers.
 - `api/` and `web/` are the backend and the frontend: the Mechanic's workspace and the Customer's message thread.
 - `evals/` holds the scenario suite that measures whether the agents get it right.
 
@@ -46,6 +46,8 @@ make servers                                  # all three over HTTP on ports 810
 ```
 
 ## Try it
+
+**Chat with the Agent as the Mechanic.** Add your Anthropic API key to `.env`, then run `make agent`. It uses Claude Sonnet 5.5 and costs a little per message. Try the same message as below. Slash commands act out what the Agent can't do: `/send` sends its draft (as the Mechanic), `/approve` or `/decline` answers the quote (as the Customer), `/reply TEXT` replies as the Customer, `/photo PATH` attaches a photo, and `/usage` shows tokens used. Conversations are stored, so `make agent ARGS='--conversation ID'` resumes one.
 
 **Watch the hero story run.** `make demo` launches the three servers and plays the Agent's tool calls in order, including the two the shop refuses (a cassette that doesn't fit, and ordering before the Customer approves). It stands in for the Mechanic sending the quote and the Customer approving it, since neither is an Agent tool. It uses its own database, `data/demo.db`.
 

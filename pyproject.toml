@@ -5,6 +5,7 @@ description = "A fictional bike shop where an AI Agent works alongside the Mecha
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=2.8.0",
     "mcp>=2.3.0",
     "pyyaml",
 ]

@@ -198,3 +198,25 @@ CREATE TABLE audit_log (
   args_json        TEXT NOT NULL,
   result_summary   TEXT
 );
+
+-- Agent conversations -----------------------------------------------------------
+-- Written by agents/, never read by shop rules. One conversation is one chat between
+-- a mechanic and the agent; it is linked to a work order once the agent opens one.
+CREATE TABLE agent_conversations (
+  id             TEXT PRIMARY KEY,     -- also CONVERSATION_ID in audit_log
+  runtime        TEXT NOT NULL,        -- anthropic, dust
+  model          TEXT,
+  work_order_id  INTEGER REFERENCES work_orders(id),
+  external_id    TEXT,                 -- the runtime's own conversation id, if it keeps one
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- The exact message history sent to the model, append-only.
+CREATE TABLE agent_messages (
+  id               INTEGER PRIMARY KEY,
+  conversation_id  TEXT NOT NULL REFERENCES agent_conversations(id),
+  role             TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content_json     TEXT NOT NULL,
+  usage_json       TEXT,                -- token usage, for assistant messages
+  created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
