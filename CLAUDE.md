@@ -29,6 +29,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **The Customer's only credential is their link** (`shop/customer_links.py`): an unguessable token tied to one work order. Anything that serves the Customer resolves the token to that work order and shows nothing else.
 - **Seed data refers to records by readable keys** (SKU, standard kind and name, bike model key), never by row id.
 - **Rules raise `NotFound` or `RuleViolation`** from `shop/errors.py`; MCP servers turn these into tool errors, and the API into 404 and 409 with the rule's message.
+- **Open Agent conversations live in `api/agent_pool.py`**, one task per conversation: MCP connections must be opened and closed by the same task, so never call a runtime's `open`/`close` from a request handler directly.
 - **The API is thin too.** `api/` wraps `shop/` functions; staff routers depend on `require_staff`, and Customer routes resolve the link token first and check that every id they touch belongs to that work order.
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.
 - **Real standards, invented products.** Interface standards (freehubs, BB shells, axles, etc.) are real; brands, product names, and prices are invented.

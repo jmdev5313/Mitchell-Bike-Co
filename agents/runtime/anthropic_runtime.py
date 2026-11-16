@@ -18,7 +18,7 @@ import anthropic
 from mcp import Client, StdioServerParameters
 
 from agents import config, conversations
-from agents.runtime.base import AgentRuntime, ToolCall, TurnResult
+from agents.runtime.base import AgentRuntime, EventHandler, ToolCall, TurnResult
 from shop import db
 
 SERVERS = ("catalog", "work_orders", "procurement")
@@ -101,7 +101,9 @@ class AnthropicRuntime(AgentRuntime):
         if self._conn:
             self._conn.close()
 
-    async def send(self, text: str, images: Sequence[Path] = ()) -> TurnResult:
+    async def send(
+        self, text: str, images: Sequence[Path] = (), on_event: EventHandler | None = None
+    ) -> TurnResult:
         content: list[dict] = [_image_block(p) for p in images]
         content.append({"type": "text", "text": text})
         self._append("user", content)
@@ -132,7 +134,10 @@ class AnthropicRuntime(AgentRuntime):
 
             blocks = [b.model_dump(mode="json", by_alias=True, exclude_none=True) for b in response.content]
             self._append("assistant", blocks, usage)
-            result.progress += [b["thinking"] for b in blocks if b["type"] == "thinking" and b.get("thinking")]
+            for note in (b["thinking"] for b in blocks if b["type"] == "thinking" and b.get("thinking")):
+                result.progress.append(note)
+                if on_event:
+                    await on_event({"type": "progress", "text": note})
             text_out = "\n\n".join(b["text"] for b in blocks if b["type"] == "text").strip()
 
             if response.stop_reason == "tool_use":
@@ -140,6 +145,11 @@ class AnthropicRuntime(AgentRuntime):
                 for block in (b for b in blocks if b["type"] == "tool_use"):
                     call = await self._call_tool(block["name"], block.get("input") or {})
                     result.tool_calls.append(call)
+                    if on_event:
+                        await on_event({
+                            "type": "tool_call", "name": call.name, "is_error": call.is_error,
+                            "result": call.result if call.is_error else None,
+                        })
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block["id"],

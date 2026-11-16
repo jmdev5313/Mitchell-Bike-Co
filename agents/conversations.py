@@ -88,3 +88,53 @@ def usage_totals(conn: sqlite3.Connection, conversation_id: str) -> dict[str, in
             if isinstance(value, int):
                 totals[key] = totals.get(key, 0) + value
     return totals
+
+
+def list_conversations(conn: sqlite3.Connection) -> list[dict]:
+    """Conversations, newest first, with the Mechanic's first message as a preview."""
+    rows = conn.execute(
+        "SELECT id, runtime, model, work_order_id, created_at FROM agent_conversations ORDER BY created_at DESC, rowid DESC"
+    ).fetchall()
+    out = []
+    for r in rows:
+        entries = transcript(conn, r["id"])
+        first = next((e["text"] for e in entries if e["role"] == "mechanic"), "")
+        out.append({**dict(r), "preview": first[:120], "turns": sum(e["role"] == "mechanic" for e in entries)})
+    return out
+
+
+def transcript(conn: sqlite3.Connection, conversation_id: str) -> list[dict]:
+    """The conversation as people see it: Mechanic messages and Agent replies.
+
+    Tool results are folded into the Agent's entry as tool names; photos show as a
+    count. The raw history (with thinking blocks) stays in `history`.
+    """
+    get(conn, conversation_id)
+    entries: list[dict] = []
+    agent: dict | None = None
+    for message in history(conn, conversation_id):
+        blocks = message["content"] if isinstance(message["content"], list) else [
+            {"type": "text", "text": message["content"]}
+        ]
+        if message["role"] == "user":
+            texts = [b["text"] for b in blocks if b.get("type") == "text"]
+            if not texts:
+                continue  # tool results only
+            agent = None
+            entries.append({
+                "role": "mechanic",
+                "text": "\n\n".join(texts),
+                "photos": sum(b.get("type") == "image" for b in blocks),
+            })
+            continue
+        if agent is None:
+            agent = {"role": "agent", "text": "", "tools": [], "progress": []}
+            entries.append(agent)
+        for b in blocks:
+            if b.get("type") == "text" and b.get("text"):
+                agent["text"] = (agent["text"] + "\n\n" + b["text"]).strip()
+            elif b.get("type") == "tool_use":
+                agent["tools"].append(b["name"])
+            elif b.get("type") == "thinking" and b.get("thinking"):
+                agent["progress"].append(b["thinking"])
+    return entries

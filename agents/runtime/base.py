@@ -6,7 +6,7 @@ reply out, with a record of the tools it called along the way.
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -34,6 +34,12 @@ class TurnResult:
         return self.stop_reason == "refusal"
 
 
+# Called during a turn with events as they happen:
+#   {"type": "progress", "text": ...}                      a short status note
+#   {"type": "tool_call", "name": ..., "is_error": ..., "result": ...}
+EventHandler = Callable[[dict[str, Any]], Awaitable[None]]
+
+
 class AgentRuntime(ABC):
     """One conversation with the Agent on some platform."""
 
@@ -56,5 +62,10 @@ class AgentRuntime(ABC):
         """Release connections. The conversation stays stored and can be resumed."""
 
     @abstractmethod
-    async def send(self, text: str, images: Sequence[Path] = ()) -> TurnResult:
-        """One Mechanic turn: the message (and any photos) in, the Agent's reply out."""
+    async def send(
+        self, text: str, images: Sequence[Path] = (), on_event: EventHandler | None = None
+    ) -> TurnResult:
+        """One Mechanic turn: the message (and any photos) in, the Agent's reply out.
+
+        `on_event`, if given, is awaited with progress notes and tool calls during the turn.
+        """

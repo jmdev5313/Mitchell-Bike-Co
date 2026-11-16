@@ -663,6 +663,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "fastapi" },
     { name = "mcp" },
+    { name = "python-multipart" },
     { name = "pyyaml" },
     { name = "stripe" },
 ]
@@ -678,6 +679,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=2.8.0" },
     { name = "fastapi", specifier = ">=0.163.1" },
     { name = "mcp", specifier = ">=2.3.0" },
+    { name = "python-multipart", specifier = ">=0.0.33" },
     { name = "pyyaml" },
     { name = "stripe", specifier = ">=17.0.0" },
 ]
