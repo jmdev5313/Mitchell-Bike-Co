@@ -120,3 +120,21 @@ One entry per choice: what was decided, what was rejected, and why.
 ### Try it two ways before there's an Agent
 - **Decided:** a committed `.mcp.json` lets Claude Code act as the Agent against the real servers, and `make demo` replays the hero story through the servers as stdio subprocesses, launched the way a runtime launches them. The demo plays the Mechanic's send and the Customer's approval directly through `shop/`, and uses its own database.
 - **Why:** both exercise the tools end to end before M3. The demo is also a test (`tests/test_demo.py`), so the launch path an agent runtime uses is checked in CI, not just the in-memory one.
+
+### Claude Sonnet 5.5 at medium effort, with server-side fallback
+- **Decided:** the Agent runs on `claude-sonnet-5-5` (set by `AGENT_MODEL`) at effort `medium` (`AGENT_EFFORT`), with adaptive thinking and progress updates shown to the Mechanic. Requests opt into `fallbacks: "default"`, so a declined request is retried server-side on the model Anthropic recommends. The prompt and tool list are prompt-cached.
+- **Rejected:** Claude Opus 5.5 as the default; a separate router model (`ROUTER_MODEL`), which only made sense with several agents.
+- **Why:** Sonnet 5.5 costs half as much as Opus 5.5 and is faster, which suits a few-step tool workflow. `medium` is Anthropic's suggested starting point for multi-step tool use; the evals in M5 decide whether to raise it.
+
+### A hand-written agent loop, stored message by message
+- **Decided:** the Anthropic runtime runs its own loop over `client.beta.messages.create`: call the model, run the requested tools through MCP, send all results back in one message, repeat (up to 25 calls per turn). Every message is stored in `agent_messages` exactly as sent, and a conversation can be resumed from the database.
+- **Rejected:** the SDK's beta tool runner with its MCP helpers.
+- **Why:** Claude Sonnet 5.5 ties thinking blocks to the exact conversation, so the history must be stored and replayed byte for byte, and the M4 API needs to resume conversations across requests. The loop is short, and it also gives a clean record of tool calls for the CLI and the evals.
+
+### Each conversation gets its own server processes
+- **Decided:** the Anthropic runtime launches the three MCP servers over stdio for each conversation, with `CONVERSATION_ID` set, so every audit log entry names its conversation.
+- **Why:** it makes the audit log complete with no change to MCP requests. The cost (three short-lived processes per conversation) is fine at this scale; a hosted deployment can revisit it.
+
+### The Mechanic chat stands in for the screens
+- **Decided:** `make agent` is a terminal chat in which the user is the Mechanic. Slash commands perform the actions that are not the Agent's (sending a draft, the Customer's approval or reply), and the Agent hears about them as a short shop update with the next message.
+- **Why:** it makes the whole story playable with the real model before the M4 API and M6 frontend exist, without giving the Agent tools it must not have.
