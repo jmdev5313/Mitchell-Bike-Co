@@ -4,7 +4,7 @@ help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
 	@echo "make seed    Load seed data into the database"
 	@echo "make reset   Delete, rebuild, and seed the database"
-	@echo "make sample  Add a quoted hero work order and print its Customer token"
+	@echo "make sample  Add a quoted hero work order and print its Customer token (ARGS=--done: ready to pay)"
 	@echo "make test    Run unit tests"
 	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
 	@echo "make demo    Run the hero story through the MCP servers"
@@ -24,7 +24,7 @@ reset:
 	uv run python -m shop.seed --reset
 
 sample:
-	uv run python -m demo.sample
+	uv run python -m demo.sample $(ARGS)
 
 test:
 	uv run pytest

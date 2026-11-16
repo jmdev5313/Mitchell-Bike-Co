@@ -9,6 +9,7 @@ dependencies = [
     "fastapi>=0.163.1",
     "mcp>=2.3.0",
     "pyyaml",
+    "stripe>=17.0.0",
 ]
 
 [dependency-groups]
