@@ -25,3 +25,6 @@ web/dist/
 
 # Unedited photos (may contain location data); commit cropped copies only
 data/photos/raw/
+
+# Live check results (make agent-check)
+evals/results/

@@ -1,4 +1,4 @@
-.PHONY: help db seed reset test servers demo agent api web evals
+.PHONY: help db seed reset test servers demo agent agent-check api web evals
 
 help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
@@ -8,6 +8,7 @@ help:
 	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
 	@echo "make demo    Run the hero story through the MCP servers"
 	@echo "make agent   Chat with the Agent as the Mechanic (uses your API key)"
+	@echo "make agent-check  Run the hero story against the real model and check the outcome (spends tokens)"
 	@echo "make api     Run the API (not built yet)"
 	@echo "make web     Run the frontend (not built yet)"
 	@echo "make evals   Run the eval suite (not built yet)"
@@ -35,6 +36,9 @@ demo:
 
 agent:
 	uv run python -m agents.cli $(ARGS)
+
+agent-check:
+	uv run python -m evals.hero $(ARGS)
 
 api:
 	@echo "Not built yet: M4 (API)"
