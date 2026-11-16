@@ -72,7 +72,7 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M1 | Seed data and core business rules in `shop/` (fit, stock, quote approval, ordering) | Done |
 | M2 | MCP servers: catalog, work orders (including Customer messages), procurement | Done |
 | M3 | The Agent, behind the `AgentRuntime` interface (Dust runtime deferred) | Done |
-| M4 | Backend API | Next |
+| M4 | Backend API: Mechanic and Customer endpoints, Agent chat (streamed), Stripe test-mode payments | Done |
 | M5 | Eval suite | |
 | M6 | Web frontend: Mechanic workspace and Customer thread | |
 
