@@ -5,7 +5,7 @@ and nothing is ordered for a work order until they have.
 """
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from shop.compat import check_fit
 from shop.errors import NotFound, RuleViolation
@@ -125,6 +125,63 @@ def record_customer_decision(conn: sqlite3.Connection, quote_message_id: int, ap
     return new_status
 
 
+def schedule_repair(conn: sqlite3.Connection, work_order_id: int, scheduled_for: str) -> None:
+    """Book the repair once every part on the work order is on the shelf.
+
+    `scheduled_for` is a date, YYYY-MM-DD. Stock is checked here and again when the
+    repair is finished; it is not reserved for the work order in between.
+    """
+    _require_status(_get(conn, work_order_id), ("approved", "awaiting_parts"), "schedule the repair")
+    try:
+        day = date.fromisoformat(scheduled_for)
+    except (TypeError, ValueError):
+        raise RuleViolation(f"scheduled_for must be a date like 2026-11-20, not {scheduled_for!r}")
+    short = _parts_short(conn, work_order_id)
+    if short:
+        raise RuleViolation("parts are not in yet: " + "; ".join(short))
+    with conn:
+        conn.execute(
+            "UPDATE work_orders SET status = 'scheduled', scheduled_for = ? WHERE id = ?",
+            (day.isoformat(), work_order_id),
+        )
+
+
+def start_repair(conn: sqlite3.Connection, work_order_id: int) -> None:
+    _require_status(_get(conn, work_order_id), ("scheduled",), "start the repair")
+    with conn:
+        conn.execute("UPDATE work_orders SET status = 'in_progress' WHERE id = ?", (work_order_id,))
+
+
+def finish_repair(conn: sqlite3.Connection, work_order_id: int) -> None:
+    """Mark the repair done and take its parts off the shelf."""
+    _require_status(_get(conn, work_order_id), ("in_progress",), "finish the repair")
+    short = _parts_short(conn, work_order_id)
+    if short:
+        raise RuleViolation("not enough stock to finish: " + "; ".join(short))
+    with conn:
+        for part_id, qty in conn.execute(
+            """SELECT part_id, SUM(qty) FROM work_order_lines
+               WHERE work_order_id = ? AND part_id IS NOT NULL GROUP BY part_id""",
+            (work_order_id,),
+        ).fetchall():
+            conn.execute("UPDATE parts SET stock_qty = stock_qty - ? WHERE id = ?", (qty, part_id))
+        conn.execute("UPDATE work_orders SET status = 'done' WHERE id = ?", (work_order_id,))
+
+
+def _parts_short(conn, work_order_id: int) -> list[str]:
+    """Parts on the work order with less stock than it needs, as readable notes."""
+    return [
+        f"{r['sku']} needs {r['needed']}, {r['stock_qty']} in stock"
+        for r in conn.execute(
+            """SELECT p.sku, p.stock_qty, SUM(l.qty) AS needed
+               FROM work_order_lines l JOIN parts p ON p.id = l.part_id
+               WHERE l.work_order_id = ? GROUP BY p.id HAVING p.stock_qty < SUM(l.qty)
+               ORDER BY p.sku""",
+            (work_order_id,),
+        )
+    ]
+
+
 def _get(conn, work_order_id: int) -> sqlite3.Row:
     row = conn.execute("SELECT * FROM work_orders WHERE id = ?", (work_order_id,)).fetchone()
     if row is None:
@@ -191,5 +248,6 @@ def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
         "total_cents": total_cents(conn, work_order_id),
         "quoted_total_cents": wo["quoted_total_cents"],
         "decided_at": wo["decided_at"],
+        "scheduled_for": wo["scheduled_for"],
         "created_at": wo["created_at"],
     }

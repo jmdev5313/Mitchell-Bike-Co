@@ -7,6 +7,7 @@ quantities) on that quote, no matter who or what is asking.
 
 import sqlite3
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from shop.errors import NotFound, RuleViolation
 from shop.work_orders import ORDERABLE
@@ -83,6 +84,48 @@ def create_purchase_order(
         )
         conn.execute("UPDATE work_orders SET status = 'awaiting_parts' WHERE id = ?", (work_order_id,))
     return PurchaseOrder(cur.lastrowid, work_order_id, supplier_id, total)
+
+
+def receive_purchase_order(conn: sqlite3.Connection, po_id: int) -> None:
+    """The parts arrived: mark the order received and put them on the shelf."""
+    po = conn.execute("SELECT status FROM purchase_orders WHERE id = ?", (po_id,)).fetchone()
+    if po is None:
+        raise NotFound(f"no purchase order with id {po_id}")
+    if po["status"] != "ordered":
+        raise RuleViolation(f"purchase order {po_id} is {po['status']}, not ordered")
+    with conn:
+        for part_id, qty in conn.execute(
+            "SELECT part_id, qty FROM purchase_order_lines WHERE purchase_order_id = ?", (po_id,)
+        ).fetchall():
+            conn.execute("UPDATE parts SET stock_qty = stock_qty + ? WHERE id = ?", (qty, part_id))
+        conn.execute(
+            "UPDATE purchase_orders SET status = 'received', received_at = ? WHERE id = ?",
+            (datetime.now(timezone.utc).isoformat(timespec="seconds"), po_id),
+        )
+
+
+def list_purchase_orders(conn: sqlite3.Connection, work_order_id: int) -> list[dict]:
+    orders = conn.execute(
+        """SELECT po.id, po.status, po.total_cents, po.created_at, po.received_at,
+                  s.name AS supplier, s.lead_time_days
+           FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id
+           WHERE po.work_order_id = ? ORDER BY po.id""",
+        (work_order_id,),
+    ).fetchall()
+    return [
+        {
+            **dict(o),
+            "lines": [
+                dict(line) for line in conn.execute(
+                    """SELECT p.sku, p.name, pol.qty, pol.unit_cost_cents
+                       FROM purchase_order_lines pol JOIN parts p ON p.id = pol.part_id
+                       WHERE pol.purchase_order_id = ? ORDER BY p.sku""",
+                    (o["id"],),
+                )
+            ],
+        }
+        for o in orders
+    ]
 
 
 def _approved_qty(conn, work_order_id: int, part_id: int) -> int:

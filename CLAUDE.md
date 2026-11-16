@@ -24,6 +24,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **Agent conversation history is append-only** (`agents/conversations.py`). Store each message exactly as sent and never edit or strip it: Claude Sonnet 5.5 ties thinking blocks to the exact history.
 - **Tests never call the model.** Drive runtimes with a scripted fake client (`tests/test_agent_runtime.py`). Real-model runs are opt-in commands, not CI.
 - **Money is integer cents.** Never floats.
+- **The Customer's only credential is their link** (`shop/customer_links.py`): an unguessable token tied to one work order. Anything that serves the Customer resolves the token to that work order and shows nothing else.
 - **Seed data refers to records by readable keys** (SKU, standard kind and name, bike model key), never by row id.
 - **Rules raise `NotFound` or `RuleViolation`** from `shop/errors.py`; MCP servers turn these into tool errors.
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.

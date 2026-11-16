@@ -138,13 +138,24 @@ CREATE TABLE customer_messages (
   CHECK (quoted_total_cents IS NULL OR direction = 'to_customer')
 );
 
+-- A payment is started (for example, a Stripe checkout) and completed when the
+-- money is confirmed. A work order can have abandoned pending payments.
 CREATE TABLE payments (
   id                 INTEGER PRIMARY KEY,
   work_order_id      INTEGER NOT NULL REFERENCES work_orders(id),
-  stripe_session_id  TEXT,
+  stripe_session_id  TEXT UNIQUE,
   amount_cents       INTEGER NOT NULL,
   status             TEXT NOT NULL CHECK (status IN (
-                       'pending', 'paid', 'failed', 'refunded'))
+                       'pending', 'paid', 'failed', 'refunded')),
+  created_at         TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  paid_at            TEXT
+);
+
+-- The private link a customer uses to see their work order. No accounts.
+CREATE TABLE customer_links (
+  token          TEXT PRIMARY KEY,
+  work_order_id  INTEGER NOT NULL UNIQUE REFERENCES work_orders(id),
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Procurement -----------------------------------------------------------------
@@ -170,7 +181,8 @@ CREATE TABLE purchase_orders (
   work_order_id  INTEGER NOT NULL REFERENCES work_orders(id),
   status         TEXT NOT NULL CHECK (status IN ('ordered', 'received', 'cancelled')),
   total_cents    INTEGER NOT NULL,
-  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  received_at    TEXT
 );
 
 CREATE TABLE purchase_order_lines (
