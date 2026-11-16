@@ -166,3 +166,12 @@ One entry per choice: what was decided, what was rejected, and why.
 ### The Customer sees the conversation, not the workshop
 - **Decided:** the Customer's view has their bike, the quote lines and total, sent messages and their own replies, the schedule, and whether it's paid. It leaves out drafts, the diagnosis notes, purchase orders, and anything about other work orders. A decision on a message from another work order returns 404, the same as a message that doesn't exist.
 - **Why:** drafts are the Mechanic's to review, and internal notes are written for the shop. Answering 404 either way means a link can't be used to probe other work orders.
+
+### Agent turns stream over Server-Sent Events
+- **Decided:** `POST /api/conversations/{id}/messages` (text plus up to four photos) streams the turn as Server-Sent Events: `progress` notes and `tool_call`s as they happen, then the `reply` (with the linked work order and token usage), or an `error`. The runtime reports these through an `on_event` callback. If the client disconnects, the turn still finishes and is stored.
+- **Rejected:** a plain request that returns when the turn is done; WebSockets.
+- **Why:** a turn takes seconds to tens of seconds, and watching the Agent look up the bike and check fit is a big part of the demo. Events only flow one way, which is what SSE is for, and it works over plain HTTP.
+
+### Open conversations are kept in a pool, one task each
+- **Decided:** a conversation stays open between turns, keeping its MCP server processes, and closes after 15 idle minutes or when the app stops. Each open conversation is run by its own task, and turns are handed to it one at a time. A second message while a turn runs gets 409.
+- **Why:** reopening three server processes for every message adds noticeable delay. MCP connections have to be closed by the task that opened them, which a request handler can't guarantee, so a long-lived task owns each one.

@@ -25,7 +25,7 @@ Only once the Customer approves can the cassette be ordered. The Agent picks a s
 - `shop/` holds the business rules and the database. It has no AI code.
 - `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement). Every tool call is written to an audit log. The Agent gets no tool to send a message or approve a quote.
 - `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped by configuration. The Anthropic runtime runs Claude Sonnet 5.5 against the three MCP servers.
-- `api/` is the HTTP API (FastAPI): staff endpoints for the Mechanic's workspace, behind a passcode, and Customer endpoints reached through the Customer's private link. `make api` runs it, with interactive docs at `/docs`.
+- `api/` is the HTTP API (FastAPI): staff endpoints for the Mechanic's workspace, behind a passcode, including the chat with the Agent (each turn streams its progress and tool calls live), and Customer endpoints reached through the Customer's private link. `make api` runs it, with interactive docs at `/docs`.
 - `web/` will be the frontend: the Mechanic's workspace and the Customer's message thread.
 - `evals/` measures whether the Agent gets it right. `make agent-check` is the first check, the full hero story against the real model; the scenario suite follows in M5.
 
