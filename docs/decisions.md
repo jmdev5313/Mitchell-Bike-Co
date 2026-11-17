@@ -226,3 +226,15 @@ One entry per choice: what was decided, what was rejected, and why.
 ### A next-step bar with one action
 - **Decided:** every work order (and the Agent chat's side panel) shows what's next, whose turn it is, and one button: review the draft, ask the Agent (with the message filled in), mark parts received, book the repair on the promised date, start, or "Repair done". In the chat, "Repair done" goes straight to the Agent for the "ready to pick up" draft. An unanswered Customer reply becomes "draft an answer". A conversation links to the first work order the Agent acts on.
 - **Why:** the Mechanic never has to hunt for the next action or leave the conversation.
+
+### A front door for visitors, with a demo mode
+- **Decided:** `/` explains the project in one sentence and offers **Be the Mechanic**, **Be the Customer**, the latest `make agent-check` result, and **Reset the demo**. With `DEMO_MODE=1`, the front door signs visitors in to the workshop (the passcode is handed to the page), links to the newest open work order's Customer page, and allows the reset, which clears every table, reloads the seed data and leaves one quote waiting. Without demo mode it hands out nothing and the reset is refused.
+- **Rejected:** a passcode wall as the first thing a visitor sees.
+- **Why:** a reviewer has a minute or two. Demo mode removes the setup without weakening anything outside a demo. A public deployment still needs its own protection against spending API credits, decided with hosting.
+
+### An audit log page, and honest screenshots
+- **Decided:** the workshop has an Audit log page listing every tool call from `audit_log` (tool, MCP server, runtime, arguments, result), with a filter for the shop's refusals. The README's screenshot of refusals comes from `make demo`, a scripted client making real tool calls, and says so. The live Agent's screenshots come from a real run.
+- **Why:** the live Agent checks fit and approval before acting, so it rarely triggers a refusal (see "The Agent checks before it acts on a claimed approval"). Showing the guardrail without staging the model means using the scripted run where it does fire, and labelling it.
+
+### Counting eval checks: required versus advisory
+- **Correction:** earlier summaries said the hero check passed 19 and then 22 checks. Those counts included the advisory notes. The saved results show 17 of 17 required checks for the first run and 20 of 20 for the latest, each with 3 advisory notes. The front door reads the count from the newest result file, so it can't drift again.

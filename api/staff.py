@@ -215,3 +215,47 @@ def finish_repair(work_order_id: int, conn: sqlite3.Connection = Depends(get_db)
     wo.finish_repair(conn, work_order_id)
     events.record(conn, work_order_id, "mechanic", "finished", "Finished the repair")
     return work_order_detail(conn, work_order_id)
+
+
+@router.get("/audit")
+def audit_log(
+    conversation_id: str | None = None,
+    refused_only: bool = False,
+    limit: int = 300,
+    conn: sqlite3.Connection = Depends(get_db),
+) -> dict[str, Any]:
+    """Every tool call the Agent made, newest first: tool, MCP server, arguments, result, refusals.
+
+    Written by the MCP servers themselves, so it's the same whichever agent runtime called.
+    """
+    import json
+
+    from agents import activity
+
+    where, params = [], []
+    if conversation_id:
+        where.append("a.conversation_id = ?")
+        params.append(conversation_id)
+    if refused_only:
+        where.append("a.result_summary LIKE 'refused:%'")
+    sql = f"""SELECT a.id, a.at, a.conversation_id, a.runtime, a.tool, a.args_json, a.result_summary,
+                     c.work_order_id
+              FROM audit_log a LEFT JOIN agent_conversations c ON c.id = a.conversation_id
+              {"WHERE " + " AND ".join(where) if where else ""}
+              ORDER BY a.id DESC LIMIT ?"""
+    rows = conn.execute(sql, (*params, max(1, min(limit, 1000)))).fetchall()
+    totals = conn.execute(
+        "SELECT COUNT(*), SUM(result_summary LIKE 'refused:%') FROM audit_log"
+    ).fetchone()
+    return {
+        "total": totals[0], "refused": totals[1] or 0,
+        "entries": [
+            {
+                "id": r["id"], "at": r["at"], "conversation_id": r["conversation_id"], "work_order_id": r["work_order_id"],
+                "runtime": r["runtime"], "tool": r["tool"], "server": activity.server_for(r["tool"]),
+                "arguments": json.loads(r["args_json"]), "result": r["result_summary"],
+                "refused": (r["result_summary"] or "").startswith("refused:"),
+            }
+            for r in rows
+        ],
+    }

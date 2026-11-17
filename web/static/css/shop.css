@@ -432,3 +432,26 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .expand-dialog .textarea { min-height: 50vh; font-size: 16px; }
 .expand-dialog .row { display: flex; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
 .hint-actions { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s2); }
+
+/* Audit log */
+.data tr.is-refused-row td { background: var(--red-tint); }
+.data tr.is-refused-row td:first-child { box-shadow: inset 2px 0 0 var(--red); padding-left: var(--s2); }
+.data details summary { cursor: pointer; min-height: 24px; }
+
+/* Front door */
+.front { max-width: 980px; }
+.front h1.display { font-size: 56px; margin-top: var(--s5); max-width: 760px; }
+.front .lede { font-size: 20px; line-height: 1.5; max-width: 720px; margin: var(--s4) 0 0; color: var(--ink); }
+.doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); margin-top: var(--s6); }
+.door { border-top: 2px solid var(--ink); padding-top: var(--s4); }
+.door p { margin: var(--s3) 0 0; }
+.door-customer { background: var(--manila); border-top-style: dashed; border-top-color: var(--manila-text); padding: var(--s4); }
+.door-customer .muted, .door-customer .small { color: var(--manila-text); }
+.door .btn[aria-disabled="true"] { color: var(--disabled-text); border-color: var(--disabled-border); cursor: not-allowed; }
+.look { margin: 0; padding-left: 22px; display: grid; gap: var(--s3); max-width: 760px; line-height: 1.5; }
+.front-footer { margin-top: var(--s7); padding-top: var(--s3); border-top: 1px solid var(--hair); font-size: 14px; color: var(--slate); }
+.front code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+@media (max-width: 700px) {
+  .doors { grid-template-columns: 1fr; }
+  .front h1.display { font-size: 40px; }
+}
