@@ -238,8 +238,10 @@ def audit_log(
         params.append(conversation_id)
     if refused_only:
         where.append("a.result_summary LIKE 'refused:%'")
+    # The work order comes from the Agent's conversation, or else from the call's own arguments
+    # (a scripted client like `make demo` has no conversation).
     sql = f"""SELECT a.id, a.at, a.conversation_id, a.runtime, a.tool, a.args_json, a.result_summary,
-                     c.work_order_id
+                     COALESCE(c.work_order_id, json_extract(a.args_json, '$.work_order_id')) AS work_order_id
               FROM audit_log a LEFT JOIN agent_conversations c ON c.id = a.conversation_id
               {"WHERE " + " AND ".join(where) if where else ""}
               ORDER BY a.id DESC LIMIT ?"""

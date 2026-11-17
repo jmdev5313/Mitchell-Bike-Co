@@ -2,7 +2,7 @@
 
 A fictional bike shop where an AI Agent works alongside the Mechanic, built to demonstrate agentic workflows over the Model Context Protocol (MCP). The Agent diagnoses, checks parts against the bike the Customer actually has, quotes, and plans the order. People stay in charge: the Mechanic sends every message, only the Customer approves, and the shop's own code enforces both.
 
-![The Agent at work: each tool call streams into the activity log with the MCP server it went to, while the quote and the draft to the Customer build up in the side panel.](docs/screenshots/agent-quote.jpg)
+![One job screen: the Agent's tool calls in the activity log and its reply on the left, the work order with the next step and the quote on the right. From a live run.](docs/screenshots/agent-quote.jpg)
 
 > Mitchell Bike Co. is not a real business. All data is synthetic, the parts and brands are invented (the interface standards are real), and payments run in Stripe test mode.
 
@@ -27,8 +27,9 @@ In demo mode the front door opens the demo stage (**Play both sides at once**): 
 
 | | |
 | --- | --- |
-| ![Each work order's History: the Agent's tool calls, with the shop's two refusals in red.](docs/screenshots/history.jpg) | ![The Customer's page: the quote in plain words and one obvious action.](docs/screenshots/customer-quote.jpg) |
-| ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) | ![The front door.](docs/screenshots/front-door.jpg) |
+| ![The demo stage: the workshop at full width, Emma's phone opened from the Customer POV tab, and the bottom bar saying whose turn it is.](docs/screenshots/demo-stage.jpg) | ![The Customer's page: the quote in plain words and one obvious action.](docs/screenshots/customer-quote.jpg) |
+| ![A work order's History: the Agent's tool calls, with the shop's two refusals in red (from the scripted `make demo` run).](docs/screenshots/history.jpg) | ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) |
+| ![The front door.](docs/screenshots/front-door.jpg) | |
 
 ## The story
 
