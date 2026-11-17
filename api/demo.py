@@ -73,11 +73,20 @@ def demo_status() -> dict[str, Any]:
     return info
 
 
+def _require_demo_mode(action: str) -> None:
+    if not demo_mode():
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"{action} is only available in demo mode (DEMO_MODE=1)")
+
+
 @router.post("/reset")
 async def reset(request: Request) -> dict[str, Any]:
-    """Clear the shop and start again with the seed data and one quote waiting for the Customer."""
-    if not demo_mode():
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "reset is only available in demo mode (DEMO_MODE=1)")
+    """Clear the shop's activity and start again from the seed data, with nothing waiting.
+
+    Work orders, messages, conversations, history, the audit log and payments go.
+    The catalog, the Customer, her bike and the suppliers are reloaded exactly as
+    seeded, so stock and service history are back where the story starts.
+    """
+    _require_demo_mode("reset")
     await request.app.state.agent_pool.close_all()  # open conversations would point at deleted rows
     from shop import seed
 
@@ -89,7 +98,18 @@ async def reset(request: Request) -> dict[str, Any]:
                 conn.execute(f"DELETE FROM {table}")
         conn.execute("PRAGMA foreign_keys = ON")
         seed.load(conn)
-        order, token, _ = create_sample(conn, source="the demo reset")
     finally:
         conn.close()
-    return {"status": "reset", "work_order_id": order, "customer_token": token}
+    return {"status": "reset"}
+
+
+@router.post("/sample")
+def sample() -> dict[str, Any]:
+    """Add the hero work order with its quote already sent, for trying the Customer's side without the Agent."""
+    _require_demo_mode("generating a sample quote")
+    conn = db.connect()
+    try:
+        order, token, _ = create_sample(conn, source="the front door")
+    finally:
+        conn.close()
+    return {"work_order_id": order, "customer_token": token}

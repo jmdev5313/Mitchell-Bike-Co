@@ -43,17 +43,27 @@ def test_demo_mode_hands_out_the_passcode_and_a_sample_link(client, conn, monkey
     assert info["demo_mode"] and info["staff_passcode"] == "pc" and info["customer_token"] == token
 
 
-def test_demo_reset_starts_clean_with_one_quote(client, conn, monkeypatch):
+def test_demo_reset_clears_activity_and_leaves_nothing_waiting(client, conn, monkeypatch):
     monkeypatch.setenv("DEMO_MODE", "1")
     for _ in range(3):
         create_sample(conn, done=True)
-    result = client.post("/api/demo/reset").json()
-    assert result["status"] == "reset" and result["work_order_id"] == 1
-    assert conn.execute("SELECT COUNT(*) FROM work_orders").fetchone()[0] == 1
-    assert conn.execute("SELECT COUNT(*) FROM purchase_orders").fetchone()[0] == 0
-    assert customer_links.work_order_for(conn, result["customer_token"]) == 1
-    view = client.get(f"/api/customer/{result['customer_token']}").json()
-    assert view["status"] == "quoted"
+    parts = conn.execute("SELECT COUNT(*) FROM parts").fetchone()[0]
+    assert client.post("/api/demo/reset").json() == {"status": "reset"}
+    for table in ("work_orders", "purchase_orders", "customer_messages", "work_order_events", "audit_log", "payments"):
+        assert conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 0, table
+    assert conn.execute("SELECT COUNT(*) FROM parts").fetchone()[0] == parts
+    assert conn.execute("SELECT COUNT(*) FROM customers WHERE name = 'Emma Clark'").fetchone()[0] == 1
+    assert client.get("/api/demo").json()["customer_token"] is None
+
+
+def test_sample_quote_is_separate_and_demo_only(client, conn, monkeypatch):
+    assert client.post("/api/demo/sample").status_code == 403
+    monkeypatch.setenv("DEMO_MODE", "1")
+    client.post("/api/demo/reset")
+    result = client.post("/api/demo/sample").json()
+    assert customer_links.work_order_for(conn, result["customer_token"]) == result["work_order_id"]
+    assert client.get(f"/api/customer/{result['customer_token']}").json()["status"] == "quoted"
+    assert client.get("/api/demo").json()["customer_token"] == result["customer_token"]
 
 
 def test_latest_eval_is_read_from_the_newest_result(client, tmp_path):

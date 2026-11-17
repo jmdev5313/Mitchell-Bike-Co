@@ -16,7 +16,7 @@ make reset                # create the database and load the seed data
 make api                  # then open http://127.0.0.1:8000
 ```
 
-The front door has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link), **Reset the demo**, and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+The front door has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
 ## What to look for
 
@@ -76,4 +76,5 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M3 | The Agent, behind the `AgentRuntime` interface (Dust runtime deferred) | Done |
 | M4 | Backend API: Mechanic and Customer endpoints, Agent chat (streamed), Stripe test-mode payments | Done |
 | M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
+| M7 | Demo flow: the Agent on the work order screen, a side-by-side demo stage, reset without a sample, a photo on the hero message | In progress |
 | M5 | Eval suite: more scenarios than the hero story | Next |

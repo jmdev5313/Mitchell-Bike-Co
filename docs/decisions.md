@@ -228,7 +228,7 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Why:** the Mechanic never has to hunt for the next action or leave the conversation.
 
 ### A front door for visitors, with a demo mode
-- **Decided:** `/` explains the project in one sentence and offers **Be the Mechanic**, **Be the Customer**, the latest `make agent-check` result, and **Reset the demo**. With `DEMO_MODE=1`, the front door signs visitors in to the workshop (the passcode is handed to the page), links to the newest open work order's Customer page, and allows the reset, which clears every table, reloads the seed data and leaves one quote waiting. Without demo mode it hands out nothing and the reset is refused.
+- **Decided:** `/` explains the project in one sentence and offers **Be the Mechanic**, **Be the Customer**, the latest `make agent-check` result, and **Reset the demo**. With `DEMO_MODE=1`, the front door signs visitors in to the workshop (the passcode is handed to the page), links to the newest open work order's Customer page, and allows the reset, which clears every table and reloads the seed data (M7 removed the quote it used to leave waiting; see below). Without demo mode it hands out nothing and the reset is refused.
 - **Rejected:** a passcode wall as the first thing a visitor sees.
 - **Why:** a reviewer has a minute or two. Demo mode removes the setup without weakening anything outside a demo. A public deployment still needs its own protection against spending API credits, decided with hosting.
 
@@ -238,3 +238,26 @@ One entry per choice: what was decided, what was rejected, and why.
 
 ### Counting eval checks: required versus advisory
 - **Correction:** earlier summaries said the hero check passed 19 and then 22 checks. Those counts included the advisory notes. The saved results show 17 of 17 required checks for the first run and 20 of 20 for the latest, each with 3 advisory notes. The front door reads the count from the newest result file, so it can't drift again.
+
+### M7: the demo flow, from walkthrough feedback
+- **Decided:** a milestone before the evals that fixes what a first walkthrough found: the reset skipped the Agent, visitors got lost switching between Mechanic and Customer, and the Agent and the work order were on separate screens. It covers: the reset clears activity only, with "Generate a sample quote" as a separate button; "Start with the Agent" opens a conversation with the hero message filled in; the draft to the Customer can be expanded; the Customer's suggested reply can be accepted with Tab or a tap; a `/demo` stage with the workshop and the Customer's phone side by side and a step guide; and a photo on the hero message.
+- **Why:** the demo is how most people will meet the project. Every one of these removed a moment where a visitor had to guess what to do next.
+
+### The reset clears activity, not reference data
+- **Decided:** **Reset the demo** deletes work orders, messages, conversations, history, the audit log and payments, and puts the catalog, the Customer, her bike and the suppliers back exactly as seeded (reloading them, so stock and service history return to where the story starts). It no longer leaves a quote waiting. **Generate a sample quote** on the front door does that separately, using the same code as `make sample`.
+- **Rejected:** keeping the automatic sample quote (it skipped the Agent, the point of the demo, and put a job in the queue that distracted from the conversation); clearing everything including the seed data (the Agent would have no bike to look up).
+- **Why:** after a reset the first thing a visitor does should be asking the Agent.
+
+### The Agent and the work order share one screen
+- **Decided:** each job gets one screen: the conversation with the Agent on the left, the work order on the right (Overview, Bike and History tabs, the next step, the quote and the draft to the Customer). The panel can collapse to a strip. At narrow widths the two stack.
+- **Rejected:** a slide-out drawer (it covers the quote while the Agent is talking about it); a chat pop-up in the corner (the pattern for a business's support widget rather than a staff copilot, too small for the activity log, and it would cover most of the workshop in the side-by-side demo stage).
+- **Why:** the Agent's output appears next to the conversation that produced it, which is the story: the Agent proposes, the Mechanic reviews and sends. Docked side panels are also how staff copilots are usually built.
+
+### The draft to the Customer appears in the chat as a reference, not a second place to send from
+- **Decided:** where the Agent drafts a message, the chat shows a manila card ("To Emma · Draft", the total, the first line) with one link, **Review and send**, which moves focus to the draft in the work order panel. The card's status (draft, sent, approved, replaced by a newer draft) is read from the database when the page shows it; the stored conversation is never changed. Send, editing and the full text live only in the panel.
+- **Rejected:** the full message with Send inside the chat.
+- **Why:** it would blur the boundary the project exists to show (the Agent drafts, only the Mechanic sends), put two composers on one screen where a message could go to the wrong person, and turn an append-only transcript into something that changes. A draft also scrolls out of view in a chat, and it's the thing waiting on the Mechanic.
+
+### The hero photo is generated, and labelled
+- **Decided:** the hero message can carry a photo of the worn cassette, generated with an image model and prompted to show no logos or brand marks. It is labelled "Illustrative photo (AI-generated)" wherever it appears. The original stays in `data/photos/raw/` (gitignored); only a cropped copy is committed.
+- **Why:** the Agent can read photos, and showing it is worth more than describing it. The earlier rule against generated images was about decoration; this one is demo input, and the label keeps it honest.

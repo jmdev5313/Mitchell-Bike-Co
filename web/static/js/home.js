@@ -9,6 +9,7 @@ const customerNote = document.getElementById("customer-note");
 const evalLine = document.getElementById("eval-line");
 const resetSection = document.getElementById("reset-section");
 const resetButton = document.getElementById("reset");
+const sampleButton = document.getElementById("sample");
 const resetStatus = document.getElementById("reset-status");
 
 function describeEval(result) {
@@ -42,11 +43,12 @@ async function load() {
     }
     if (info.customer_token) {
       customer.href = `/c/${info.customer_token}`;
+      customer.removeAttribute("aria-disabled");
       customerNote.textContent = "Opens the newest open work order's link.";
     } else {
       customer.removeAttribute("href");
       customer.setAttribute("aria-disabled", "true");
-      customerNote.textContent = "No open work order has a Customer link yet. Reset the demo, or send a quote from the workshop.";
+      customerNote.textContent = "Emma has no link yet: she gets one when the Mechanic sends her the quote. Be the Mechanic first, or generate a sample quote below.";
     }
   } else {
     passcodeNote.textContent = "Sign in with STAFF_PASSCODE from .env.";
@@ -60,19 +62,22 @@ async function load() {
   }
 }
 
-resetButton.addEventListener("click", async () => {
-  resetButton.disabled = true;
-  resetStatus.textContent = "Resetting…";
+async function demoAction(busyText, path, done) {
+  resetButton.disabled = sampleButton.disabled = true;
+  resetStatus.textContent = busyText;
   try {
-    const result = await api("/api/demo/reset", { method: "POST" });
-    customer.href = `/c/${result.customer_token}`;
-    resetStatus.textContent = `Done. Work order #${result.work_order_id} has a quote waiting for Emma.`;
+    resetStatus.textContent = done(await api(path, { method: "POST" }));
     load();
   } catch (e) {
-    resetStatus.textContent = `Couldn't reset: ${e.message}`;
+    resetStatus.textContent = `Couldn't do that: ${e.message}`;
   } finally {
-    resetButton.disabled = false;
+    resetButton.disabled = sampleButton.disabled = false;
   }
-});
+}
+
+resetButton.addEventListener("click", () => demoAction("Resetting…", "/api/demo/reset",
+  () => "Done. The shop is empty and the Agent is ready: Be the Mechanic to start."));
+sampleButton.addEventListener("click", () => demoAction("Adding a sample quote…", "/api/demo/sample",
+  (result) => `Done. Work order #${result.work_order_id} has a quote waiting for Emma: Be the Customer to see it.`));
 
 load();

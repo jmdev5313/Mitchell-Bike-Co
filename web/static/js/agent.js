@@ -2,9 +2,7 @@
 // in the middle (streamed live while the Agent works), the linked work order on the right.
 
 import { h, icon, richText } from "./dom.js";
-import { staff, passcode, Unauthorized, stageMeter, ledger, draftBand, customerLink, nextStepBar, takePrefill, newBadge } from "./staff.js";
-
-const HERO = "Emma Clark's gravel bike is on the stand. Gears skip under load in the smaller cogs, and my chain checker reads 0.75%. Work out what it needs and draft her a quote.";
+import { staff, passcode, Unauthorized, stageMeter, ledger, draftBand, customerLink, nextStepBar, takePrefill, newBadge, HERO, startWithAgent } from "./staff.js";
 
 const PHOTO = "M2 4h12v9H2zM5.5 8a1 1 0 100-.01M14 11l-4-4-6 6";
 const CLIP = "M13 7.5l-5.5 5.5a3.2 3.2 0 01-4.5-4.5l6-6a2.2 2.2 0 013 3l-6 6a1.2 1.2 0 01-1.7-1.7L10 4.5";
@@ -44,8 +42,10 @@ function agentTurn(entry) {
 export async function agentScreen(app, conversationId, { onUnauthorized }) {
   document.title = "Agent · Workshop · Mitchell Bike Co.";
   const conversations = await staff("/api/conversations");
-  if (!conversationId && conversations.length) {
-    location.replace(`#/agent/${conversations[0].id}`);
+  if (!conversationId) {
+    // Nothing to pick yet: start one, with the hero message ready, rather than an empty screen.
+    if (conversations.length) location.replace(`#/agent/${conversations[0].id}`);
+    else await startWithAgent();
     return;
   }
   const convo = conversationId ? await staff(`/api/conversations/${conversationId}`) : null;
@@ -76,12 +76,18 @@ export async function agentScreen(app, conversationId, { onUnauthorized }) {
       : h("p", { class: "small muted" }, "No conversations yet."));
 
   // Middle: transcript and composer
+  const prefill = convo ? takePrefill() : "";
   const transcript = h("div", { class: "transcript", "aria-live": "polite" });
   if (!convo) {
     transcript.append(h("div", { class: "turn" }, h("div", { class: "speaker" }, ""),
       h("div", { class: "content" },
         h("p", { style: "font-size: 18px" }, "Start a conversation, then describe the bike on the stand: what you see, what you measured, and whose bike it is."),
         h("p", { class: "muted" }, "The Agent looks up the bike, checks what fits, builds the quote and drafts the message to the Customer. You review and send it."))));
+  } else if (!convo.entries.length && prefill === HERO) {
+    transcript.append(h("div", { class: "turn", "data-hint": "" }, h("div", { class: "speaker" }, ""),
+      h("div", { class: "content" },
+        h("p", { style: "font-size: 18px" }, "The hero story is waiting in the box below. Press Send and watch the Agent work, tool call by tool call."),
+        h("p", { class: "muted" }, "Edit it first if you like: describe what you see, what you measured, and whose bike it is."))));
   } else if (!convo.entries.length) {
     const copied = h("span", { class: "small muted", role: "status" });
     transcript.append(h("div", { class: "turn", "data-hint": "" }, h("div", { class: "speaker" }, ""),
@@ -115,7 +121,6 @@ export async function agentScreen(app, conversationId, { onUnauthorized }) {
 
   app.replaceChildren(h("div", { class: "chat" }, convos, center, side));
   if (composer) {
-    const prefill = takePrefill();
     if (prefill) composerApi.setText(prefill);
     else composer.querySelector("textarea").focus();
   }

@@ -129,11 +129,29 @@ function thread(view, { excludeId = null, title = "Messages with the shop" } = {
         h("p", { class: "body" }, m.body)))));
 }
 
-function replyForm(placeholder = "Can it be ready by Friday?") {
+/** The reply box. A `suggestion` shows as the placeholder and becomes real text on Tab or a tap. */
+function replyForm(placeholder, { suggestion = null } = {}) {
   const input = h("input", {
     id: "reply", class: "input", type: "text", name: "body", required: true,
-    placeholder, autocomplete: "off", maxlength: 2000,
+    placeholder: suggestion || placeholder, autocomplete: "off", maxlength: 2000,
+    "aria-describedby": suggestion ? "reply-hint" : null,
   });
+  const chip = suggestion ? h("button", { type: "button", class: "suggestion", onclick: () => use() },
+    h("span", { class: "visually-hidden" }, "Use the suggestion: "), suggestion) : null;
+  const suggestRow = suggestion ? h("div", { class: "suggest-row" },
+    h("span", { id: "reply-hint", class: "small" }, "Tap to use it, or press Tab:"), chip) : null;
+  function use() {
+    input.value = suggestion;
+    input.focus();
+    input.setSelectionRange(suggestion.length, suggestion.length);
+    suggestRow.hidden = true;
+  }
+  if (suggestion) {
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Tab" && !event.shiftKey && !input.value) { event.preventDefault(); use(); }
+    });
+    input.addEventListener("input", () => { suggestRow.hidden = Boolean(input.value); });
+  }
   return h("form", {
     class: "reply-form",
     onsubmit: (event) => {
@@ -145,7 +163,8 @@ function replyForm(placeholder = "Can it be ready by Friday?") {
   },
     h("label", { for: "reply" }, "Questions? Message the shop"),
     h("div", { class: "row" }, input,
-      h("button", { type: "submit", class: "btn btn-outline", disabled: busy }, "Send")));
+      h("button", { type: "submit", class: "btn btn-outline", disabled: busy }, "Send")),
+    suggestRow);
 }
 
 function step(label, { done = false, when = "", current = false } = {}) {
@@ -206,7 +225,7 @@ function quoteScreen(view) {
     h("div", { style: "margin-top: 8px" }, quoteLedger(view)),
     actions,
     errorNotice(),
-    replyForm(),
+    replyForm("Message the shop", { suggestion: "Can it be ready by Friday?" }),
     thread(view, { excludeId: view.open_quote_message_id, title: "Other messages with the shop" }),
   ];
 }
