@@ -90,7 +90,7 @@ async def test_a_turn_with_tool_calls(conn):
     assert first["fallbacks"] == "default"
     assert first["cache_control"] == {"type": "ephemeral"}
     assert "service agent at Mitchell Bike Co." in first["system"]
-    assert len(first["tools"]) == 17
+    assert len(first["tools"]) == 18
     assert [t["name"] for t in first["tools"]] == sorted(t["name"] for t in first["tools"])
 
     # Both tool results go back together, in one user message, matched by id.

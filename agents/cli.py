@@ -20,7 +20,7 @@ from pathlib import Path
 
 from agents import config, conversations
 from agents.runtime import RUNTIMES, TurnResult, open_agent
-from shop import db, messages
+from shop import db, flow, messages
 from shop import work_orders as wo
 from shop.errors import NotFound, RuleViolation
 
@@ -68,8 +68,12 @@ class Session:
                 quotes = [m for m in thread if m.status == "sent" and m.quoted_total_cents is not None]
                 if not quotes:
                     return "No sent quote to answer."
-                status = wo.record_customer_decision(conn, quotes[-1].id, approved=command == "/approve")
-                self.notes.append(f"The customer {status} the quote in message {quotes[-1].id}.")
+                result = flow.customer_decides(conn, quotes[-1].id, approved=command == "/approve")
+                status = result["status"]
+                placed = "; ".join(f"the shop ordered {', '.join(po['skus'])} from {po['supplier']}" for po in result["placed"])
+                failed = "; ".join(f"the planned order from {f['supplier']} failed: {f['reason']}" for f in result["failed"])
+                self.notes.append(f"The customer {status} the quote in message {quotes[-1].id}."
+                                  + (f" On approval, {placed}." if placed else "") + (f" {failed}." if failed else ""))
                 return f"The Customer {status} the ${quotes[-1].quoted_total_cents / 100:.2f} quote."
             if command == "/reply":
                 if not arg:

@@ -167,7 +167,7 @@ def finish_repair(conn: sqlite3.Connection, work_order_id: int) -> None:
             conn.execute("UPDATE parts SET stock_qty = stock_qty - ? WHERE id = ?", (qty, part_id))
         conn.execute(
             "UPDATE work_orders SET status = 'done', finished_at = ? WHERE id = ?",
-            (datetime.now(timezone.utc).isoformat(timespec="seconds"), work_order_id),
+            (datetime.now(timezone.utc).isoformat(timespec="microseconds"), work_order_id),
         )
 
 

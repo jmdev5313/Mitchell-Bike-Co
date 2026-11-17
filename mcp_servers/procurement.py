@@ -15,10 +15,10 @@ from shop.errors import NotFound
 server = new_server(
     "mitchell-procurement",
     (
-        "Mitchell Bike Co. procurement. Parts can be ordered only for a work order whose quote "
-        "the customer has approved, and only the parts and quantities on that quote. Only "
-        "promise the customer a ready date that estimate_ready_date backs up. Prices are "
-        "integer cents."
+        "Mitchell Bike Co. procurement. Plan the order with the quote (plan_order): the shop "
+        "places it itself when the customer approves. Parts can be ordered only for a work order "
+        "whose quote the customer has approved, and only the parts and quantities on that quote. "
+        "Only promise the customer a ready date the plan backs up. Prices are integer cents."
     ),
 )
 tool = shop_tool(server)
@@ -59,12 +59,30 @@ def estimate_ready_date(conn: sqlite3.Connection, supplier_ids: list[int] | None
     }
 
 
+class PlanLine(TypedDict):
+    sku: str
+    supplier_id: int
+    qty: int
+
+
+@tool
+def plan_order(conn: sqlite3.Connection, work_order_id: int, lines: list[PlanLine]) -> dict[str, Any]:
+    """Record which supplier each out-of-stock part will be ordered from if the customer
+    approves. Make the plan with the quote, before drafting the message: the shop places
+    these orders itself the moment the customer approves, and the plan's ready date is the
+    one to promise the customer. Replaces any earlier plan."""
+    return {"work_order_id": work_order_id, **procurement.set_order_plan(
+        conn, work_order_id, [(line["sku"], line["supplier_id"], line["qty"]) for line in lines]
+    )}
+
+
 @tool
 def create_purchase_order(
     conn: sqlite3.Connection, work_order_id: int, supplier_id: int, lines: list[OrderLine]
 ) -> dict[str, Any]:
-    """Order parts from one supplier for a work order the customer has approved.
-    Prices come from the supplier."""
+    """Order parts from one supplier for a work order the customer has approved. Normally the
+    shop places the planned order itself on approval; use this only when the plan failed or
+    something extra was approved. Prices come from the supplier."""
     po = procurement.create_purchase_order(
         conn, work_order_id, supplier_id, [(line["sku"], line["qty"]) for line in lines]
     )

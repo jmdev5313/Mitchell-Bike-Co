@@ -14,7 +14,9 @@ bearer = HTTPBearer(auto_error=False, description="The staff passcode from STAFF
 
 
 def get_db() -> Iterator[sqlite3.Connection]:
-    conn = db.connect()
+    # One connection per request. FastAPI may open it in one worker thread and run the
+    # endpoint in another, so it can't be pinned to its thread; it is never shared.
+    conn = db.connect(check_same_thread=False)
     try:
         yield conn
     finally:

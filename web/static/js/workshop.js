@@ -3,7 +3,7 @@
 import { h, dollars, shortDate, longDate } from "./dom.js";
 import {
   staff, passcode, setPasscode, Unauthorized, stageMeter, progressStrip, ledger, draftBand,
-  customerLink, refusedNotice,
+  customerLink, refusedNotice, nextStepBar, historySection, newBadge,
 } from "./staff.js";
 import { agentScreen } from "./agent.js";
 
@@ -18,12 +18,12 @@ function route() {
     link.toggleAttribute("aria-current", link.dataset.section === section);
     if (link.dataset.section === section) link.setAttribute("aria-current", "page");
   }
-  if (!passcode()) return gate();
+  if (!passcode()) return Promise.resolve(gate());
   const screens = {
     "work-orders": () => (id ? workOrder(Number(id)) : workOrders()),
     agent: () => agentScreen(app, id, { onUnauthorized: signOut }),
   };
-  (screens[section] || screens["work-orders"])().catch(handle);
+  return (screens[section] || screens["work-orders"])().catch(handle);
 }
 
 function handle(e) {
@@ -40,6 +40,32 @@ function signOut() {
 }
 
 window.addEventListener("hashchange", route);
+
+// --- Live updates: poll for new history events, refresh the screen when something happened ---
+
+let latestEvent = null;
+function userIsBusy() {
+  const el = document.activeElement;
+  const typing = el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button")) && el.value;
+  return Boolean(typing || window.mbcStreaming || document.querySelector("dialog[open]"));
+}
+async function poll() {
+  if (!passcode() || document.hidden) return;
+  try {
+    const { latest_event_id, needs_you } = await staff("/api/activity/latest");
+    const link = nav.querySelector('[data-section="work-orders"]');
+    link.querySelector(".badge")?.remove();
+    if (needs_you) link.append(h("span", { class: "badge", "aria-label": `${needs_you} need you` }, String(needs_you)));
+    if (latestEvent !== null && latest_event_id !== latestEvent && !userIsBusy()) {
+      const y = window.scrollY;  // refresh in place: keep the reader where they were
+      await route();
+      window.scrollTo(0, y);
+    }
+    latestEvent = latest_event_id;
+  } catch { /* offline or signed out: the next screen load will say so */ }
+}
+setInterval(poll, 4000);
+poll();
 
 // --- Passcode gate -----------------------------------------------------------
 
@@ -105,7 +131,8 @@ async function workOrders() {
               onclick: (event) => { if (!event.target.closest("a")) location.hash = `#/work-orders/${o.id}`; },
             },
               h("td", {}, h("a", { href: `#/work-orders/${o.id}` }, String(o.id))),
-              h("td", {}, h("div", { style: "font-weight: 600" }, o.customer), h("div", { class: "small muted" }, o.bike)),
+              h("td", {}, h("div", { style: "font-weight: 600" }, o.customer), h("div", { class: "small muted" }, o.bike),
+                newBadge(o.unseen_count, o.unseen_latest, o.unseen_actor)),
               h("td", {}, o.complaint),
               h("td", {}, stageMeter(o.status)),
               h("td", { class: o.next_step.waiting_on === "mechanic" ? "next-mechanic" : "muted" }, o.next_step.text),
@@ -120,7 +147,10 @@ async function workOrder(id) {
   const order = await staff(`/api/work-orders/${id}`);
   const customer = order.bike.customer;
   document.title = `Work order #${id} · Workshop · Mitchell Bike Co.`;
-  const reload = () => workOrder(id).catch(handle);
+  const reload = () => {
+    const y = window.scrollY;
+    return workOrder(id).then(() => window.scrollTo(0, y)).catch(handle);
+  };
   const notice = h("div", { role: "alert" });
 
   async function act(work) {
@@ -167,9 +197,7 @@ async function workOrder(id) {
         ? h("a", { href: `#/agent/${order.conversation_ids[0]}`, style: "font-weight: 600" }, "Open the Agent conversation")
         : null),
     progressStrip(s),
-    h("p", { style: "margin: 16px 0 0" },
-      h("strong", {}, "Next: "), order.next_step.text,
-      order.next_step.waiting_on !== "nobody" ? h("span", { class: "muted" }, ` (${{ mechanic: "you", agent: "the Agent", customer: customer.split(" ")[0] }[order.next_step.waiting_on]})`) : null),
+    nextStepBar(order, { onChange: reload }),
     notice,
     h("div", { class: "cols", style: "margin-top: 8px" },
       h("div", { class: "main-col" },
@@ -187,7 +215,16 @@ async function workOrder(id) {
         order.diagnosis ? h("section", { class: "section" }, h("h2", {}, "Diagnosis"), h("p", { style: "margin: 0; white-space: pre-line" }, order.diagnosis)) : null,
         order.lines.length ? h("section", { class: "section" },
           h("h2", {}, order.quoted_total_cents !== null ? "Quote (locked)" : "Quote (draft)"),
-          ledger(order.lines, order.quoted_total_cents ?? order.total_cents, { stock })) : null),
+          ledger(order.lines, order.quoted_total_cents ?? order.total_cents, { stock })) : null,
+        order.order_plan.lines.length ? h("section", { class: "section" },
+          h("h2", {}, "Order plan"),
+          h("p", { class: "small muted", style: "margin: 0 0 8px" },
+            "Chosen by the Agent with the quote. The shop places it the moment the Customer approves."),
+          h("ul", { style: "margin: 0; padding-left: 18px" }, order.order_plan.lines.map((l) =>
+            h("li", {}, `${l.sku} × ${l.qty} from ${l.supplier}, ${l.lead_time_days}-day lead time, ${dollars(l.total_cents)}`))),
+          order.order_plan.promised_ready_on ? h("p", { class: "small", style: "margin: 8px 0 0" },
+            h("strong", {}, "Promised to the Customer: "), longDate(order.order_plan.promised_ready_on)) : null) : null,
+        historySection(order)),
       h("div", { class: "side-col" },
         h("section", { class: "section" },
           h("h2", {}, "Bike"),
@@ -229,6 +266,7 @@ async function workOrder(id) {
         h("section", { class: "section" },
           h("h2", {}, "Customer link"),
           customerLink(order.customer_link_token, customer))))));
+  if (order.unseen.length) staff(`/api/work-orders/${id}/seen`, { method: "POST" }).catch(() => {});
 }
 
 route();

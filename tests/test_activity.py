@@ -36,7 +36,7 @@ async def test_tool_servers_match_the_real_servers():
         async with Client(server) as client:
             tools = [t.name for t in (await client.list_tools()).tools]
         assert {t: activity.server_for(t) for t in tools} == {t: name for t in tools}
-    assert len(activity.TOOL_SERVERS) == 17
+    assert len(activity.TOOL_SERVERS) == 18
 
 
 async def test_hero_summaries(conn, quoted, quote_sent):

@@ -15,12 +15,10 @@ Run: make sample   (or: make sample ARGS=--done)
 """
 
 import sys
-from datetime import date, timedelta
 
 from agents import config
-from shop import customer_links, db, messages
+from shop import customer_links, db, events, flow, messages, procurement
 from shop import work_orders as wo
-from shop.procurement import create_purchase_order, receive_purchase_order
 
 EMMA = "emma.clark@example.com"
 
@@ -43,18 +41,21 @@ def main(argv: list[str] | None = None) -> None:
     wo.add_part(conn, order, "AD-CH11")
     wo.add_service(conn, order, "Drivetrain replacement (chain and cassette)")
     total = wo.lock_quote(conn, order)
+    velo = conn.execute("SELECT id FROM suppliers WHERE name = 'Velo Supply Co.'").fetchone()[0]
+    procurement.set_order_plan(conn, order, [("AD-C11-34W", velo, 1)])  # the shop orders this on approval
     draft = messages.draft_message(
         conn, order, include_quote=True,
         body=(f"Hi Emma, the chain and the gear cluster on your back wheel are worn out, which is why "
               f"the gears skip. Replacing both comes to ${total / 100:.2f}, parts and labor."),
     )
     messages.send_draft(conn, draft.id)
+    events.record(conn, order, "shop", "sample", "Created by make sample (no Agent): quote sent to Emma")
     token = customer_links.link_token(conn, order)
     if done:
-        wo.record_customer_decision(conn, draft.id, approved=True)
-        velo = conn.execute("SELECT id FROM suppliers WHERE name = 'Velo Supply Co.'").fetchone()[0]
-        receive_purchase_order(conn, create_purchase_order(conn, order, velo, [("AD-C11-34W", 1)]).id)
-        wo.schedule_repair(conn, order, (date.today() + timedelta(days=1)).isoformat())
+        placed = flow.customer_decides(conn, draft.id, approved=True)["placed"]  # the shop places the plan
+        procurement.receive_purchase_order(conn, placed[0]["id"])
+        promised = conn.execute("SELECT promised_ready_on FROM work_orders WHERE id = ?", (order,)).fetchone()[0]
+        wo.schedule_repair(conn, order, promised)
         wo.start_repair(conn, order)
         wo.finish_repair(conn, order)
     conn.close()
