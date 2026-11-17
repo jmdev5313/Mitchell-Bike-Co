@@ -76,3 +76,10 @@ def test_unknown_shapes_fall_back_quietly():
     assert activity.describe("lock_quote", {}, "not json", False) == "Done"
     assert activity.describe("mystery_tool", {}, json.dumps({"a": 1}), False) == "Done"
     assert activity.entry("mystery_tool", {}, "", False)["server"] == "unknown"
+
+
+def test_a_draft_entry_names_the_message_it_drafted():
+    result = json.dumps({"id": 7, "work_order_id": 1, "status": "draft", "body": "Hi Emma"})
+    assert activity.entry("draft_customer_message", {}, result, False)["message_id"] == 7
+    assert "message_id" not in activity.entry("draft_customer_message", {}, "Error: no", True)
+    assert "message_id" not in activity.entry("lock_quote", {}, result, False)

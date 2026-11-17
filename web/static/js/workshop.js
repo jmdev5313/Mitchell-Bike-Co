@@ -1,11 +1,9 @@
-// The Mechanic's workspace: /workshop#/work-orders, #/work-orders/{id}, #/agent, #/agent/{id}.
+// The Mechanic's workspace: /workshop#/work-orders, the job screen at #/work-orders/{id}[/{conversation}],
+// a job not yet on a work order at #/agent/{conversation}, and #/audit.
 
-import { h, dollars, shortDate, longDate } from "./dom.js";
-import {
-  staff, passcode, setPasscode, Unauthorized, stageMeter, progressStrip, ledger, draftBand,
-  customerLink, refusedNotice, nextStepBar, historySection, newBadge, startWithAgent,
-} from "./staff.js";
-import { agentScreen } from "./agent.js";
+import { h, dollars } from "./dom.js";
+import { staff, passcode, setPasscode, Unauthorized, stageMeter, newBadge, startWithAgent } from "./staff.js";
+import { jobScreen } from "./job.js";
 
 const app = document.getElementById("app");
 const nav = document.getElementById("nav");
@@ -13,15 +11,15 @@ const nav = document.getElementById("nav");
 // --- Routing -----------------------------------------------------------------
 
 function route() {
-  const [section = "work-orders", id] = location.hash.replace(/^#\/?/, "").split("/");
+  const [section = "work-orders", id, conversationId] = location.hash.replace(/^#\/?/, "").split("/");
   for (const link of nav.querySelectorAll("a")) {
     link.toggleAttribute("aria-current", link.dataset.section === section);
     if (link.dataset.section === section) link.setAttribute("aria-current", "page");
   }
   if (!passcode()) return Promise.resolve(gate());
   const screens = {
-    "work-orders": () => (id ? workOrder(Number(id)) : workOrders()),
-    agent: () => agentScreen(app, id, { onUnauthorized: signOut }),
+    "work-orders": () => (id ? jobScreen(app, { orderId: Number(id), conversationId, onUnauthorized: signOut }) : workOrders()),
+    agent: () => (id ? jobScreen(app, { conversationId: id, onUnauthorized: signOut }) : agentStart()),
     audit: () => auditLog(),
   };
   return (screens[section] || screens["work-orders"])().catch(handle);
@@ -106,7 +104,8 @@ let filter = "all";
 
 async function workOrders() {
   document.title = "Work orders · Workshop · Mitchell Bike Co.";
-  const orders = await staff("/api/work-orders");
+  const [orders, conversations] = await Promise.all([staff("/api/work-orders"), staff("/api/conversations")]);
+  const loose = conversations.filter((c) => !c.work_order_id && c.turns > 0);
   const render = () => {
     const shown = orders.filter(FILTERS.find((f) => f.id === filter).test);
     app.replaceChildren(h("div", { class: "page" },
@@ -137,137 +136,22 @@ async function workOrders() {
               h("td", {}, o.complaint),
               h("td", {}, stageMeter(o.status)),
               h("td", { class: o.next_step.waiting_on === "mechanic" ? "next-mechanic" : "muted" }, o.next_step.text),
-              h("td", { class: "money" }, dollars(o.quoted_total_cents ?? o.total_cents)))))))));
+              h("td", { class: "money" }, dollars(o.quoted_total_cents ?? o.total_cents))))))),
+      loose.length ? h("section", { class: "section" },
+        h("h2", {}, "Conversations not on a work order yet"),
+        h("ul", { class: "loose" }, loose.map((c) => h("li", {},
+          h("a", { href: `#/agent/${c.id}` }, c.preview.length > 90 ? `${c.preview.slice(0, 89)}…` : c.preview),
+          h("span", { class: "small muted" }, ` · ${c.turns} turn${c.turns === 1 ? "" : "s"}`))))) : null));
   };
   render();
 }
 
-// --- Work order detail -------------------------------------------------------
+// --- The Agent tab: the newest conversation, or a fresh one with the hero message ready ---
 
-async function workOrder(id) {
-  const order = await staff(`/api/work-orders/${id}`);
-  const customer = order.bike.customer;
-  document.title = `Work order #${id} · Workshop · Mitchell Bike Co.`;
-  const reload = () => {
-    const y = window.scrollY;
-    return workOrder(id).then(() => window.scrollTo(0, y)).catch(handle);
-  };
-  const notice = h("div", { role: "alert" });
-
-  async function act(work) {
-    notice.replaceChildren();
-    try { await work(); reload(); }
-    catch (e) {
-      if (e instanceof Unauthorized) return signOut();
-      notice.replaceChildren(refusedNotice(e.message));
-    }
-  }
-
-  const ordered = new Map();
-  for (const po of order.purchase_orders) {
-    for (const line of po.lines) ordered.set(line.sku, po);
-  }
-  const stock = (line) => {
-    if (line.kind !== "part") return null;
-    const po = ordered.get(line.sku);
-    if (po) {
-      return h("span", { class: po.status === "received" ? "stock-in" : "stock-out", style: "display: block" },
-        po.status === "received" ? `Arrived from ${po.supplier}` : `Ordered from ${po.supplier}, ${po.lead_time_days} days`);
-    }
-    return line.in_stock
-      ? h("span", { class: "stock-in", style: "display: block" }, "In stock")
-      : h("span", { class: "stock-out", style: "display: block" }, "Out of stock");
-  };
-
-  const thread = order.messages.filter((m) => m.status !== "draft");
-  const differs = new Set(order.bike.differs_from_catalog_model.map((d) => d.kind));
-  const catalog = Object.fromEntries(order.bike.differs_from_catalog_model.map((d) => [d.kind, d.catalog_model]));
-
-  const s = order.status;
-  const today = new Date().toISOString().slice(0, 10);
-  const dateInput = h("input", { id: "repair-date", class: "input", type: "date", value: order.scheduled_for || today,
-    disabled: !["approved", "awaiting_parts"].includes(s) });
-
-  app.replaceChildren(h("div", { class: "page" },
-    h("a", { class: "crumb", href: "#/work-orders" }, "← Work orders"),
-    h("div", { style: "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 6px" },
-      h("div", {},
-        h("h1", { class: "display" }, `Work order #${id} · ${customer}`),
-        h("p", { class: "subhead" }, `${order.bike.model} “${order.bike.nickname}” · “${order.complaint}”`)),
-      order.conversation_ids.length
-        ? h("a", { href: `#/agent/${order.conversation_ids[0]}`, style: "font-weight: 600" }, "Open the Agent conversation")
-        : null),
-    progressStrip(s),
-    nextStepBar(order, { onChange: reload }),
-    notice,
-    h("div", { class: "cols", style: "margin-top: 8px" },
-      h("div", { class: "main-col" },
-        h("section", { class: "section" },
-          h("h2", {}, `Messages with ${customer.split(" ")[0]}`),
-          draftBand(order, { onChange: reload, customerName: customer }),
-          thread.length
-            ? h("ol", { class: "mthread" }, thread.map((m) => h("li", {},
-              h("div", { class: "who" },
-                m.direction === "to_customer" ? `Shop → ${customer.split(" ")[0]}` : customer.split(" ")[0],
-                h("div", { class: "when", style: "font-weight: 400" }, shortDate(m.sent_at))),
-              h("p", { class: "body" }, m.body,
-                m.quoted_total_cents !== null ? h("span", { class: "small muted", style: "display: block; margin-top: 4px" }, `Carried the ${dollars(m.quoted_total_cents)} quote`) : null))))
-            : h("p", { class: "muted small" }, "Nothing sent yet.")),
-        order.diagnosis ? h("section", { class: "section" }, h("h2", {}, "Diagnosis"), h("p", { style: "margin: 0; white-space: pre-line" }, order.diagnosis)) : null,
-        order.lines.length ? h("section", { class: "section" },
-          h("h2", {}, order.quoted_total_cents !== null ? "Quote (locked)" : "Quote (draft)"),
-          ledger(order.lines, order.quoted_total_cents ?? order.total_cents, { stock })) : null,
-        order.order_plan.lines.length ? h("section", { class: "section" },
-          h("h2", {}, "Order plan"),
-          h("p", { class: "small muted", style: "margin: 0 0 8px" },
-            "Chosen by the Agent with the quote. The shop places it the moment the Customer approves."),
-          h("ul", { style: "margin: 0; padding-left: 18px" }, order.order_plan.lines.map((l) =>
-            h("li", {}, `${l.sku} × ${l.qty} from ${l.supplier}, ${l.lead_time_days}-day lead time, ${dollars(l.total_cents)}`))),
-          order.order_plan.promised_ready_on ? h("p", { class: "small", style: "margin: 8px 0 0" },
-            h("strong", {}, "Promised to the Customer: "), longDate(order.order_plan.promised_ready_on)) : null) : null,
-        historySection(order)),
-      h("div", { class: "side-col" },
-        h("section", { class: "section" },
-          h("h2", {}, "Bike"),
-          differs.size ? h("div", { class: "mismatch", style: "margin-bottom: 12px" },
-            h("div", { class: "label" }, "Differs from its catalog model"),
-            "Fit is checked against this bike, not the catalog.") : null,
-          h("table", { class: "compare" },
-            h("thead", {}, h("tr", {}, h("th", { scope: "col" }, "Standard"), h("th", { scope: "col" }, "This bike"), h("th", { scope: "col" }, "Catalog model"))),
-            h("tbody", {}, Object.entries(order.bike.standards).map(([kind, name]) =>
-              h("tr", { class: differs.has(kind) ? "differs" : null },
-                h("th", { scope: "row", style: "font-weight: 400" }, kind.replace(/_/g, " ")),
-                h("td", { class: "this" }, name),
-                h("td", {}, differs.has(kind) ? h("s", {}, catalog[kind]) : "same"))))),
-          order.bike.service_history.length ? h("div", { style: "margin-top: 16px" },
-            h("h3", { style: "font-size: 15px; margin: 0 0 6px" }, "Service history"),
-            h("ol", { class: "small", style: "margin: 0; padding-left: 18px; line-height: 1.6" },
-              order.bike.service_history.slice().reverse().map((r) =>
-                h("li", {}, `${shortDate(r.date)} ${r.date.slice(0, 4)} · ${r.odometer_km?.toLocaleString("en-US") ?? "?"} km · ${r.summary}`)))) : null),
-        h("section", { class: "section" },
-          h("h2", {}, "Parts and repair"),
-          order.purchase_orders.length ? h("table", { class: "compare", style: "margin-bottom: 12px" },
-            h("tbody", {}, order.purchase_orders.map((po) => h("tr", {},
-              h("td", {}, `${po.lines.map((l) => l.sku).join(", ")} from ${po.supplier}`,
-                h("div", { class: "small muted" }, `${dollars(po.total_cents)} · ${po.status === "received" ? `arrived ${shortDate(po.received_at)}` : `ordered ${shortDate(po.created_at)}, ${po.lead_time_days}-day lead time`}`)),
-              h("td", { style: "text-align: right" }, po.status === "ordered"
-                ? h("button", { type: "button", class: "btn btn-outline", onclick: () => act(() => staff(`/api/purchase-orders/${po.id}/receive`, { method: "POST" })) }, "Mark received")
-                : null)))))
-            : h("p", { class: "small muted", style: "margin: 0 0 12px" }, ["approved", "awaiting_parts"].includes(s) ? "No parts ordered. The Agent orders what's out of stock after approval." : "Parts are ordered after the Customer approves."),
-          h("div", { class: "repair-steps" },
-            h("label", { for: "repair-date", class: "small", style: "font-weight: 600" }, "Repair date"),
-            h("div", { class: "row" }, dateInput,
-              h("button", { type: "button", class: "btn btn-outline", disabled: !["approved", "awaiting_parts"].includes(s),
-                onclick: () => act(() => staff(`/api/work-orders/${id}/schedule`, { method: "POST", body: { scheduled_for: dateInput.value } })) },
-                order.scheduled_for ? `Booked ${longDate(order.scheduled_for)}` : "Schedule")),
-            h("button", { type: "button", class: "btn btn-outline", disabled: s !== "scheduled",
-              onclick: () => act(() => staff(`/api/work-orders/${id}/start`, { method: "POST" })) }, "Start repair"),
-            h("button", { type: "button", class: "btn btn-outline", disabled: s !== "in_progress",
-              onclick: () => act(() => staff(`/api/work-orders/${id}/finish`, { method: "POST" })) }, "Finish repair"))),
-        h("section", { class: "section" },
-          h("h2", {}, "Customer link"),
-          customerLink(order.customer_link_token, customer))))));
-  if (order.unseen.length) staff(`/api/work-orders/${id}/seen`, { method: "POST" }).catch(() => {});
+async function agentStart() {
+  const conversations = await staff("/api/conversations");
+  if (conversations.length) location.replace(`#/agent/${conversations[0].id}`);
+  else await startWithAgent();
 }
 
 // --- Audit log --------------------------------------------------------------

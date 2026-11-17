@@ -17,6 +17,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from agents import conversations
 from api.agent_pool import AgentPool, Busy
@@ -47,10 +48,26 @@ def list_conversations(conn: sqlite3.Connection = Depends(get_db)) -> list[dict[
     return conversations.list_conversations(conn)
 
 
+class NewConversation(BaseModel):
+    work_order_id: int | None = None
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def new_conversation(agents: AgentPool = Depends(pool)) -> dict[str, str]:
-    """Start a conversation with the Agent."""
-    return {"conversation_id": await agents.new()}
+async def new_conversation(
+    body: NewConversation | None = None,
+    agents: AgentPool = Depends(pool),
+    conn: sqlite3.Connection = Depends(get_db),
+) -> dict[str, str]:
+    """Start a conversation with the Agent, optionally about an existing work order."""
+    work_order_id = body.work_order_id if body else None
+    if work_order_id is not None and conn.execute(
+        "SELECT 1 FROM work_orders WHERE id = ?", (work_order_id,)
+    ).fetchone() is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no work order {work_order_id}")
+    conversation_id = await agents.new()
+    if work_order_id is not None:
+        conversations.link_work_order(conn, conversation_id, work_order_id)
+    return {"conversation_id": conversation_id}
 
 
 @router.get("/{conversation_id}")
