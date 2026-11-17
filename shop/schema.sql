@@ -108,6 +108,7 @@ CREATE TABLE work_orders (
   diagnosis         TEXT,
   quoted_total_cents  INTEGER,    -- locked when the quote goes to the customer
   decided_at        TEXT,         -- when the customer approved or declined
+  finished_at       TEXT,         -- when the repair was finished
   scheduled_for     TEXT,
   created_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

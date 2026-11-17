@@ -18,7 +18,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from api.deps import get_db, get_stripe, public_base_url
-from shop import customer_links, garage, messages, payments
+from shop import customer_links, garage, messages, payments, procurement
 from shop import work_orders as wo
 from shop.errors import NotFound
 
@@ -50,22 +50,34 @@ def customer_view(conn: sqlite3.Connection, work_order_id: int) -> dict[str, Any
     open_quote = next(
         (m["id"] for m in reversed(thread) if m["quoted_total_cents"] is not None), None
     ) if order["status"] == "quoted" else None
-    paid = any(p.status == "paid" for p in payments.list_payments(conn, work_order_id))
+    paid_at = next((p.paid_at for p in payments.list_payments(conn, work_order_id) if p.status == "paid"), None)
+    paid = paid_at is not None
     can_pay = order["status"] == "done" and not paid
+    received = [po["received_at"] for po in procurement.list_purchase_orders(conn, work_order_id) if po["received_at"]]
+    ordered = any(po["status"] != "cancelled" for po in procurement.list_purchase_orders(conn, work_order_id))
     return {
         "shop": "Mitchell Bike Co.",
+        "work_order_id": work_order_id,
         "customer": bike["customer"],
         "bike": {"nickname": bike["nickname"], "model": bike["model"]},
         "status": order["status"],
         "quote": {
             "total_cents": order["quoted_total_cents"],
             "lines": [
-                {"name": line["name"], "qty": line["qty"], "unit_price_cents": line["unit_price_cents"]}
+                {"name": line["name"], "category": line["category"], "qty": line["qty"],
+                 "unit_price_cents": line["unit_price_cents"]}
                 for line in order["lines"]
             ],
         } if order["quoted_total_cents"] is not None else None,
         "open_quote_message_id": open_quote,
         "scheduled_for": order["scheduled_for"],
+        "timeline": {
+            "decided_at": order["decided_at"],
+            "parts_ordered": ordered,
+            "parts_received_at": max(received) if received else None,
+            "finished_at": order["finished_at"],
+            "paid_at": paid_at,
+        },
         "paid": paid,
         "can_pay": can_pay,
         "messages": thread,
@@ -159,7 +171,7 @@ def _create_session(stripe_client: Any, token: str, work_order_id: int, view: di
                 },
             }],
             "success_url": f"{base}/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}",
-            "cancel_url": f"{base}/api/customer/{token}",
+            "cancel_url": f"{base}/c/{token}?checkout=cancelled",
         },
         # Payment ids restart when the database is rebuilt, and Stripe remembers keys for
         # 24 hours, so the key also carries the work order's unique link token.
@@ -173,7 +185,7 @@ def checkout_return(
 ) -> RedirectResponse:
     """Where Stripe sends the Customer after paying: confirm with Stripe, then show their work order."""
     _confirm(conn, stripe_client, _work_order(conn, token), session_id)
-    return RedirectResponse(f"{public_base_url()}/api/customer/{token}", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(f"{public_base_url()}/c/{token}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/checkout/confirm")

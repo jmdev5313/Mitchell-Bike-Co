@@ -34,6 +34,9 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.
 - **Real standards, invented products.** Interface standards (freehubs, BB shells, axles, etc.) are real; brands, product names, and prices are invented.
 
+- **The web pages are plain HTML, CSS and JavaScript in `web/`**, served by the API (`/static`, `/c/{token}`), no framework or build step. Put text from the API on the page with `textContent` (the `h()` helper in `web/static/js/dom.js`), never `innerHTML`: messages are written by Customers and the Agent.
+- **The visual system lives in `web/static/css/shop.css`** as CSS variables. Each colour has one meaning: work blue only for "Send to Emma" and the focus ring, red only for refusals, catalog mismatches and out of stock, green only for in stock and paid, manila for anything the Customer sees. Structure comes from rules and tables, not cards.
+
 ## Conventions
 
 - In documentation, name people by persona, capitalized: **Customer**, **Mechanic**, **Agent** (see the README). Seed data keeps realistic names.

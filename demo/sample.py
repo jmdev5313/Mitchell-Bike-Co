@@ -61,14 +61,15 @@ def main(argv: list[str] | None = None) -> None:
 
     if done:
         print(f"Added work order {order} for Emma: approved, repaired, ready to pay ${total / 100:.2f}.\n")
-        print(f"Customer token: {token}\n")
-        print("To pay in Stripe test mode (make api, then http://127.0.0.1:8000/docs):")
-        print("  Customer: POST /api/customer/{token}/checkout, then open the checkout_url it returns")
-        print("  Pay with card 4242 4242 4242 4242, any future date, any CVC and postcode")
-        print("  Stripe sends you back to the Customer view, now showing \"paid\": true")
+        print(f"Customer token: {token}")
+        print(f"Customer page:  http://127.0.0.1:8000/c/{token}  (with make api running)\n")
+        print("Open the Customer page and press Pay. In Stripe's test checkout, use card")
+        print("4242 4242 4242 4242, any future date, any CVC and postcode. Stripe sends you")
+        print("back to the Customer page, now showing the receipt.")
         return
     print(f"Added work order {order} for Emma, with a sent ${total / 100:.2f} quote (message {draft.id}).\n")
-    print(f"Customer token: {token}\n")
+    print(f"Customer token: {token}")
+    print(f"Customer page:  http://127.0.0.1:8000/c/{token}  (with make api running)\n")
     print("In the API docs (make api, then http://127.0.0.1:8000/docs):")
     print("  Customer: GET /api/customer/{token}, pasting the token above")
     print(f"  Customer: POST /api/customer/{{token}}/messages/{draft.id}/decision with {{\"approved\": true}}")

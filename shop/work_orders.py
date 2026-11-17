@@ -165,7 +165,10 @@ def finish_repair(conn: sqlite3.Connection, work_order_id: int) -> None:
             (work_order_id,),
         ).fetchall():
             conn.execute("UPDATE parts SET stock_qty = stock_qty - ? WHERE id = ?", (qty, part_id))
-        conn.execute("UPDATE work_orders SET status = 'done' WHERE id = ?", (work_order_id,))
+        conn.execute(
+            "UPDATE work_orders SET status = 'done', finished_at = ? WHERE id = ?",
+            (datetime.now(timezone.utc).isoformat(timespec="seconds"), work_order_id),
+        )
 
 
 def _parts_short(conn, work_order_id: int) -> list[str]:
@@ -222,6 +225,7 @@ def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
         {
             "line_id": r["id"],
             "kind": "part" if r["sku"] else "service",
+            "category": r["category"] if r["sku"] else "labor",
             "sku": r["sku"],
             "name": r["part_name"] or r["service_name"],
             "qty": r["qty"],
@@ -229,7 +233,7 @@ def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
             "in_stock": None if r["sku"] is None else r["stock_qty"] >= r["qty"],
         }
         for r in conn.execute(
-            """SELECT l.id, l.qty, l.unit_price_cents, p.sku, p.name AS part_name, p.stock_qty,
+            """SELECT l.id, l.qty, l.unit_price_cents, p.sku, p.name AS part_name, p.stock_qty, p.category,
                       s.name AS service_name
                FROM work_order_lines l
                LEFT JOIN parts p ON p.id = l.part_id
@@ -249,6 +253,7 @@ def summary(conn: sqlite3.Connection, work_order_id: int) -> dict:
         "quoted_total_cents": wo["quoted_total_cents"],
         "decided_at": wo["decided_at"],
         "scheduled_for": wo["scheduled_for"],
+        "finished_at": wo["finished_at"],
         "created_at": wo["created_at"],
     }
 
