@@ -171,6 +171,11 @@ def finish_repair(conn: sqlite3.Connection, work_order_id: int) -> None:
         )
 
 
+def parts_short(conn: sqlite3.Connection, work_order_id: int) -> list[str]:
+    """Parts on the work order with less stock than it needs, as readable notes. Empty when all are in."""
+    return _parts_short(conn, work_order_id)
+
+
 def _parts_short(conn, work_order_id: int) -> list[str]:
     """Parts on the work order with less stock than it needs, as readable notes."""
     return [

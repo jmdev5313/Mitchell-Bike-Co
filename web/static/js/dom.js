@@ -79,3 +79,25 @@ export async function api(path, { method = "GET", body, headers = {} } = {}) {
   }
   return data;
 }
+
+/** The Agent's replies use light Markdown: paragraphs, "- " lists and **bold**.
+    Render those as elements, everything as text (never HTML). */
+export function richText(text) {
+  const blocks = String(text || "").trim().split(/\n\s*\n/);
+  return blocks.map((block) => {
+    const lines = block.split("\n");
+    if (lines.every((line) => /^\s*[-*] /.test(line))) {
+      return h("ul", {}, lines.map((line) => h("li", {}, inline(line.replace(/^\s*[-*] /, "")))));
+    }
+    return h("p", {}, inline(lines.join("\n")));
+  });
+}
+
+function inline(text) {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
+  return parts.filter(Boolean).map((part) => {
+    if (part.startsWith("**") && part.endsWith("**")) return h("strong", {}, part.slice(2, -2));
+    if (part.startsWith("`") && part.endsWith("`")) return part.slice(1, -1);
+    return part;
+  });
+}

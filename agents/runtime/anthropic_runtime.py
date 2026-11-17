@@ -17,7 +17,7 @@ from typing import Any
 import anthropic
 from mcp import Client, StdioServerParameters
 
-from agents import config, conversations
+from agents import activity, config, conversations
 from agents.runtime.base import AgentRuntime, EventHandler, ToolCall, TurnResult
 from shop import db
 
@@ -147,7 +147,7 @@ class AnthropicRuntime(AgentRuntime):
                     result.tool_calls.append(call)
                     if on_event:
                         await on_event({
-                            "type": "tool_call", "name": call.name, "is_error": call.is_error,
+                            "type": "tool_call", **activity.entry(call.name, call.arguments, call.result, call.is_error),
                             "result": call.result if call.is_error else None,
                         })
                     tool_results.append({

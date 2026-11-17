@@ -42,3 +42,42 @@ def test_drafts_never_reach_the_customer_page_data(conn, tmp_path, monkeypatch, 
     messages.draft_message(conn, quoted, "Internal: check the rotor too")
     view = client(tmp_path, monkeypatch).get(f"/api/customer/{customer_links.link_token(conn, quoted)}").json()
     assert all("Internal" not in m["body"] for m in view["messages"])
+
+
+def test_workshop_page_is_served(conn, tmp_path, monkeypatch):
+    c = client(tmp_path, monkeypatch)
+    page = c.get("/workshop")
+    assert page.status_code == 200 and '<script type="module" src="/static/js/workshop.js">' in page.text
+    for asset in ("/static/js/workshop.js", "/static/js/staff.js", "/static/js/agent.js"):
+        assert c.get(asset).status_code == 200, asset
+
+
+def test_next_step_follows_the_work_order(conn, tmp_path, monkeypatch, diagnosed):
+    from api.staff import next_step
+    from shop import messages as msgs
+
+    assert next_step(conn, diagnosed, "diagnosed")["waiting_on"] == "agent"
+    wo.add_part(conn, diagnosed, "AD-C11-34W")
+    wo.lock_quote(conn, diagnosed)
+    draft = msgs.draft_message(conn, diagnosed, "Hi Emma", include_quote=True)
+    assert next_step(conn, diagnosed, "quoted") == {"text": "Review and send the quote", "waiting_on": "mechanic"}
+    msgs.send_draft(conn, draft.id)
+    assert next_step(conn, diagnosed, "quoted")["waiting_on"] == "customer"
+    wo.record_customer_decision(conn, draft.id, approved=True)
+    assert next_step(conn, diagnosed, "approved") == {"text": "The Agent orders the parts", "waiting_on": "agent"}
+    create_purchase_order(conn, diagnosed, 1, [("AD-C11-34W", 1)])
+    assert next_step(conn, diagnosed, "awaiting_parts")["text"] == "Mark parts received when they arrive"
+
+
+def test_list_and_detail_carry_next_step_and_conversations(conn, tmp_path, monkeypatch, quoted):
+    from agents import conversations
+
+    monkeypatch.setenv("STAFF_PASSCODE", "pc")
+    convo = conversations.create(conn, "anthropic")
+    conversations.link_work_order(conn, convo.id, quoted)
+    c = client(tmp_path, monkeypatch)
+    staff = {"Authorization": "Bearer pc"}
+    [row] = c.get("/api/work-orders", headers=staff).json()
+    assert row["next_step"]["waiting_on"] == "agent"  # quote locked, no message drafted yet
+    detail = c.get(f"/api/work-orders/{quoted}", headers=staff).json()
+    assert detail["conversation_ids"] == [convo.id]
