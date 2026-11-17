@@ -60,7 +60,7 @@ async def test_tool_lists():
         "mitchell-work-orders": ["add_part", "add_service", "draft_customer_message", "get_work_order",
                                  "list_customer_messages", "lock_quote", "open_work_order",
                                  "record_diagnosis"],
-        "mitchell-procurement": ["create_purchase_order", "estimate_ready_date", "supplier_options"],
+        "mitchell-procurement": ["create_purchase_order", "estimate_ready_date", "plan_order", "supplier_options"],
     }
 
 

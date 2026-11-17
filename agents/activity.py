@@ -19,7 +19,7 @@ TOOL_SERVERS = {
          "lock_quote", "draft_customer_message", "list_customer_messages"],
         "work orders",
     ),
-    **dict.fromkeys(["supplier_options", "estimate_ready_date", "create_purchase_order"], "procurement"),
+    **dict.fromkeys(["supplier_options", "estimate_ready_date", "plan_order", "create_purchase_order"], "procurement"),
 }
 
 
@@ -191,6 +191,15 @@ def _estimate(arguments: dict, data: Any) -> str:
         f"Ready {_short_date(data['ready_date'])}, parts in stock"
 
 
+def _plan_order(arguments: dict, data: Any) -> str:
+    lines = data.get("lines") or []
+    if not lines:
+        return "Nothing to order: every part is in stock"
+    parts = "; ".join(f"{l['sku']} from {l['supplier']} ({l['lead_time_days']} days, {_dollars(l['total_cents'])})" for l in lines)
+    promised = f". Promise: ready {_short_date(data['promised_ready_on'])}" if data.get("promised_ready_on") else ""
+    return f"Plan: {parts}{promised}. The shop orders it on approval"
+
+
 def _purchase_order(arguments: dict, data: Any) -> str:
     supplier = data.get("supplier_name") or f"supplier {data['supplier_id']}"
     return f"Ordered from {supplier}: {_dollars(data['total_cents'])}"
@@ -213,5 +222,6 @@ _SUMMARIES = {
     "list_customer_messages": _list_messages,
     "supplier_options": _supplier_options,
     "estimate_ready_date": _estimate,
+    "plan_order": _plan_order,
     "create_purchase_order": _purchase_order,
 }

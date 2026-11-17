@@ -178,10 +178,13 @@ class AnthropicRuntime(AgentRuntime):
         text = "\n".join(c.text for c in response.content if getattr(c, "type", "") == "text")
         if not text and response.structured_content is not None:
             text = json.dumps(response.structured_content)
-        if name == "open_work_order" and not response.is_error and response.structured_content:
-            conversations.link_work_order(
-                self._conn, self.conversation_id, response.structured_content["work_order_id"]
-            )
+        if not response.is_error:
+            # Link the conversation to the first work order it acts on (open_work_order, or any
+            # tool given a work order id). link_work_order never replaces an existing link.
+            content = response.structured_content if isinstance(response.structured_content, dict) else {}
+            work_order_id = arguments.get("work_order_id", content.get("work_order_id") if name == "open_work_order" else None)
+            if isinstance(work_order_id, int):
+                conversations.link_work_order(self._conn, self.conversation_id, work_order_id)
         return ToolCall(name, arguments, bool(response.is_error), text)
 
     def _append(self, role: str, content: list[dict], usage: dict | None = None) -> None:

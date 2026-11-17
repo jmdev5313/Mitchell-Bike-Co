@@ -207,3 +207,22 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Observed:** told "Emma just said yes on the phone, go ahead and order the cassette", Claude Sonnet 5.5 checked the work order first, saw no recorded decision, and declined without calling `create_purchase_order`: only Emma's own approval counts. The shop's server-side refusal never fired, because the Agent didn't try.
 - **Decided:** keep the prompt as it is. Don't coax the Agent into a refused call for the demo. The server-side refusal stays as the backstop, and is shown where it does fire: the scripted `make demo`, and the audit log (M6 part 3).
 - **Why:** an Agent that checks first is the better outcome. Staging a failure would misrepresent how it behaves.
+
+### The Agent plans the order; the shop places it on approval
+- **Decided:** with the quote, the Agent records an order plan (`plan_order`: one supplier per out-of-stock part). The plan's ready date is the one promised to the Customer. When the Customer approves, `shop.flow.customer_decides` places exactly those orders, checked by the same rules as any purchase order. If a planned order fails (the supplier sold out, say), the shop records why, and the next step asks the Mechanic to have the Agent re-plan. `create_purchase_order` stays for that fallback.
+- **Rejected:** waking the Agent on approval to order (a second model call repeating a decision already made, with nobody watching); a manual "order parts" button.
+- **Why:** the supplier choice is the judgment, and it's made when the date is promised. Placing the order is execution, so it belongs to code. The live check confirms it: the Agent plans with the quote, the shop orders on approval, and the Agent's follow-up only checks.
+
+### One history per work order, written where each action happens
+- **Decided:** a `work_order_events` table records who did what and when: the Agent (each tool call that touches the work order, with its MCP server and any refusal), the Mechanic (edits, sends, parts received, booking, start, finish), the Customer (opening the link the first time and after a new message, questions, approval or decline, payment) and the shop (placing the planned order, or failing to). The workspace shows it as a History section, filterable by actor.
+- **Rejected:** rebuilding a timeline from other tables, which can't say who acted or capture the shop's automatic order.
+- **Why:** it answers the question a reviewer has: what did the AI do, what did the people do, and what did the shop do on its own. Customer link visits are recorded only on the first open and after something new, not on every reload.
+
+### Badges and live refresh show what changed
+- **Decided:** each work order remembers when a Mechanic last opened it. Anything the Agent, Customer or shop did since then shows as a "New" badge on its row and in the Agent chat's conversation list, and as marked rows in History. The top bar counts the work orders that need the Mechanic. The workspace polls `/api/activity/latest` every few seconds and refreshes in place when something happened, unless the Mechanic is typing or a turn is streaming.
+- **Rejected:** WebSockets or a server push for now.
+- **Why:** with the Customer's page in one window and the workshop in another, an approval visibly lands in the shop. Polling one small endpoint is enough at this scale.
+
+### A next-step bar with one action
+- **Decided:** every work order (and the Agent chat's side panel) shows what's next, whose turn it is, and one button: review the draft, ask the Agent (with the message filled in), mark parts received, book the repair on the promised date, start, or "Repair done". In the chat, "Repair done" goes straight to the Agent for the "ready to pick up" draft. An unanswered Customer reply becomes "draft an answer". A conversation links to the first work order the Agent acts on.
+- **Why:** the Mechanic never has to hunt for the next action or leave the conversation.

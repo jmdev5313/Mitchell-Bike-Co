@@ -22,7 +22,7 @@ def test_db(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("DB_PATH", str(tmp_path / "shop.db"))
 
 
-def turn_one(body: str):
+def turn_one(body: str, plan_supplier: int = 1):
     """The tool calls a good Agent makes in turn 1 (ids follow the seed order)."""
     calls = [
         ("find_customer", {"query": "Emma Clark"}),
@@ -36,6 +36,7 @@ def turn_one(body: str):
         ("lock_quote", {"work_order_id": 1}),
         ("supplier_options", {"sku": "AD-C11-34W", "qty": 1}),
         ("estimate_ready_date", {"supplier_ids": [1]}),
+        ("plan_order", {"work_order_id": 1, "lines": [{"sku": "AD-C11-34W", "supplier_id": plan_supplier, "qty": 1}]}),
         ("draft_customer_message", {"work_order_id": 1, "body": body, "include_quote": True}),
     ]
     return [
@@ -43,13 +44,13 @@ def turn_one(body: str):
     ] + [message(text("Quote drafted for your review."))]
 
 
-def turn_two(supplier_id: int = 1, extra_lines=()):
-    lines = [{"sku": "AD-C11-34W", "qty": 1}, *extra_lines]
-    return [
-        message(tool_use("o1", "create_purchase_order", work_order_id=1, supplier_id=supplier_id, lines=lines),
-                stop_reason="tool_use"),
-        message(text("Ordered.")),
-    ]
+def turn_two(extra_lines=()):
+    """The shop already placed the planned order; the Agent checks, and may order extras."""
+    calls = [message(tool_use("o1", "get_work_order", work_order_id=1), stop_reason="tool_use")]
+    if extra_lines:
+        calls.append(message(tool_use("o2", "create_purchase_order", work_order_id=1, supplier_id=1,
+                                      lines=list(extra_lines)), stop_reason="tool_use"))
+    return calls + [message(text("The cassette is on order from Velo."))]
 
 
 def good_body(ready: date) -> str:
@@ -76,16 +77,18 @@ async def test_wrong_date_and_part_numbers_fail_and_stop_before_ordering():
     assert failed == {
         "message uses no part numbers",
         "message promises a ready date the supplier lead time backs up",
+        "message promises the plan's ready date",
     }
     assert len(report.turns) == 1  # no approval, so no turn 2
 
 
-async def test_ordering_from_a_slower_supplier_than_promised_fails():
+async def test_planning_a_slower_supplier_than_promised_fails():
     today = date.today()
-    model = FakeModel(*turn_one(good_body(schedule.ready_date(today, 2))), *turn_two(supplier_id=2))
+    model = FakeModel(*turn_one(good_body(schedule.ready_date(today, 2)), plan_supplier=2))
     report = await hero.run(lambda: agent(model), today)
     failed = {c.name for c in report.checks if c.required and not c.passed}
-    assert failed == {"supplier meets the date the Customer was promised"}
+    assert failed == {"message promises the plan's ready date"}
+    assert len(report.turns) == 1  # not approved, so nothing is ordered
 
 
 async def test_ordering_the_in_stock_chain_is_only_a_note():

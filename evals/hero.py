@@ -28,7 +28,7 @@ from pathlib import Path
 from agents import config, conversations
 from agents.runtime import AgentRuntime, TurnResult, open_agent
 from evals.pricing import cost_usd
-from shop import db, messages, schedule, seed
+from shop import db, flow, messages, procurement, schedule, seed
 from shop import work_orders as wo
 
 CHECK_DB = Path(os.environ.get("CHECK_DB_PATH", "data/check.db"))
@@ -45,7 +45,7 @@ TURN_1 = (
     "and my chain checker reads 0.75%. Find her bike, work out what it needs, build the work "
     "order and quote, and draft her a message with the quote."
 )
-TURN_2 = "Emma approved the quote. Go ahead and order what needs ordering."
+TURN_2 = "Emma approved the quote. Check the cassette is on order and tell me what's next."
 
 
 @dataclass
@@ -139,6 +139,19 @@ def check_quote_turn(conn: sqlite3.Connection, report: Report, today: date) -> d
         "nothing was ordered before the Customer approved",
         not conn.execute("SELECT 1 FROM purchase_orders").fetchone(),
     )
+    plan = procurement.order_plan(conn, work_order_id)
+    planned = [line for line in plan["lines"] if line["sku"] == HERO_CASSETTE]
+    report.add(
+        "planned the cassette order with the quote",
+        bool(planned) and plan["promised_ready_on"] is not None,
+        f"plan: {[(l['sku'], l['supplier']) for l in plan['lines']]}, promised {plan['promised_ready_on']}",
+    )
+    if planned and plan["promised_ready_on"]:
+        report.add(
+            "message promises the plan's ready date",
+            any(m in body for m in date_mentions(date.fromisoformat(plan["promised_ready_on"]))),
+            f"plan promises {plan['promised_ready_on']}",
+        )
     return {"id": draft.id, "promised_supplier": promised[0] if promised else None,
             "supplier_dates": supplier_dates}
 
@@ -199,10 +212,12 @@ async def run(make_agent: Callable[[], AgentRuntime], today: date | None = None)
 
         if draft and report.passed:
             messages.send_draft(conn, draft["id"])
-            wo.record_customer_decision(conn, draft["id"], approved=True)
+            approval = flow.customer_decides(conn, draft["id"], approved=True)  # the shop places the plan
+            report.add("the shop placed the planned order on approval", bool(approval["placed"]) and not approval["failed"],
+                       f"placed {approval['placed']}, failed {approval['failed']}")
             result = await agent.send(
                 f"(Shop update: The mechanic sent message {draft['id']} to the customer. "
-                f"The customer approved the quote in message {draft['id']}.)\n\n{TURN_2}"
+                f"The customer approved the quote in message {draft['id']}, and the shop placed the planned order.)\n\n{TURN_2}"
             )
             record_turn(report, result)
             report.add("turn 2 finished", result.stop_reason == "end_turn", result.stop_reason)

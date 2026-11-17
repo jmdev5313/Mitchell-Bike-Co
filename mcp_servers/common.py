@@ -18,7 +18,8 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from shop import db
+from agents import activity
+from shop import db, events
 from shop.errors import NotFound, RuleViolation
 
 SUMMARY_LIMIT = 500
@@ -45,11 +46,13 @@ def shop_tool(server: MCPServer) -> Callable:
                     result = fn(conn, **kwargs)
                 except (NotFound, RuleViolation) as e:
                     _audit(conn, name, kwargs, f"refused: {e}")
+                    _work_order_event(conn, name, kwargs, None, str(e))
                     raise ToolError(str(e)) from e
                 except Exception as e:
                     _audit(conn, name, kwargs, f"error: {type(e).__name__}")
                     raise
                 _audit(conn, name, kwargs, _summarize(result))
+                _work_order_event(conn, name, kwargs, result, None)
                 return result
             finally:
                 conn.close()
@@ -87,6 +90,23 @@ def _audit(conn: sqlite3.Connection, tool: str, args: dict, summary: str) -> Non
                 summary,
             ),
         )
+
+
+def _work_order_event(conn: sqlite3.Connection, tool: str, args: dict, result: Any, error: str | None) -> None:
+    """Add the agent's tool call to the work order's history, when it concerns one."""
+    work_order_id = args.get("work_order_id")
+    if work_order_id is None and isinstance(result, dict):
+        work_order_id = result.get("work_order_id")
+    if not isinstance(work_order_id, int) or tool.startswith(("get_", "list_")):
+        return  # lookups aren't history
+    if not conn.execute("SELECT 1 FROM work_orders WHERE id = ?", (work_order_id,)).fetchone():
+        return
+    text = error if error is not None else json.dumps(result, default=str)
+    events.record(
+        conn, work_order_id, "agent", f"tool:{tool}",
+        activity.describe(tool, args, text, error is not None),
+        {"tool": tool, "server": activity.server_for(tool)}, is_error=error is not None,
+    )
 
 
 def _summarize(result: Any) -> str:

@@ -161,3 +161,117 @@ export function customerLink(token, name) {
 export function refusedNotice(message) {
   return h("p", { class: "notice-refused", role: "alert" }, h("strong", {}, "Refused: "), message);
 }
+
+// --- Next step, history, badges ------------------------------------------------
+
+const WHOSE = { mechanic: "Your turn", agent: "The Agent's turn", customer: "The Customer's turn", shop: "The shop's turn", nobody: "Nothing to do" };
+
+/** Ask the Agent: open the conversation with the prompt waiting in the message box. */
+export function askAgent(order, prompt) {
+  try { sessionStorage.setItem("mbc-prefill", prompt); } catch { /* private mode */ }
+  if (order.conversation_ids && order.conversation_ids.length) {
+    location.hash = `#/agent/${order.conversation_ids[0]}`;
+  } else {
+    staff("/api/conversations", { method: "POST" }).then(({ conversation_id }) => { location.hash = `#/agent/${conversation_id}`; });
+  }
+}
+
+export function takePrefill() {
+  try {
+    const value = sessionStorage.getItem("mbc-prefill");
+    sessionStorage.removeItem("mbc-prefill");
+    return value || "";
+  } catch { return ""; }
+}
+
+/** What happens next, whose turn it is, and the one button that moves it forward. */
+export function nextStepBar(order, { onChange, onFinished, onAskAgent } = {}) {
+  const step = order.next_step;
+  const action = step.action;
+  const id = order.work_order_id;
+  const status = h("span", { class: "small", role: "status" });
+  let busy = false;
+
+  async function run(work) {
+    if (busy) return;
+    busy = true;
+    status.textContent = "Working…";
+    try { await work(); onChange && onChange(); }
+    catch (e) { busy = false; status.replaceChildren(h("span", { class: "refused" }, h("strong", {}, "Refused: "), e.message)); }
+  }
+
+  const controls = [];
+  if (action) {
+    if (action.kind === "send_draft") {
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => {
+        const box = document.getElementById(`draft-${action.message_id}`);
+        if (box) { box.scrollIntoView({ block: "center" }); box.focus(); }
+      } }, "Review the draft"));
+    } else if (action.kind === "receive") {
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => run(() => staff(`/api/purchase-orders/${action.purchase_order_id}/receive`, { method: "POST" })) }, action.label));
+    } else if (action.kind === "book") {
+      const date = h("input", { type: "date", class: "input", value: action.date, "aria-label": "Repair date" });
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => run(() => staff(`/api/work-orders/${id}/schedule`, { method: "POST", body: { scheduled_for: date.value } })) }, "Book repair"), date);
+    } else if (action.kind === "start") {
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => run(() => staff(`/api/work-orders/${id}/start`, { method: "POST" })) }, action.label));
+    } else if (action.kind === "finish") {
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => run(async () => {
+        await staff(`/api/work-orders/${id}/finish`, { method: "POST" });
+        if (onFinished) onFinished();
+      }) }, action.label));
+    } else if (action.kind === "ask_agent") {
+      controls.push(h("button", { type: "button", class: "btn", onclick: () => (onAskAgent ? onAskAgent(action.prompt) : askAgent(order, action.prompt)) }, action.label));
+    }
+  }
+
+  return h("div", { class: "nextbar" },
+    h("div", { class: "what" },
+      h("span", { class: "lbl" }, "Next"),
+      h("span", { class: "text" }, step.text),
+      h("span", { class: "whose" }, WHOSE[step.waiting_on] || "")),
+    controls.length ? h("div", { class: "do" }, controls, status) : null);
+}
+
+function when(iso) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
+}
+
+const ACTOR_LABEL = { agent: "Agent", mechanic: "Mechanic", customer: "Customer", shop: "Shop" };
+
+/** The work order's history, filterable by who acted. Items new since the last visit are marked. */
+export function historySection(order) {
+  const newIds = new Set((order.unseen || []).map((e) => e.id));
+  let filter = "all";
+  const list = h("ol", { class: "history", "aria-label": "History" });
+  const counts = (actor) => order.history.filter((e) => actor === "all" || e.actor === actor).length;
+  const buttons = ["all", "agent", "mechanic", "customer", "shop"].map((actor) =>
+    h("button", { type: "button", "aria-pressed": String(actor === filter), onclick: () => { filter = actor; draw(); } },
+      `${actor === "all" ? "All" : ACTOR_LABEL[actor]} · ${counts(actor)}`));
+  function draw() {
+    buttons.forEach((b, i) => b.setAttribute("aria-pressed", String(["all", "agent", "mechanic", "customer", "shop"][i] === filter)));
+    const shown = order.history.filter((e) => filter === "all" || e.actor === filter);
+    list.replaceChildren(...(shown.length ? shown.map((e) => h("li", {
+      class: [e.is_error ? "is-refused" : "", newIds.has(e.id) ? "is-new" : ""].join(" ").trim() || null,
+    },
+      h("span", { class: "when" }, when(e.at)),
+      h("span", { class: `actor ${e.actor}` }, ACTOR_LABEL[e.actor]),
+      h("span", { class: "summary" },
+        newIds.has(e.id) ? h("span", { class: "visually-hidden" }, "New: ") : null,
+        e.is_error ? [h("strong", {}, "Refused: "), e.summary.replace(/^Refused: /, "")] : e.summary,
+        e.detail && e.detail.server ? h("span", { class: "server" }, ` · ${e.detail.tool} via ${e.detail.server}`) : null))) : [h("li", {}, h("span", {}), h("span", {}), h("span", { class: "muted" }, "Nothing yet."))]));
+  }
+  draw();
+  return h("section", { class: "section" },
+    h("h2", {}, "History"),
+    h("p", { class: "small muted", style: "margin: 0" }, "Everything that happened on this work order: the Agent's tool calls, your actions, the Customer's, and what the shop did on its own."),
+    h("div", { class: "filters", role: "group", "aria-label": "Filter history by who acted" }, buttons),
+    list);
+}
+
+export function newBadge(count, summary, actor) {
+  if (!count) return null;
+  return h("div", { class: "new-line" },
+    h("span", { class: "badge" }, count > 1 ? `${count} new` : "New"),
+    h("span", {}, `${ACTOR_LABEL[actor] || ""}: ${summary}`));
+}

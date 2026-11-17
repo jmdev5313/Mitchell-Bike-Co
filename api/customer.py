@@ -18,7 +18,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
 from api.deps import get_db, get_stripe, public_base_url
-from shop import customer_links, garage, messages, payments, procurement
+from shop import customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
 from shop.errors import NotFound
 
@@ -88,10 +88,30 @@ def _work_order(conn: sqlite3.Connection, token: str) -> int:
     return customer_links.work_order_for(conn, token)
 
 
+def _record_visit(conn: sqlite3.Connection, token: str, work_order_id: int) -> None:
+    """Note the Customer opening their link: the first time, and after the shop sends something new.
+    Reloads in between aren't recorded."""
+    link = conn.execute("SELECT last_visit_at FROM customer_links WHERE token = ?", (token,)).fetchone()
+    newest = conn.execute(
+        """SELECT MAX(sent_at) FROM customer_messages
+           WHERE work_order_id = ? AND direction = 'to_customer' AND status = 'sent'""",
+        (work_order_id,),
+    ).fetchone()[0]
+    last = link["last_visit_at"]
+    if last is None:
+        events.record(conn, work_order_id, "customer", "link_opened", "Opened their link for the first time")
+    elif newest and newest > last:
+        events.record(conn, work_order_id, "customer", "link_opened", "Opened their link and read the new message")
+    with conn:
+        conn.execute("UPDATE customer_links SET last_visit_at = ? WHERE token = ?", (events.now(), token))
+
+
 @router.get("")
 def view(token: str, conn: sqlite3.Connection = Depends(get_db)) -> dict[str, Any]:
     """The Customer's view of their work order: the thread, the quote, and where it stands."""
-    return customer_view(conn, _work_order(conn, token))
+    work_order_id = _work_order(conn, token)
+    _record_visit(conn, token, work_order_id)
+    return customer_view(conn, work_order_id)
 
 
 @router.post("/messages/{message_id}/decision")
@@ -101,7 +121,7 @@ def decide(token: str, message_id: int, decision: Decision, conn: sqlite3.Connec
     message = messages.get_message(conn, message_id)
     if message.work_order_id != work_order_id:
         raise NotFound(f"no message with id {message_id}")  # don't reveal other work orders' messages
-    wo.record_customer_decision(conn, message_id, decision.approved)
+    flow.customer_decides(conn, message_id, decision.approved)  # on approval, the shop places the planned orders
     return customer_view(conn, work_order_id)
 
 
@@ -110,6 +130,8 @@ def reply(token: str, body: Reply, conn: sqlite3.Connection = Depends(get_db)) -
     """Send the shop a message."""
     work_order_id = _work_order(conn, token)
     messages.receive_message(conn, work_order_id, body.body)
+    text = body.body.strip()
+    events.record(conn, work_order_id, "customer", "replied", f"Asked: \u201c{text[:140]}{'…' if len(text) > 140 else ''}\u201d")
     return customer_view(conn, work_order_id)
 
 
@@ -130,7 +152,10 @@ def _confirm(conn: sqlite3.Connection, stripe_client: Any, work_order_id: int, s
     if str(session.client_reference_id) != str(work_order_id) or session.currency != "usd":
         raise HTTPException(status.HTTP_409_CONFLICT, "checkout session does not match this work order")
     if session.payment_status == "paid":
-        return payments.complete_payment(conn, payment.id, session.amount_total).status
+        done = payments.complete_payment(conn, payment.id, session.amount_total)
+        events.record(conn, work_order_id, "customer", "paid",
+                      f"Paid ${done.amount_cents // 100:,}.{done.amount_cents % 100:02d} through Stripe Checkout (test mode)")
+        return done.status
     return payment.status
 
 

@@ -109,6 +109,8 @@ CREATE TABLE work_orders (
   quoted_total_cents  INTEGER,    -- locked when the quote goes to the customer
   decided_at        TEXT,         -- when the customer approved or declined
   finished_at       TEXT,         -- when the repair was finished
+  promised_ready_on TEXT,         -- the ready date the order plan backs up (YYYY-MM-DD)
+  staff_seen_at     TEXT,         -- when a mechanic last opened it, for new-activity badges
   scheduled_for     TEXT,
   created_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -156,7 +158,30 @@ CREATE TABLE payments (
 CREATE TABLE customer_links (
   token          TEXT PRIMARY KEY,
   work_order_id  INTEGER NOT NULL UNIQUE REFERENCES work_orders(id),
-  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  created_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_visit_at  TEXT            -- when the customer last opened it
+);
+
+-- What the agent plans to order if the customer approves: one supplier per part.
+-- The shop places these orders itself when the customer approves.
+CREATE TABLE order_plan_lines (
+  work_order_id  INTEGER NOT NULL REFERENCES work_orders(id),
+  part_id        INTEGER NOT NULL REFERENCES parts(id),
+  supplier_id    INTEGER NOT NULL REFERENCES suppliers(id),
+  qty            INTEGER NOT NULL,
+  PRIMARY KEY (work_order_id, part_id)
+);
+
+-- A work order's history: who did what, and when. Written where each action happens.
+CREATE TABLE work_order_events (
+  id             INTEGER PRIMARY KEY,
+  work_order_id  INTEGER NOT NULL REFERENCES work_orders(id),
+  at             TEXT NOT NULL,
+  actor          TEXT NOT NULL CHECK (actor IN ('agent', 'mechanic', 'customer', 'shop')),
+  kind           TEXT NOT NULL,        -- e.g. tool:add_part, message_sent, approved, order_placed
+  summary        TEXT NOT NULL,
+  detail_json    TEXT,                 -- e.g. which MCP server a tool call went to
+  is_error       INTEGER NOT NULL DEFAULT 0
 );
 
 -- Procurement -----------------------------------------------------------------
