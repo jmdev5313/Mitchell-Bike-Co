@@ -557,6 +557,7 @@ body.customer {
 .stage-door { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s5); margin-top: var(--s6); padding: var(--s4) 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--hair); }
 .stage-door[hidden] { display: none; }
 .stage-door p { margin: 0; flex: 1 1 320px; max-width: 620px; }
+.stage-door .btn-big { width: auto; flex: none; padding: 0 32px; }
 .doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); margin-top: var(--s6); }
 .door { border-top: 2px solid var(--ink); padding-top: var(--s4); }
 .door p { margin: var(--s3) 0 0; }

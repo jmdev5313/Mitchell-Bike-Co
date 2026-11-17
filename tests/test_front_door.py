@@ -89,7 +89,7 @@ def test_audit_log_lists_tool_calls_and_refusals(client, conn):
     conn.executemany(
         "INSERT INTO audit_log (runtime, tool, args_json, result_summary) VALUES (?, ?, ?, ?)",
         [("anthropic", "check_fit", '{"sku": "AD-C11-34W"}', '{"fits": true}'),
-         ("anthropic", "add_part", '{"sku": "AD-C11-28R"}', "refused: AD-C11-28R does not fit this bike")],
+         ("anthropic", "add_part", '{"work_order_id": 7, "sku": "AD-C11-28R"}', "refused: AD-C11-28R does not fit this bike")],
     )
     conn.commit()
     assert client.get("/api/audit").status_code == 401
@@ -97,7 +97,9 @@ def test_audit_log_lists_tool_calls_and_refusals(client, conn):
     assert (data["total"], data["refused"]) == (2, 1)
     assert [(e["tool"], e["server"], e["refused"]) for e in data["entries"]] == [
         ("add_part", "work orders", True), ("check_fit", "catalog", False)]
-    assert data["entries"][0]["arguments"] == {"sku": "AD-C11-28R"}
+    assert data["entries"][0]["arguments"] == {"work_order_id": 7, "sku": "AD-C11-28R"}
+    # No conversation (a scripted client): the work order comes from the call's arguments, when it has one.
+    assert [e["work_order_id"] for e in data["entries"]] == [7, None]
     refused = client.get("/api/audit?refused_only=true", headers=STAFF).json()["entries"]
     assert [e["tool"] for e in refused] == ["add_part"]
 
