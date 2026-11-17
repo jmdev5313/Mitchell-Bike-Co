@@ -81,10 +81,10 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   const entries = convo ? convo.entries : [];
   if (entries.length) {
     for (const entry of entries) {
-      transcript.append(entry.role === "mechanic" ? mechanicTurn(entry.text, entry.photos) : agentTurn(entry, { order, onReview: reveal }));
+      transcript.append(entry.role === "mechanic" ? mechanicTurn(entry.text, entry.images || []) : agentTurn(entry, { order, onReview: reveal }));
     }
   } else {
-    transcript.append(emptyHint({ order, prefill, setText: (text) => composer.api.setText(text) }));
+    transcript.append(emptyHint({ order, prefill, setText: (text) => composer.api.setText(text), attachPhoto: () => composer.api.attachHeroPhoto() }));
   }
 
   const composer = composerForm({
@@ -328,11 +328,12 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
     transcript.scrollTop = transcript.scrollHeight;
   }
   if (prefill) composer.api.setText(prefill);
+  if (prefill === HERO) composer.api.attachHeroPhoto();  // the hero story comes with its photo, when the shop has one
   else if (!entries.length && order) composer.api.setText(`About work order #${id} for ${customer}: `);
   if (order && order.unseen.length) staff(`/api/work-orders/${id}/seen`, { method: "POST" }).catch(() => {});
 }
 
-function emptyHint({ order, prefill, setText }) {
+function emptyHint({ order, prefill, setText, attachPhoto }) {
   const turn = (...content) => h("div", { class: "turn", "data-hint": "" }, h("div", { class: "speaker" }, ""), h("div", { class: "content" }, ...content));
   if (prefill === HERO) {
     return turn(
@@ -349,7 +350,7 @@ function emptyHint({ order, prefill, setText }) {
     h("p", { class: "muted", style: "margin-bottom: 4px" }, "Try the hero story:"),
     h("p", {}, `“${HERO}”`),
     h("div", { class: "hint-actions" },
-      h("button", { type: "button", class: "btn", onclick: () => setText(HERO) }, "Use this message"),
+      h("button", { type: "button", class: "btn", onclick: () => { setText(HERO); attachPhoto(); } }, "Use this message"),
       h("button", { type: "button", class: "btn btn-outline", onclick: async () => {
         try { await navigator.clipboard.writeText(HERO); copied.textContent = "Copied"; } catch { copied.textContent = "Select the text above to copy it"; }
       } }, "Copy"),

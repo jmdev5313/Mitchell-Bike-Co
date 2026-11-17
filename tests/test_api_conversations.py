@@ -120,3 +120,25 @@ def test_a_conversation_can_start_on_a_work_order(client, conn):
     assert client.get(f"/api/conversations/{conversation_id}", headers=STAFF).json()["work_order_id"] == order
     assert client.get(f"/api/work-orders/{order}", headers=STAFF).json()["conversation_ids"] == [conversation_id]
     assert client.post("/api/conversations", headers=STAFF, json={"work_order_id": 999}).status_code == 404
+
+
+def test_photos_come_back_and_the_hero_photo_is_labelled(client, conn, tmp_path, monkeypatch):
+    import base64
+
+    from api import conversations as api_conversations
+
+    hero = tmp_path / "hero.jpg"
+    hero.write_bytes(b"\xff\xd8 illustrative cassette")
+    monkeypatch.setattr(api_conversations, "HERO_PHOTO", hero)
+    other = b"\xff\xd8 a real photo"
+    convo = conversations.create(conn, "anthropic", "model")
+    block = lambda data: {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                                                      "data": base64.standard_b64encode(data).decode()}}
+    conversations.append(conn, convo.id, "user", [block(hero.read_bytes()), block(other), {"type": "text", "text": "Look"}])
+    entry = client.get(f"/api/conversations/{convo.id}", headers=STAFF).json()["entries"][0]
+    assert entry["photos"] == 2
+    assert [i["illustrative"] for i in entry["images"]] == [True, False]
+    assert entry["images"][0]["src"].startswith("data:image/jpeg;base64,")
+    hero.unlink()  # no hero photo in the shop: nothing is labelled
+    entry = client.get(f"/api/conversations/{convo.id}", headers=STAFF).json()["entries"][0]
+    assert [i["illustrative"] for i in entry["images"]] == [False, False]

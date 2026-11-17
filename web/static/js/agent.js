@@ -2,7 +2,7 @@
 // drafts to the Customer), the composer, and streaming a turn. The job screen (job.js) lays them out.
 
 import { h, icon, richText, dollars, shortDate } from "./dom.js";
-import { passcode, Unauthorized } from "./staff.js";
+import { passcode, Unauthorized, HERO_PHOTO } from "./staff.js";
 
 const PHOTO = "M2 4h12v9H2zM5.5 8a1 1 0 100-.01M14 11l-4-4-6 6";
 const CLIP = "M13 7.5l-5.5 5.5a3.2 3.2 0 01-4.5-4.5l6-6a2.2 2.2 0 013 3l-6 6a1.2 1.2 0 01-1.7-1.7L10 4.5";
@@ -25,12 +25,18 @@ export function activityLog(tools, progress = [], { live = false } = {}) {
       progress.length && live ? h("li", { class: "note" }, h("span", { class: "result" }, progress[progress.length - 1])) : null));
 }
 
-export function mechanicTurn(text, photos = 0) {
+/** The illustrative hero photo is labelled as generated wherever it shows. */
+const ILLUSTRATIVE = "Illustrative photo (AI-generated)";
+
+/** The Mechanic's message, with its photos. `images` are {src, illustrative}. */
+export function mechanicTurn(text, images = []) {
   return h("div", { class: "turn" },
     h("div", { class: "speaker" }, "Mechanic"),
     h("div", { class: "content" },
       h("p", { style: "white-space: pre-line; font-size: 16px" }, text),
-      photos ? h("div", { class: "attach" }, icon(PHOTO, 16, 1.6), `${photos} photo${photos === 1 ? "" : "s"}`) : null));
+      images.length ? h("div", { class: "turn-photos" }, images.map((image) => h("figure", { class: "photo" },
+        h("img", { src: image.src, alt: image.illustrative ? "Worn cassette and chain on the bike (illustrative, AI-generated)" : "Photo from the Mechanic" }),
+        h("figcaption", {}, icon(PHOTO, 14, 1.6), image.illustrative ? ILLUSTRATIVE : "Photo")))) : null));
 }
 
 export function agentTurn(entry, { order = null, onReview = null } = {}) {
@@ -90,10 +96,24 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
   const grow = () => { textarea.style.height = "auto"; textarea.style.height = `${Math.min(textarea.scrollHeight + 2, 220)}px`; };
   textarea.addEventListener("input", grow);
   const files = h("input", { type: "file", accept: "image/jpeg,image/png,image/gif,image/webp", multiple: true, class: "visually-hidden", id: "photos", tabindex: "-1" });
-  const fileNote = h("div", { class: "files", role: "status" });
-  files.addEventListener("change", () => {
-    fileNote.textContent = files.files.length ? `${files.files.length} photo${files.files.length === 1 ? "" : "s"} attached` : "";
-  });
+  // Attached photos show as thumbnails, each with a remove button.
+  const fileNote = h("div", { class: "attached", role: "status" });
+  const isHero = (file) => file.name === HERO_PHOTO.name;
+  const previews = () => [...files.files].map((file) => ({ src: URL.createObjectURL(file), illustrative: isHero(file), name: file.name }));
+  function setFiles(list) {
+    const dt = new DataTransfer();
+    for (const file of list) dt.items.add(file);
+    files.files = dt.files;
+    drawAttached();
+  }
+  function drawAttached() {
+    fileNote.replaceChildren(...previews().map((p, i) => h("figure", { class: "thumb" },
+      h("img", { src: p.src, alt: "" }),
+      h("figcaption", {}, p.illustrative ? ILLUSTRATIVE : p.name),
+      h("button", { type: "button", class: "thumb-x", "aria-label": `Remove ${p.illustrative ? "the illustrative photo" : p.name}`,
+        onclick: () => setFiles([...files.files].filter((_, j) => j !== i)) }, "✕"))));
+  }
+  files.addEventListener("change", drawAttached);
   const send = h("button", { type: "submit", class: "btn" }, "Send");
 
   async function submit(text) {
@@ -101,13 +121,14 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
     const body = new FormData();
     body.append("text", text);
     for (const file of files.files) body.append("photos", file);
+    const sentImages = previews();
     send.disabled = true;
     textarea.disabled = true;
     textarea.value = "";
     grow();
-    fileNote.textContent = "";
+    fileNote.replaceChildren();
     transcript.querySelector("[data-hint]")?.remove();
-    transcript.append(mechanicTurn(text, files.files.length));
+    transcript.append(mechanicTurn(text, sentImages));
     window.mbcStreaming = true;
     try {
       await streamTurn(await conversationId(), body, transcript);
@@ -121,6 +142,7 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
       textarea.disabled = false;
       textarea.value = text;
       grow();
+      drawAttached();
     }
   }
 
@@ -159,6 +181,17 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
     // only holds off once they've actually changed it.
     setText(text) { textarea.value = text; textarea.dataset.prefill = text; grow(); textarea.focus(); textarea.setSelectionRange(text.length, text.length); },
     send(text) { submit(text); },
+    /** Attach the illustrative hero photo, if the shop has one. Returns whether it did. */
+    async attachHeroPhoto() {
+      if ([...files.files].some(isHero)) return true;
+      try {
+        const response = await fetch(HERO_PHOTO.url);
+        if (!response.ok) return false;
+        const blob = await response.blob();
+        setFiles([...files.files, new File([blob], HERO_PHOTO.name, { type: blob.type || "image/jpeg" })]);
+        return true;
+      } catch { return false; }
+    },
   };
   return form;
 }

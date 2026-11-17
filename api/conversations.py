@@ -8,6 +8,8 @@ Sending a message streams the turn as Server-Sent Events while it runs:
 """
 
 import asyncio
+import base64
+import hashlib
 import json
 import sqlite3
 import tempfile
@@ -29,6 +31,32 @@ router = APIRouter(prefix="/api/conversations", tags=["agent"], dependencies=[De
 PHOTO_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_PHOTOS = 4
+
+# The hero story's illustrative photo of the worn cassette. It was made with an image model, so
+# wherever it appears in a conversation it's labelled as generated. Matched by its exact bytes.
+HERO_PHOTO = Path(__file__).resolve().parent.parent / "web" / "static" / "img" / "hero-cassette.jpg"
+
+
+def _hero_digest() -> str | None:
+    return hashlib.sha256(HERO_PHOTO.read_bytes()).hexdigest() if HERO_PHOTO.exists() else None
+
+
+def _with_images(entries: list[dict]) -> list[dict]:
+    """Turn stored photos into data URLs for the page, marking the illustrative hero photo."""
+    hero = _hero_digest()
+    for entry in entries:
+        images = entry.pop("images", None)
+        if entry["role"] != "mechanic":
+            continue
+        entry["images"] = [
+            {
+                "src": f"data:{image['media_type']};base64,{image['data']}",
+                "illustrative": hero is not None
+                and hashlib.sha256(base64.b64decode(image["data"])).hexdigest() == hero,
+            }
+            for image in images or []
+        ]
+    return entries
 
 
 def pool(request: Request) -> AgentPool:
@@ -79,7 +107,7 @@ def get_conversation(conversation_id: str, conn: sqlite3.Connection = Depends(ge
         "conversation_id": convo.id,
         "work_order_id": convo.work_order_id,
         "model": convo.model,
-        "entries": conversations.transcript(conn, conversation_id),
+        "entries": _with_images(conversations.transcript(conn, conversation_id)),
         "usage": conversations.usage_totals(conn, conversation_id),
     }
 

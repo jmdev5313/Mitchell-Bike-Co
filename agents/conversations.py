@@ -107,7 +107,7 @@ def transcript(conn: sqlite3.Connection, conversation_id: str) -> list[dict]:
     """The conversation as people see it: Mechanic messages and Agent replies.
 
     Each Agent entry carries its tool calls (name, MCP server, a summary of the
-    result, and whether it was refused); photos show as a count. The raw history
+    result, and whether it was refused); photos come as a count and as their stored data. The raw history
     (with thinking blocks) stays in `history`.
     """
     from agents import activity
@@ -137,6 +137,12 @@ def transcript(conn: sqlite3.Connection, conversation_id: str) -> list[dict]:
                 "role": "mechanic",
                 "text": "\n\n".join(texts),
                 "photos": sum(b.get("type") == "image" for b in blocks),
+                # The photos themselves (base64, as stored), for screens that show them.
+                "images": [
+                    {"media_type": b["source"]["media_type"], "data": b["source"]["data"]}
+                    for b in blocks
+                    if b.get("type") == "image" and (b.get("source") or {}).get("type") == "base64"
+                ],
             })
             continue
         if agent is None:
