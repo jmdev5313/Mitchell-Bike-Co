@@ -10,6 +10,15 @@ import { mechanicTurn, agentTurn, composerForm } from "./agent.js";
 
 const TABS = [
   { id: "overview", label: () => "Overview" },
+  {
+    id: "messages",
+    label: (order) => {
+      const sent = order.messages.filter((m) => m.status !== "draft").length;
+      const draft = order.messages.some((m) => m.status === "draft");
+      return [`Messages · ${sent}`, draft ? h("span", { class: "tab-dot", title: "A draft is waiting" },
+        h("span", { class: "visually-hidden" }, ", a draft is waiting")) : null];
+    },
+  },
   { id: "bike", label: () => "Bike" },
   { id: "history", label: (order) => `History · ${order.history.length}` },
 ];
@@ -126,7 +135,9 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
       drawPanel();
       panel.querySelector(`#tab-${ui.tab}`).focus();
     });
-    const body = ui.tab === "bike" ? bikeTab(order) : ui.tab === "history" ? h("div", { class: "rail-section" }, historySection(order)) : overviewTab();
+    const body = ui.tab === "bike" ? bikeTab(order)
+      : ui.tab === "history" ? h("div", { class: "rail-section" }, historySection(order))
+        : ui.tab === "messages" ? messagesTab() : overviewTab();
     panel.replaceChildren(tablist, h("div", { id: "tabpanel", role: "tabpanel", "aria-labelledby": `tab-${ui.tab}` }, body));
   }
 
@@ -146,7 +157,6 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
       return h("span", { class: "stock-out", style: "display: block" },
         planned ? `Out of stock · planned from ${planned.supplier}, ${planned.lead_time_days} days` : "Out of stock");
     };
-    const thread = order.messages.filter((m) => m.status !== "draft");
     return [
       nextStepBar(order, {
         onChange: rerender,
@@ -166,6 +176,12 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
         }),
         order.order_plan.promised_ready_on ? h("p", { class: "small", style: "margin: 10px 0 0" },
           h("strong", {}, "Promised to the Customer: "), longDate(order.order_plan.promised_ready_on)) : null) : null,
+    ];
+  }
+
+  function messagesTab() {
+    const thread = order.messages.filter((m) => m.status !== "draft");
+    return [
       draftBand(order, { onChange: rerender, customerName: customer }),
       h("div", { class: "rail-section" },
         h("h2", {}, `Messages with ${first}`),
@@ -183,7 +199,7 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   // "Review and send" in the chat, and "Review the draft" in the next step: show the draft and put focus on it.
   function reveal() {
     if (root.classList.contains("is-collapsed")) toggle();
-    ui.tab = "overview";
+    ui.tab = "messages";
     drawPanel();
     showView("order");
     const band = panel.querySelector(".draft-band");

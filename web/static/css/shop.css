@@ -374,7 +374,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .job-panel .rail-section + .rail-section { border-top: 1px solid var(--hair-bench); }
 .job-panel .rail-section > h2 { font-size: 20px; }
 .job-panel .section { margin-top: 0; border-top: 0; padding-top: 0; }
-.job-panel .draft-band { margin-top: var(--s4); }
+.job-panel .draft-band { margin-top: 0; }
+.tab-dot { display: inline-block; width: 8px; height: 8px; margin-left: 6px; vertical-align: 2px; background: var(--manila); border: 1px solid var(--manila-text); border-radius: 50%; }
 .draft-band.is-flagged { outline: 3px solid var(--work-blue); outline-offset: -3px; }
 .panel-strip { display: none; }
 .job.is-collapsed .job-panel { display: none; }
