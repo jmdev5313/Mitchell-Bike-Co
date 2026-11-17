@@ -3,7 +3,7 @@
 import { h, dollars, shortDate, longDate } from "./dom.js";
 import {
   staff, passcode, setPasscode, Unauthorized, stageMeter, progressStrip, ledger, draftBand,
-  customerLink, refusedNotice, nextStepBar, historySection, newBadge,
+  customerLink, refusedNotice, nextStepBar, historySection, newBadge, startWithAgent,
 } from "./staff.js";
 import { agentScreen } from "./agent.js";
 
@@ -112,7 +112,7 @@ async function workOrders() {
     app.replaceChildren(h("div", { class: "page" },
       h("div", { style: "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px" },
         h("h1", { class: "display" }, "Work orders"),
-        h("a", { class: "btn", href: "#/agent" }, "Start with the Agent")),
+        h("button", { type: "button", class: "btn", onclick: () => startWithAgent().catch(handle) }, "Start with the Agent")),
       h("div", { class: "filters", role: "group", "aria-label": "Filter by who it's waiting on" },
         FILTERS.map((f) => h("button", {
           type: "button", "aria-pressed": String(f.id === filter),

@@ -122,22 +122,44 @@ export function draftBand(order, { onChange, customerName }) {
     }
   }
 
-  return h("div", { class: "draft-band" },
+  const sendIt = () => run("Sending…", async () => { await save(); await staff(`/api/messages/${draft.id}/send`, { method: "POST" }); });
+
+  // The full-size editor: the same draft in a dialog, for reading and editing it comfortably.
+  const big = h("textarea", { class: "textarea", "aria-label": `Draft to ${first} (large editor)` });
+  const dialog = h("dialog", { class: "expand-dialog draft-dialog", "aria-labelledby": `${id}-big-title` },
+    h("form", { method: "dialog", onsubmit: (event) => event.preventDefault() },
+      h("div", { class: "head" },
+        h("h2", { id: `${id}-big-title`, class: "display", style: "font-size: 28px" }, `Draft to ${first}`),
+        draft.quoted_total_cents !== null ? h("span", { class: "meta" }, `Carries the ${dollars(draft.quoted_total_cents)} quote`) : null),
+      big,
+      h("p", { class: "who-sends", style: "margin: 0" }, "The Agent can't send messages. Only you can, after reviewing it."),
+      h("div", { class: "row" },
+        h("button", { type: "button", class: "btn btn-outline", onclick: () => { textarea.value = big.value; dialog.close(); textarea.focus(); } },
+          "Back to the small box"),
+        h("span", { style: "display: flex; gap: 8px; flex-wrap: wrap" },
+          h("button", { type: "button", class: "btn btn-outline", onclick: () => { textarea.value = big.value; dialog.close(); run("Saving…", save); } },
+            "Save edits"),
+          h("button", { type: "button", class: "btn btn-send", onclick: () => { textarea.value = big.value; dialog.close(); sendIt(); } },
+            `Send to ${first}`)))));
+  dialog.addEventListener("cancel", () => { textarea.value = big.value; });
+
+  return h("div", { class: "draft-band", id: `${id}-band`, tabindex: "-1" },
     h("div", { class: "head" },
       h("label", { class: "title", for: id }, `Draft to ${first}`),
       h("span", { class: "meta" },
         draft.quoted_total_cents !== null ? `Carries the ${dollars(draft.quoted_total_cents)} quote · ` : "",
-        `Drafted by the ${draft.author === "agent" ? "Agent" : "Mechanic"}, ${shortDate(draft.created_at)}`)),
+        `Drafted by the ${draft.author === "agent" ? "Agent" : "Mechanic"}, ${shortDate(draft.created_at)}`,
+        " · ",
+        h("button", { type: "button", class: "linkish", onclick: () => { big.value = textarea.value; dialog.showModal(); big.focus(); big.setSelectionRange(0, 0); big.scrollTop = 0; } },
+          "Expand"))),
     textarea,
     h("p", { class: "who-sends", style: "margin: 0" },
       "The Agent can't send messages. Only you can, after reviewing it."),
     h("div", { class: "actions" },
-      h("button", { type: "button", class: "btn btn-send",
-        onclick: () => run("Sending…", async () => { await save(); await staff(`/api/messages/${draft.id}/send`, { method: "POST" }); }) },
-        `Send to ${first}`),
+      h("button", { type: "button", class: "btn btn-send", onclick: sendIt }, `Send to ${first}`),
       h("button", { type: "button", class: "btn btn-outline",
         onclick: () => run("Saving…", save) }, "Save edits")),
-    status);
+    status, dialog);
 }
 
 /** The Customer's private link, with open and copy. */
@@ -165,6 +187,18 @@ export function refusedNotice(message) {
 // --- Next step, history, badges ------------------------------------------------
 
 const WHOSE = { mechanic: "Your turn", agent: "The Agent's turn", customer: "The Customer's turn", shop: "The shop's turn", nobody: "Nothing to do" };
+
+/** The hero story's opening message, offered wherever a conversation starts. */
+export const HERO = "Emma Clark's gravel bike is on the stand. Gears skip under load in the smaller cogs, and my chain checker reads 0.75%. Work out what it needs and draft her a quote.";
+
+/** Open a fresh conversation (reusing an unused one) with the hero message waiting in the box. */
+export async function startWithAgent() {
+  try { sessionStorage.setItem("mbc-prefill", HERO); } catch { /* private mode */ }
+  const unused = (await staff("/api/conversations")).find((c) => c.turns === 0);
+  const id = unused ? unused.id : (await staff("/api/conversations", { method: "POST" })).conversation_id;
+  if (location.hash === `#/agent/${id}`) window.dispatchEvent(new HashChangeEvent("hashchange"));
+  else location.hash = `#/agent/${id}`;
+}
 
 /** Ask the Agent: open the conversation with the prompt waiting in the message box. */
 export function askAgent(order, prompt) {

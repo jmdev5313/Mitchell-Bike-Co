@@ -197,6 +197,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .reply-form label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
 .reply-form .row { display: flex; gap: var(--s2); }
 .reply-form .row .btn { height: 48px; }
+.reply-form .suggest-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s2); margin-top: var(--s2); color: var(--manila-text); }
+.suggestion {
+  font: inherit; font-size: 15px; color: var(--ink); background: transparent; cursor: pointer;
+  border: 1px dashed var(--manila-text); border-radius: 999px; padding: 6px 14px; min-height: 36px;
+}
+.suggestion:hover { background: rgba(79, 74, 56, 0.08); }
+.reply-form .suggest-row[hidden] { display: none; }
 
 .demo-footer {
   margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--hair-manila);
@@ -430,6 +437,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .expand-dialog::backdrop { background: rgba(22, 26, 31, 0.45); }
 .expand-dialog form { display: flex; flex-direction: column; gap: var(--s3); padding: var(--s5); }
 .expand-dialog .textarea { min-height: 50vh; font-size: 16px; }
+.draft-dialog { background: var(--manila); border-color: var(--manila-text); }
+.draft-dialog .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px var(--s3); }
+.draft-dialog .meta, .draft-dialog .who-sends { font-size: 13px; color: var(--manila-text); }
+.draft-dialog .textarea { border-color: var(--manila-text); line-height: 1.55; }
+.linkish {
+  font: inherit; color: inherit; background: none; border: 0; padding: 4px 0; min-height: 24px;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.linkish:hover { color: var(--ink); }
 .expand-dialog .row { display: flex; justify-content: space-between; gap: var(--s2); flex-wrap: wrap; }
 .hint-actions { display: flex; gap: var(--s2); flex-wrap: wrap; margin-top: var(--s2); }
 
@@ -448,10 +464,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .door-customer { background: var(--manila); border-top-style: dashed; border-top-color: var(--manila-text); padding: var(--s4); }
 .door-customer .muted, .door-customer .small { color: var(--manila-text); }
 .door .btn[aria-disabled="true"] { color: var(--disabled-text); border-color: var(--disabled-border); cursor: not-allowed; }
+.demo-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); max-width: 900px; }
+.demo-tools p { margin: var(--s2) 0 0; }
 .look { margin: 0; padding-left: 22px; display: grid; gap: var(--s3); max-width: 760px; line-height: 1.5; }
 .front-footer { margin-top: var(--s7); padding-top: var(--s3); border-top: 1px solid var(--hair); font-size: 14px; color: var(--slate); }
 .front code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
 @media (max-width: 700px) {
-  .doors { grid-template-columns: 1fr; }
+  .doors, .demo-tools { grid-template-columns: 1fr; }
   .front h1.display { font-size: 40px; }
 }

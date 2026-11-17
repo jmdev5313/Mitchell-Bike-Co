@@ -53,8 +53,16 @@
 
   <section class="section" id="reset-section" hidden>
     <h2>Start over</h2>
-    <p class="muted">Clears every work order and conversation, reloads the seed data, and leaves one quote waiting for Emma.</p>
-    <button type="button" class="btn btn-outline" id="reset">Reset the demo</button>
+    <div class="demo-tools">
+      <div>
+        <button type="button" class="btn btn-outline" id="reset">Reset the demo</button>
+        <p class="small muted">Clears every work order, message, conversation and log entry, and puts the catalog, Emma and her bike back as they started. Nothing is left waiting: begin by asking the Agent.</p>
+      </div>
+      <div>
+        <button type="button" class="btn btn-outline" id="sample">Generate a sample quote</button>
+        <p class="small muted">Skips the Agent: adds Emma's work order with the quote already sent, so you can try her side straight away.</p>
+      </div>
+    </div>
     <p class="small" id="reset-status" role="status"></p>
   </section>
 
