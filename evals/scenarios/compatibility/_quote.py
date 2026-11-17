@@ -5,6 +5,7 @@ from datetime import date
 
 from evals import checks
 from evals.common import Report, record_turn
+from shop import work_orders as wo
 
 
 DEFAULT_ANSWER = "Use your best judgment for this bike and go ahead: build the work order and quote, and draft the message."
@@ -22,7 +23,9 @@ def quote_turn(email: str, message: str, check_lines: Callable[[Report, list[str
         result = await agent.send(message)
         record_turn(report, result)
         report.add("turn finished", result.stop_reason == "end_turn", result.stop_reason)
-        asked = checks.linked_work_order(conn, report) is None
+        # A question can come before the work order is opened or after (say, about which labor to bill).
+        linked = checks.linked_work_order(conn, report)
+        asked = linked is None or wo.summary(conn, linked)["quoted_total_cents"] is None
         if asked:
             result = await agent.send(answer)
             record_turn(report, result)

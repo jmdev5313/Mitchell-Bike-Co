@@ -19,6 +19,7 @@ def client(conn, tmp_path, monkeypatch):
     monkeypatch.setenv("STAFF_PASSCODE", "pc")
     monkeypatch.delenv("DEMO_MODE", raising=False)
     monkeypatch.setattr(demo, "RESULTS", tmp_path / "results")
+    monkeypatch.setattr(demo, "SUITE", tmp_path / "latest.json")
     with TestClient(app) as c:
         yield c
 
@@ -126,3 +127,16 @@ def test_the_story_follows_the_newest_work_order(client, conn, monkeypatch):
     messages.receive_message(conn, order, "See you Friday!")
     story = client.get("/api/demo").json()["story"]
     assert (story["step"], story["whose"]) == (5, "mechanic")  # her question hands the turn back, same step
+
+
+def test_the_suite_summary_wins_over_the_hero_check(client, tmp_path):
+    from evals import suite
+
+    result = {"ran_at": "20261118T000000Z", "model": "claude-sonnet-5-5", "runs_per_scenario": 3,
+              "passed_runs": 5, "total_runs": 6, "cost_usd": 0.31,
+              "scenarios": [{"key": "a", "group": "story", "title": "A", "passed_runs": 3, "runs": 3, "reports": []},
+                            {"key": "b", "group": "story", "title": "B", "passed_runs": 2, "runs": 3, "reports": []}]}
+    suite.write_latest(result, tmp_path / "latest.json")
+    assert client.get("/api/demo").json()["latest_eval"] == {
+        "suite": True, "passed_runs": 5, "total_runs": 6, "scenarios": 2, "runs_per_scenario": 3,
+        "scenarios_all_passed": 1, "cost_usd": 0.31, "model": "claude-sonnet-5-5", "ran_at": "20261118T000000Z"}

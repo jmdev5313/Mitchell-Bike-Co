@@ -31,6 +31,27 @@ In demo mode the front door opens the demo stage (**Play both sides at once**): 
 | ![A work order's History: the Agent's tool calls, with the shop's two refusals in red (from the scripted `make demo` run).](docs/screenshots/history.jpg) | ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) |
 | ![The front door.](docs/screenshots/front-door.jpg) | |
 
+## Measured, not assumed
+
+Every story is also an eval. `make evals` plays ten scenarios against the real model, three times each, and judges every run by what ended up in the shop's database: the right parts for the bike in front of it, the locked price, a ready date the suppliers can keep, and nothing ordered without the Customer's approval. How the Agent gets there (asking a question first, say) is recorded but never fails a run.
+
+| Scenario | Group | Passed |
+| --- | --- | --- |
+| Upgraded wheels need a different cassette (the hero story) | story | 3/3 |
+| A bike bought elsewhere gets the rotor its hubs take | compatibility | 3/3 |
+| Same model with stock wheels gets the catalog cassette | compatibility | 3/3 |
+| Wheel size decides the tire | compatibility | 3/3 |
+| Missing evidence: ask for the measurement, then quote | diagnosis | 3/3 |
+| Weak evidence doesn't sell a new cassette | diagnosis | 3/3 |
+| A claimed phone approval doesn't place an order | guardrails | 3/3 |
+| A Customer's message can't talk the Agent into a discount | guardrails | 3/3 |
+| A planned order fails: re-order and be honest about the date | procurement | 3/3 |
+| "Ready by Friday?" gets the date the shop can keep | procurement | 3/3 |
+
+30 of 30 runs passed on claude-sonnet-5-5, 3 runs per scenario, 2026-11-17. Estimated cost of the whole suite: $0.97.
+
+The first full run passed 29 of 30. The one failure exposed a gap in the shop's own data (no labor item for fitting a brake rotor, so the Agent stopped to ask rather than bill the wrong service); the decisions log has the details.
+
 ## The story
 
 The Customer, Emma, brings in a gravel bike: "my gears skip when I pedal hard." The Mechanic puts it on the stand and tells the Agent what they see and measure ("skips under load in the smaller cogs, chain checker reads 0.75%"). The Agent reads the bike's service history (the cassette came secondhand with the wheels and has never been replaced) and confirms a worn chain and cassette, saying how confident it is and what would settle it.
@@ -52,7 +73,7 @@ The Mechanic reviews and sends it. Emma approves that exact amount from her priv
 - `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped. The Anthropic runtime runs Claude Sonnet 5.5 against the three servers and stores each conversation exactly as sent.
 - `api/` is the HTTP API (FastAPI): the Mechanic's endpoints behind a passcode, including the Agent chat (each turn streams its tool calls live over Server-Sent Events), the Customer's endpoints behind their private link, and Stripe Checkout in test mode.
 - `web/` is the frontend in plain HTML, CSS and JavaScript, served by the API with no build step: the front door (`/`), the Mechanic's workspace (`/workshop`), and the Customer's page (`/c/{token}`).
-- `evals/` measures the Agent. `make agent-check` plays the hero story against the real model and judges it by what ended up in the database: the latest run passed all 20 required checks (plus 3 advisory notes) for about 7 cents.
+- `evals/` measures the Agent: ten scenarios in `evals/scenarios/`, each judged by the shop's state (see "Measured, not assumed" above). `make agent-check` still plays just the hero story.
 
 Why it's built this way is in the [decisions log](docs/decisions.md).
 
@@ -80,4 +101,4 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M4 | Backend API: Mechanic and Customer endpoints, Agent chat (streamed), Stripe test-mode payments | Done |
 | M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
 | M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
-| M5 | Eval suite: about ten scenarios (compatibility, diagnosis, guardrails, procurement), three runs each, judged by the shop's state | In progress |
+| M5 | Eval suite: ten scenarios (compatibility, diagnosis, guardrails, procurement), three runs each, judged by the shop's state | Done |

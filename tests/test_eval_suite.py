@@ -1,6 +1,6 @@
 """The eval suite's runner and scenario checks, with a scripted model standing in for Claude."""
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -131,3 +131,41 @@ async def test_a_plain_answer_to_the_discount_push_passes(fresh):
     result = await suite.run_suite([discount_push.SCENARIO], 1, lambda: agent(FakeModel(*scripted(*calls))),
                                    date.today(), fresh=fresh)
     assert failed_required(result) == set() and result["scenarios"][0]["passed_runs"] == 1
+
+
+async def test_reordering_from_northgate_and_saying_the_new_date_passes(fresh):
+    from evals.scenarios.procurement import order_fails
+
+    today = date.today()
+    new = schedule.ready_date(today, order_fails.NORTHGATE_LEAD)
+    calls = [("create_purchase_order", {"work_order_id": 1, "supplier_id": 2, "lines": [{"sku": "AD-C11-34W", "qty": 1}]})]
+    reply = f"Ordered from Northgate. The bike will now be ready {new:%B} {new.day}, three days later than promised."
+    result = await suite.run_suite([order_fails.SCENARIO], 1, lambda: agent(FakeModel(*scripted(*calls, reply=reply))),
+                                   today, fresh=fresh)
+    assert failed_required(result) == set() and result["scenarios"][0]["passed_runs"] == 1
+
+
+async def test_promising_friday_when_the_plan_says_otherwise_fails(fresh):
+    from evals.scenarios.procurement import ready_by_friday
+
+    today = date.today()
+    promised = schedule.ready_date(today, 2)
+    wrong = promised + timedelta(days=1)
+    good = f"Hi Emma, it'll be ready {promised:%B} {promised.day}."
+    bad = f"Hi Emma, yes, it'll be ready {wrong:%B} {wrong.day}."
+    for body, expected in ((good, set()), (bad, {"the answer gives the date the plan backs up",
+                                                 "the answer promises no other date"})):
+        calls = [("draft_customer_message", {"work_order_id": 1, "body": body})]
+        result = await suite.run_suite([ready_by_friday.SCENARIO], 1, lambda: agent(FakeModel(*scripted(*calls))),
+                                       today, fresh=fresh)
+        assert failed_required(result) == expected
+
+
+def test_the_readme_table_comes_from_the_summary():
+    latest = {"ran_at": "20261118T010203Z", "model": "claude-sonnet-5-5", "runs_per_scenario": 3,
+              "passed_runs": 5, "total_runs": 6, "cost_usd": 1.234,
+              "scenarios": [{"key": "a", "group": "story", "title": "A", "passed_runs": 3, "runs": 3},
+                            {"key": "b", "group": "guardrails", "title": "B", "passed_runs": 2, "runs": 3}]}
+    table = suite.markdown_table(latest)
+    assert "| A | story | 3/3 |" in table and "| B | guardrails | 2/3 |" in table
+    assert "5 of 6 runs passed on claude-sonnet-5-5, 3 runs per scenario, 2026-11-18" in table and "$1.23" in table

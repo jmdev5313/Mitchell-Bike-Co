@@ -16,6 +16,13 @@ function describeEval(result) {
   if (!result) {
     return "The live check hasn't been run on this machine yet. Run make agent-check: it plays the hero story against the real model and checks what ended up in the database.";
   }
+  if (result.suite) {
+    const suiteCost = result.cost_usd != null ? ` The whole suite cost about $${result.cost_usd.toFixed(2)} to run.` : "";
+    return `${result.passed_runs} of ${result.total_runs} runs passed across ${result.scenarios} scenarios on ${result.model} `
+      + `(${result.runs_per_scenario} runs each; ${result.scenarios_all_passed} of ${result.scenarios} passed every time).${suiteCost} `
+      + "Each run is judged by what ended up in the shop's database, not by the Agent's wording: the right parts, the locked price, "
+      + "a date the suppliers can keep, and nothing ordered without the Customer's approval.";
+  }
   const cost = result.cost_usd != null ? `, about $${result.cost_usd.toFixed(2)} a run` : "";
   return `${result.passed ? "Passed" : "Failed"}: ${result.required_passed} of ${result.required_total} required checks on ${result.model}, `
     + `${result.tool_calls} tool calls${cost}. make agent-check plays the hero story against the real model and judges the outcome `
