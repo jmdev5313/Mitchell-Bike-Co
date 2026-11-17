@@ -22,6 +22,7 @@ function route() {
   const screens = {
     "work-orders": () => (id ? workOrder(Number(id)) : workOrders()),
     agent: () => agentScreen(app, id, { onUnauthorized: signOut }),
+    audit: () => auditLog(),
   };
   return (screens[section] || screens["work-orders"])().catch(handle);
 }
@@ -267,6 +268,46 @@ async function workOrder(id) {
           h("h2", {}, "Customer link"),
           customerLink(order.customer_link_token, customer))))));
   if (order.unseen.length) staff(`/api/work-orders/${id}/seen`, { method: "POST" }).catch(() => {});
+}
+
+// --- Audit log --------------------------------------------------------------
+
+let refusedOnly = false;
+
+async function auditLog() {
+  document.title = "Audit log · Workshop · Mitchell Bike Co.";
+  const data = await staff(`/api/audit?refused_only=${refusedOnly}`);
+  const when = (iso) => {
+    const d = new Date(iso.replace(" ", "T") + (/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? "" : "Z"));
+    return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+  };
+  app.replaceChildren(h("div", { class: "page" },
+    h("h1", { class: "display" }, "Audit log"),
+    h("p", { class: "subhead" },
+      "Every tool call the Agent made, written by the shop's MCP servers themselves, so it's the same whichever agent platform called. ",
+      "Each work order's History shows the friendly version, alongside the people's actions."),
+    h("div", { class: "filters", role: "group", "aria-label": "Filter the audit log" },
+      h("button", { type: "button", "aria-pressed": String(!refusedOnly), onclick: () => { refusedOnly = false; auditLog().catch(handle); } }, `All calls · ${data.total}`),
+      h("button", { type: "button", "aria-pressed": String(refusedOnly), onclick: () => { refusedOnly = true; auditLog().catch(handle); } }, `Refused by the shop · ${data.refused}`)),
+    data.entries.length === 0
+      ? h("p", { class: "empty" }, refusedOnly ? "No refused calls yet." : "No tool calls yet. Start a conversation with the Agent.")
+      : h("div", { class: "table-box" },
+        h("table", { class: "data" },
+          h("caption", { class: "visually-hidden" }, "Agent tool calls, newest first"),
+          h("thead", {}, h("tr", {},
+            h("th", { scope: "col" }, "When"), h("th", { scope: "col" }, "Tool · MCP server"),
+            h("th", { scope: "col" }, "Result"), h("th", { scope: "col" }, "Work order"), h("th", { scope: "col" }, "Arguments"))),
+          h("tbody", {}, data.entries.map((e) => h("tr", { class: e.refused ? "is-refused-row" : null },
+            h("td", { class: "small muted", style: "white-space: nowrap" }, when(e.at), h("div", {}, e.runtime || "")),
+            h("td", {}, h("span", { style: "font-weight: 600" }, e.tool), h("div", { class: "small muted" }, e.server)),
+            h("td", { class: "small" }, e.refused
+              ? h("span", {}, h("strong", { class: "refused" }, "Refused: "), e.result.replace(/^refused: /, ""))
+              : h("span", { class: "muted" }, (e.result || "").slice(0, 160) + ((e.result || "").length > 160 ? "…" : ""))),
+            h("td", {}, e.work_order_id ? h("a", { href: `#/work-orders/${e.work_order_id}` }, `#${e.work_order_id}`) : h("span", { class: "muted small" }, "—")),
+            h("td", { class: "small" }, h("details", {},
+              h("summary", {}, "Show"),
+              h("pre", { style: "white-space: pre-wrap; margin: 4px 0 0; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace" },
+                JSON.stringify(e.arguments, null, 2)))))))))));
 }
 
 route();

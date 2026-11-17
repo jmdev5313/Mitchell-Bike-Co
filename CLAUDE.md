@@ -7,6 +7,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - `make reset` deletes, rebuilds, and seeds `data/shop.db` (`make db` and `make seed` do the two halves)
 - `make test` runs the unit tests
 - `make sample` adds a quoted hero work order to `data/shop.db` and prints its Customer token (no model call)
+- `make api` serves everything: the front door at `/`, the workshop at `/workshop`, Customer pages at `/c/{token}`, API docs at `/docs`. `DEMO_MODE=1` turns on the front door's shortcuts and reset (`api/demo.py`); never with real data
 - `make api` runs the API on port 8000 (docs at `/docs`); staff endpoints need `STAFF_PASSCODE` from `.env` as a bearer token
 - `make agent-check` runs the hero story against the real model and checks the database outcome (its own `data/check.db`; spends a few cents)
 - `make agent` chats with the Agent as the Mechanic (needs `ANTHROPIC_API_KEY` in `.env`; spends tokens)

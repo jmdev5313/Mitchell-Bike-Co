@@ -1,0 +1,89 @@
+"""The front door, demo mode, the demo reset, and the audit log."""
+
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+
+from api import demo
+from api.app import app
+from demo.sample import create_sample
+from shop import customer_links
+
+STAFF = {"Authorization": "Bearer pc"}
+
+
+@pytest.fixture
+def client(conn, tmp_path, monkeypatch):
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "shop.db"))
+    monkeypatch.setenv("STAFF_PASSCODE", "pc")
+    monkeypatch.delenv("DEMO_MODE", raising=False)
+    monkeypatch.setattr(demo, "RESULTS", tmp_path / "results")
+    with TestClient(app) as c:
+        yield c
+
+
+def test_front_door_is_served(client):
+    page = client.get("/")
+    assert page.status_code == 200 and "Be the Mechanic" in page.text and "Be the Customer" in page.text
+    assert client.get("/static/js/home.js").status_code == 200
+
+
+def test_outside_demo_mode_nothing_is_handed_out(client, conn):
+    create_sample(conn)
+    info = client.get("/api/demo").json()
+    assert info == {"demo_mode": False, "latest_eval": None}
+    assert client.post("/api/demo/reset").status_code == 403
+
+
+def test_demo_mode_hands_out_the_passcode_and_a_sample_link(client, conn, monkeypatch):
+    monkeypatch.setenv("DEMO_MODE", "1")
+    order, token, _ = create_sample(conn)
+    info = client.get("/api/demo").json()
+    assert info["demo_mode"] and info["staff_passcode"] == "pc" and info["customer_token"] == token
+
+
+def test_demo_reset_starts_clean_with_one_quote(client, conn, monkeypatch):
+    monkeypatch.setenv("DEMO_MODE", "1")
+    for _ in range(3):
+        create_sample(conn, done=True)
+    result = client.post("/api/demo/reset").json()
+    assert result["status"] == "reset" and result["work_order_id"] == 1
+    assert conn.execute("SELECT COUNT(*) FROM work_orders").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM purchase_orders").fetchone()[0] == 0
+    assert customer_links.work_order_for(conn, result["customer_token"]) == 1
+    view = client.get(f"/api/customer/{result['customer_token']}").json()
+    assert view["status"] == "quoted"
+
+
+def test_latest_eval_is_read_from_the_newest_result(client, tmp_path):
+    results = tmp_path / "results"
+    results.mkdir()
+    checks = [{"name": "a", "passed": True, "required": True}, {"name": "b", "passed": True, "required": True},
+              {"name": "c", "passed": False, "required": False}]
+    (results / "hero-anthropic-20261101T000000Z.json").write_text(json.dumps(
+        {"passed": False, "checks": [], "turns": [], "model": "old"}))
+    (results / "hero-anthropic-20261117T020551Z.json").write_text(json.dumps(
+        {"passed": True, "checks": checks, "cost_usd": 0.068, "model": "claude-sonnet-5-5",
+         "turns": [{"tools": ["a", "b"]}, {"tools": ["c"]}]}))
+    assert client.get("/api/demo").json()["latest_eval"] == {
+        "passed": True, "required_passed": 2, "required_total": 2, "cost_usd": 0.068,
+        "model": "claude-sonnet-5-5", "ran_at": "20261117T020551Z", "tool_calls": 3,
+    }
+
+
+def test_audit_log_lists_tool_calls_and_refusals(client, conn):
+    conn.executemany(
+        "INSERT INTO audit_log (runtime, tool, args_json, result_summary) VALUES (?, ?, ?, ?)",
+        [("anthropic", "check_fit", '{"sku": "AD-C11-34W"}', '{"fits": true}'),
+         ("anthropic", "add_part", '{"sku": "AD-C11-28R"}', "refused: AD-C11-28R does not fit this bike")],
+    )
+    conn.commit()
+    assert client.get("/api/audit").status_code == 401
+    data = client.get("/api/audit", headers=STAFF).json()
+    assert (data["total"], data["refused"]) == (2, 1)
+    assert [(e["tool"], e["server"], e["refused"]) for e in data["entries"]] == [
+        ("add_part", "work orders", True), ("check_fit", "catalog", False)]
+    assert data["entries"][0]["arguments"] == {"sku": "AD-C11-28R"}
+    refused = client.get("/api/audit?refused_only=true", headers=STAFF).json()["entries"]
+    assert [e["tool"] for e in refused] == ["add_part"]

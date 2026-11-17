@@ -23,17 +23,18 @@ from shop import work_orders as wo
 EMMA = "emma.clark@example.com"
 
 
-def main(argv: list[str] | None = None) -> None:
-    done = "--done" in (argv or [])
-    config.load_env()
-    conn = db.connect()
+def create_sample(conn, done: bool = False, source: str = "make sample") -> tuple[int, str, int]:
+    """Emma's hero work order, built through the shop's rules with no model call.
+
+    Returns (work order id, Customer link token, quote message id).
+    """
     bike = conn.execute(
         """SELECT cb.id FROM customer_bikes cb JOIN customers c ON c.id = cb.customer_id
            WHERE c.email = ?""",
         (EMMA,),
     ).fetchone()
     if bike is None:
-        raise SystemExit("Emma's bike isn't in the database. Run `make reset` first.")
+        raise LookupError("Emma's bike isn't in the database. Run `make reset` first.")
 
     order = wo.open_work_order(conn, bike["id"], "My gears skip when I pedal hard.")
     wo.record_diagnosis(conn, order, "Chain worn to 0.75%; cassette worn (came secondhand with the wheels).")
@@ -49,7 +50,7 @@ def main(argv: list[str] | None = None) -> None:
               f"the gears skip. Replacing both comes to ${total / 100:.2f}, parts and labor."),
     )
     messages.send_draft(conn, draft.id)
-    events.record(conn, order, "shop", "sample", "Created by make sample (no Agent): quote sent to Emma")
+    events.record(conn, order, "shop", "sample", f"Created by {source} (no Agent): quote sent to Emma")
     token = customer_links.link_token(conn, order)
     if done:
         placed = flow.customer_decides(conn, draft.id, approved=True)["placed"]  # the shop places the plan
@@ -58,6 +59,19 @@ def main(argv: list[str] | None = None) -> None:
         wo.schedule_repair(conn, order, promised)
         wo.start_repair(conn, order)
         wo.finish_repair(conn, order)
+    return order, token, draft.id
+
+
+def main(argv: list[str] | None = None) -> None:
+    done = "--done" in (argv or [])
+    config.load_env()
+    conn = db.connect()
+    try:
+        order, token, quote_id = create_sample(conn, done)
+    except LookupError as e:
+        raise SystemExit(str(e))
+    total = conn.execute("SELECT quoted_total_cents FROM work_orders WHERE id = ?", (order,)).fetchone()[0]
+    draft_id = quote_id
     conn.close()
 
     if done:
@@ -68,12 +82,12 @@ def main(argv: list[str] | None = None) -> None:
         print("4242 4242 4242 4242, any future date, any CVC and postcode. Stripe sends you")
         print("back to the Customer page, now showing the receipt.")
         return
-    print(f"Added work order {order} for Emma, with a sent ${total / 100:.2f} quote (message {draft.id}).\n")
+    print(f"Added work order {order} for Emma, with a sent ${total / 100:.2f} quote (message {draft_id}).\n")
     print(f"Customer token: {token}")
     print(f"Customer page:  http://127.0.0.1:8000/c/{token}  (with make api running)\n")
     print("In the API docs (make api, then http://127.0.0.1:8000/docs):")
     print("  Customer: GET /api/customer/{token}, pasting the token above")
-    print(f"  Customer: POST /api/customer/{{token}}/messages/{draft.id}/decision with {{\"approved\": true}}")
+    print(f"  Customer: POST /api/customer/{{token}}/messages/{draft_id}/decision with {{\"approved\": true}}")
     print(f"  Staff:    GET /api/work-orders/{order}, after Authorize with STAFF_PASSCODE from .env")
 
 

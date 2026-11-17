@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from agents import config
-from api import conversations, customer, staff
+from api import conversations, customer, demo, staff
 from api.agent_pool import AgentPool, default_factory
 from shop.errors import NotFound, RuleViolation
 
@@ -40,10 +40,17 @@ app = FastAPI(
 app.include_router(staff.router)
 app.include_router(conversations.router)
 app.include_router(customer.router)
+app.include_router(demo.router)
 
 # The web pages: plain HTML, CSS and JavaScript in web/, no build step.
 WEB = Path(__file__).resolve().parent.parent / "web"
 app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def front_door() -> FileResponse:
+    """The visitor front door: what this is, and how to try both sides."""
+    return FileResponse(WEB / "index.html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/workshop", include_in_schema=False)

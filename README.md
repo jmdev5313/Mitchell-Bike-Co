@@ -1,70 +1,68 @@
 # Mitchell Bike Co.
 
-A fictional bike shop where an AI Agent works alongside the Mechanic, built to demonstrate agentic workflows over the Model Context Protocol (MCP).
+A fictional bike shop where an AI Agent works alongside the Mechanic, built to demonstrate agentic workflows over the Model Context Protocol (MCP). The Agent diagnoses, checks parts against the bike the Customer actually has, quotes, and plans the order. People stay in charge: the Mechanic sends every message, only the Customer approves, and the shop's own code enforces both.
 
-> **Status:** early scaffolding. Mitchell Bike Co. is not a real business; all shop data is synthetic.
+![The Agent at work: each tool call streams into the activity log with the MCP server it went to, while the quote and the draft to the Customer build up in the side panel.](docs/screenshots/agent-quote.jpg)
+
+> Mitchell Bike Co. is not a real business. All data is synthetic, the parts and brands are invented (the interface standards are real), and payments run in Stripe test mode.
+
+## Try it in two minutes
+
+Requires Python 3.12 or newer, [uv](https://docs.astral.sh/uv/), and an Anthropic API key for the Agent.
+
+```
+cp .env.example .env      # then add ANTHROPIC_API_KEY, and set DEMO_MODE=1 for the front door's shortcuts
+make reset                # create the database and load the seed data
+make api                  # then open http://127.0.0.1:8000
+```
+
+The front door has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link), **Reset the demo**, and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+
+## What to look for
+
+- **The activity log.** Every tool call streams in live, with the MCP server it went to (catalog, work orders or procurement) and a plain summary of what came back. The summaries are written by code from the real results, never by the model.
+- **The shop's rules, not the model, decide.** A part that doesn't fit the Customer's actual bike is refused. So is ordering before the Customer approves, or more than they approved. In practice the Agent checks first and rarely triggers a refusal; `make demo` plays a scripted run that does, and the audit log shows both.
+- **The order plan.** The Agent chooses the supplier with the quote, because that choice sets the ready date it promises. The shop places the order itself the moment the Customer approves: no second model call.
+- **Who did what.** Each work order's History records the Agent's tool calls, the Mechanic's actions, the Customer's (opening the link, asking, approving, paying) and the shop's. New activity shows as badges, and the workspace updates without a reload.
+
+| | |
+| --- | --- |
+| ![Each work order's History: the Agent's tool calls, with the shop's two refusals in red.](docs/screenshots/history.jpg) | ![The Customer's page: the quote in plain words and one obvious action.](docs/screenshots/customer-quote.jpg) |
+| ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) | ![The front door.](docs/screenshots/front-door.jpg) |
+
+## The story
+
+The Customer, Emma, brings in a gravel bike: "my gears skip when I pedal hard." The Mechanic puts it on the stand and tells the Agent what they see and measure ("skips under load in the smaller cogs, chain checker reads 0.75%"). The Agent reads the bike's service history (the cassette came secondhand with the wheels and has never been replaced) and confirms a worn chain and cassette, saying how confident it is and what would settle it.
+
+Then the twist: the catalog says this bike model takes one cassette, but Emma upgraded her wheels, so it needs a different one. The Agent checks fit against the bike she actually has. The right cassette is out of stock, so it compares suppliers, plans the order from Velo (2 days, which meets the date it will promise rather than the cheaper 5-day option), locks the quote, and drafts Emma a plain-language message.
+
+The Mechanic reviews and sends it. Emma approves that exact amount from her private link, and the shop places the planned order. A next-step bar walks the Mechanic through parts received, booking on the promised date, the repair, and the Agent's "ready to pick up" message. Emma pays in Stripe test mode.
 
 ## Personas
 
-- **Customer:** owns the bike and pays for the repair. Talks to the shop through messages, and approves or declines the quote.
+- **Customer:** owns the bike and pays for the repair. Talks to the shop through messages, and approves or declines the quote from a private link.
 - **Mechanic:** shop staff with the bike on the stand. Works with the Agent and reviews everything it drafts for the Customer.
-- **Agent:** the shop's AI service agent. Diagnoses alongside the Mechanic, checks fit and stock, drafts messages, and orders parts once the Customer approves. It cannot send a message or approve on the Customer's behalf.
-
-## The idea
-
-The Customer brings in a gravel bike: "my gears skip when I pedal hard." The Mechanic puts it on the stand and asks the Agent for help, sharing what they see and measure ("skips under load in the smaller cogs, chain checker reads 0.75%") and, if useful, a photo. The Agent reads the bike's service history (the cassette has never been replaced) and confirms the diagnosis: a worn chain and cassette, the gear cluster on the back wheel. It says how confident it is, and asks for a measurement it is missing rather than guessing.
-
-Then comes the twist. The catalog says this bike model takes one cassette, but the Customer upgraded their wheels, so it needs a different one. The Agent checks fit against the bike the Customer actually has, and finds the right cassette is out of stock.
-
-The Agent adds the parts and labor to the work order (it cannot add a part that doesn't fit) and drafts a message to the Customer in plain language: what is wrong, the total, and when it will be ready. The Mechanic reviews the draft before it is sent. The Customer is the human in the loop: the quote message carries approve and decline buttons for that exact amount, and only the Customer's click records the decision. If they reply with a question instead ("can it be ready by Friday?"), the Agent reads it and drafts an answer it can back up from the supplier's lead time.
-
-Only once the Customer approves can the cassette be ordered. The Agent picks a supplier (faster, or cheaper but slower, to match the date the Customer was promised) and orders exactly what was approved. The shop's own code enforces this: no order before approval, and nothing beyond the approved parts, whatever the Agent asks for. The part arrives, the Mechanic does the repair, and the Customer pays through a payment link.
+- **Agent:** the shop's AI service agent (Claude Sonnet 5.5). Diagnoses alongside the Mechanic, checks fit and stock, quotes, plans the order and drafts messages. It cannot send a message or approve on the Customer's behalf.
 
 ## How it is put together
 
-- `shop/` holds the business rules and the database. It has no AI code.
-- `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement). Every tool call is written to an audit log. The Agent gets no tool to send a message or approve a quote.
-- `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped by configuration. The Anthropic runtime runs Claude Sonnet 5.5 against the three MCP servers.
-- `api/` is the HTTP API (FastAPI): staff endpoints for the Mechanic's workspace, behind a passcode, including the chat with the Agent (each turn streams its progress and tool calls live), and Customer endpoints reached through the Customer's private link. `make api` runs it, with interactive docs at `/docs`.
-- `web/` is the frontend, plain HTML, CSS and JavaScript served by the API with no build step: the Mechanic's workspace at `/workshop` (work orders, and the Agent chat with its live activity log) and the Customer page at `/c/{token}` (from the private link).
-- `evals/` measures whether the Agent gets it right. `make agent-check` is the first check, the full hero story against the real model; the scenario suite follows in M5.
+- `shop/` holds the business rules and the database (SQLite). It has no AI code, and every rule is unit-tested without spending tokens.
+- `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement) on the official Python SDK. Every tool call is written to an audit log and, when it touches a work order, to that work order's history. The Agent gets no tool to send a message or approve a quote.
+- `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped. The Anthropic runtime runs Claude Sonnet 5.5 against the three servers and stores each conversation exactly as sent.
+- `api/` is the HTTP API (FastAPI): the Mechanic's endpoints behind a passcode, including the Agent chat (each turn streams its tool calls live over Server-Sent Events), the Customer's endpoints behind their private link, and Stripe Checkout in test mode.
+- `web/` is the frontend in plain HTML, CSS and JavaScript, served by the API with no build step: the front door (`/`), the Mechanic's workspace (`/workshop`), and the Customer's page (`/c/{token}`).
+- `evals/` measures the Agent. `make agent-check` plays the hero story against the real model and judges it by what ended up in the database: the latest run passed all 20 required checks (plus 3 advisory notes) for about 7 cents.
 
-## Getting started
+Why it's built this way is in the [decisions log](docs/decisions.md).
 
-Requires Python 3.12 or newer and [uv](https://docs.astral.sh/uv/).
+## Other ways in
 
-```
-cp .env.example .env
-make reset   # create the database and load the seed data
-make test
-```
-
-Each MCP server runs over stdio for a local client, or over HTTP for a hosted one:
-
-```
-uv run python -m mcp_servers.catalog          # stdio
-make servers                                  # all three over HTTP on ports 8101-8103
-```
-
-## Try it
-
-**Be the Mechanic.** Run `make api` and open http://127.0.0.1:8000/workshop. Sign in with `STAFF_PASSCODE` from `.env`, start a conversation with the Agent and describe Emma's bike. Its activity log streams in as it works: every tool call, the MCP server it went to, and any refusal. Review its draft, send it to Emma, and approve as Emma from her link: the shop places the order the Agent planned, and the workshop shows it as new activity without a reload. A next-step bar then walks you through parts received, booking (on the date Emma was promised), the repair, and the Agent's "ready to pick up" message. Each work order's History shows who did what: the Agent's tool calls, your actions, Emma's, and the shop's. Each Agent turn spends a few cents on your API key.
-
-**See the Customer's page.** Run `make api`, then `make sample` (or `make sample ARGS=--done` for a finished repair) and open the Customer page link it prints. It walks the Customer through the quote, approval, progress, payment in Stripe test mode, and the receipt.
-
-**Try the API by hand.** `make sample` adds Emma's quoted work order, with the quote already sent, and prints her Customer token. `make sample ARGS=--done` takes it all the way to a finished repair, ready to pay through Stripe Checkout in test mode (card `4242 4242 4242 4242`); this needs a Stripe test key in `.env`. Run `make api`, open http://127.0.0.1:8000/docs, and paste the token into the Customer endpoints to view the quote or approve it. For the staff endpoints, click Authorize and paste `STAFF_PASSCODE` from your `.env`.
-
-**Chat with the Agent as the Mechanic.** Add your Anthropic API key to `.env`, then run `make agent`. It uses Claude Sonnet 5.5 and costs a little per message. Try the same message as below. Slash commands act out what the Agent can't do: `/send` sends its draft (as the Mechanic), `/approve` or `/decline` answers the quote (as the Customer), `/reply TEXT` replies as the Customer, `/photo PATH` attaches a photo, and `/usage` shows tokens used. Conversations are stored, so `make agent ARGS='--conversation ID'` resumes one.
-
-**Check the Agent against the real model.** `make agent-check` runs the hero story with Claude Sonnet 5.5 (two Mechanic turns, with the send and approval acted out in between) and checks the outcome in the database, not the wording: the right cassette on the quote, the total, a quote message in plain language with a date the supplier's lead time backs up, nothing ordered before approval, then one order from a supplier that meets the promised date. The latest run passed all 22 required checks for about 7 cents. Results are saved in `evals/results/`.
-
-**Watch the hero story run.** `make demo` launches the three servers and plays the Agent's tool calls in order, including the two the shop refuses (a cassette that doesn't fit, and ordering before the Customer approves). It stands in for the Mechanic sending the quote and the Customer approving it, since neither is an Agent tool. It uses its own database, `data/demo.db`.
-
-**Be the Mechanic, with Claude Code as the Agent.** The repo's `.mcp.json` connects Claude Code to the three servers. Open the project in Claude Code, approve the servers when asked, and try:
-
-> Emma's gravel bike skips under load in the smaller cogs, and the chain checker reads 0.75%. Find her bike, work out what it needs, build the work order and quote, and draft her a message.
-
-The Agent can draft but not send, so the quote stops there. To play the Mechanic and the Customer, use `shop.messages.send_draft` and `shop.work_orders.record_customer_decision` from a Python shell (`uv run python`). The Mechanic's workspace and the Customer's thread arrive with the API and frontend (M4, M6).
+- **`make demo`** plays the hero story through the three servers with a scripted client, including the two calls the shop refuses. No API key needed. Its own database: `data/demo.db`.
+- **`make agent`** is a terminal chat as the Mechanic, with slash commands for what the Agent can't do (`/send`, `/approve`, `/reply`, `/photo`, `/usage`).
+- **`make sample`** adds Emma's quoted work order and prints her link (`ARGS=--done` for a finished repair, ready to pay with test card `4242 4242 4242 4242`).
+- **Claude Code as the Agent:** the repo's `.mcp.json` connects Claude Code to the three servers.
+- **The API by hand:** `make api`, then http://127.0.0.1:8000/docs.
+- **`make test`** runs the unit tests, which never call the model; **`make servers`** runs the three MCP servers over HTTP.
 
 ## Roadmap
 
@@ -77,9 +75,5 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M2 | MCP servers: catalog, work orders (including Customer messages), procurement | Done |
 | M3 | The Agent, behind the `AgentRuntime` interface (Dust runtime deferred) | Done |
 | M4 | Backend API: Mechanic and Customer endpoints, Agent chat (streamed), Stripe test-mode payments | Done |
-| M5 | Eval suite | |
-| M6 | Web frontend: Mechanic workspace and Customer thread | |
-
-## Documentation
-
-- [Decisions log](docs/decisions.md)
+| M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
+| M5 | Eval suite: more scenarios than the hero story | Next |
