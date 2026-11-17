@@ -39,12 +39,18 @@ def describe(tool: str, arguments: dict[str, Any] | None, result: str, is_error:
 
 
 def entry(tool: str, arguments: dict[str, Any] | None, result: str, is_error: bool) -> dict[str, Any]:
-    return {
+    out = {
         "name": tool,
         "server": server_for(tool),
         "is_error": is_error,
         "summary": describe(tool, arguments, result, is_error),
     }
+    if tool == "draft_customer_message" and not is_error:
+        # Which message the Agent drafted, so the workshop can show it in the chat as a card.
+        message = _parse(result)
+        if isinstance(message, dict) and isinstance(message.get("id"), int):
+            out["message_id"] = message["id"]
+    return out
 
 
 def _clean_error(tool: str, text: str) -> str:

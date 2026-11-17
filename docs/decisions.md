@@ -255,9 +255,13 @@ One entry per choice: what was decided, what was rejected, and why.
 
 ### The draft to the Customer appears in the chat as a reference, not a second place to send from
 - **Decided:** where the Agent drafts a message, the chat shows a manila card ("To Emma · Draft", the total, the first line) with one link, **Review and send**, which moves focus to the draft in the work order panel. The card's status (draft, sent, approved, replaced by a newer draft) is read from the database when the page shows it; the stored conversation is never changed. Send, editing and the full text live only in the panel.
-- **Rejected:** the full message with Send inside the chat.
+- **Rejected:** the full message with Send inside the chat; a green edge for an approved quote, as in the mock (green means in stock or paid, so the approved card uses ink).
 - **Why:** it would blur the boundary the project exists to show (the Agent drafts, only the Mechanic sends), put two composers on one screen where a message could go to the wrong person, and turn an append-only transcript into something that changes. A draft also scrolls out of view in a chat, and it's the thing waiting on the Mechanic.
 
 ### The hero photo is generated, and labelled
 - **Decided:** the hero message can carry a photo of the worn cassette, generated with an image model and prompted to show no logos or brand marks. It is labelled "Illustrative photo (AI-generated)" wherever it appears. The original stays in `data/photos/raw/` (gitignored); only a cropped copy is committed.
 - **Why:** the Agent can read photos, and showing it is worth more than describing it. The earlier rule against generated images was about decoration; this one is demo input, and the label keeps it honest.
+
+### The job screen replaces the separate Agent and work order pages
+- **Decided:** `#/work-orders/{id}` is the job screen: the work order's newest conversation with something in it on the left (others one click away, and "+ New conversation" starts one already linked to the job), and the work order on the right in three tabs. A conversation the Agent hasn't opened a work order in yet lives at `#/agent/{id}` as a "New job", and becomes the job's screen as soon as the Agent opens one. The conversation list rail is gone; the work orders list shows any conversations not yet on a work order. The panel's collapsed state is remembered per browser. Below 1000px wide, a switch shows one half at a time, which is what the side-by-side demo stage will use.
+- **How the card finds its message:** each `draft_customer_message` tool call in the transcript carries the id of the message it drafted (read from the tool's result), so the card can look up the message's current status on the work order.

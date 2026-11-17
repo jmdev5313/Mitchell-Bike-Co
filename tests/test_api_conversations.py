@@ -110,3 +110,13 @@ def test_a_failed_turn_reports_an_error_event(client, model):
     conversation_id = client.post("/api/conversations", headers=STAFF).json()["conversation_id"]
     got = events(client.post(f"/api/conversations/{conversation_id}/messages", headers=STAFF, data={"text": "hi"}))
     assert got[-1][0] == "error" and "the turn failed" in got[-1][1]["detail"]
+
+
+def test_a_conversation_can_start_on_a_work_order(client, conn):
+    from demo.sample import create_sample
+
+    order, _, _ = create_sample(conn)
+    conversation_id = client.post("/api/conversations", headers=STAFF, json={"work_order_id": order}).json()["conversation_id"]
+    assert client.get(f"/api/conversations/{conversation_id}", headers=STAFF).json()["work_order_id"] == order
+    assert client.get(f"/api/work-orders/{order}", headers=STAFF).json()["conversation_ids"] == [conversation_id]
+    assert client.post("/api/conversations", headers=STAFF, json={"work_order_id": 999}).status_code == 404

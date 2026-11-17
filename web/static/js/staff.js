@@ -194,20 +194,16 @@ export const HERO = "Emma Clark's gravel bike is on the stand. Gears skip under 
 /** Open a fresh conversation (reusing an unused one) with the hero message waiting in the box. */
 export async function startWithAgent() {
   try { sessionStorage.setItem("mbc-prefill", HERO); } catch { /* private mode */ }
-  const unused = (await staff("/api/conversations")).find((c) => c.turns === 0);
+  const unused = (await staff("/api/conversations")).find((c) => c.turns === 0 && !c.work_order_id);
   const id = unused ? unused.id : (await staff("/api/conversations", { method: "POST" })).conversation_id;
   if (location.hash === `#/agent/${id}`) window.dispatchEvent(new HashChangeEvent("hashchange"));
   else location.hash = `#/agent/${id}`;
 }
 
-/** Ask the Agent: open the conversation with the prompt waiting in the message box. */
+/** Ask the Agent: open the job's screen with the prompt waiting in the message box. */
 export function askAgent(order, prompt) {
   try { sessionStorage.setItem("mbc-prefill", prompt); } catch { /* private mode */ }
-  if (order.conversation_ids && order.conversation_ids.length) {
-    location.hash = `#/agent/${order.conversation_ids[0]}`;
-  } else {
-    staff("/api/conversations", { method: "POST" }).then(({ conversation_id }) => { location.hash = `#/agent/${conversation_id}`; });
-  }
+  location.hash = `#/work-orders/${order.work_order_id}`;
 }
 
 export function takePrefill() {
@@ -219,7 +215,7 @@ export function takePrefill() {
 }
 
 /** What happens next, whose turn it is, and the one button that moves it forward. */
-export function nextStepBar(order, { onChange, onFinished, onAskAgent } = {}) {
+export function nextStepBar(order, { onChange, onFinished, onAskAgent, onReviewDraft } = {}) {
   const step = order.next_step;
   const action = step.action;
   const id = order.work_order_id;
@@ -238,6 +234,7 @@ export function nextStepBar(order, { onChange, onFinished, onAskAgent } = {}) {
   if (action) {
     if (action.kind === "send_draft") {
       controls.push(h("button", { type: "button", class: "btn", onclick: () => {
+        if (onReviewDraft) return onReviewDraft();
         const box = document.getElementById(`draft-${action.message_id}`);
         if (box) { box.scrollIntoView({ block: "center" }); box.focus(); }
       } }, "Review the draft"));

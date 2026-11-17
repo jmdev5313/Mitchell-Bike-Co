@@ -18,14 +18,14 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 | 0:00 | Left | **Start with the Agent → Send** (the hero message is already in the box) | The activity log filling in: each tool, its MCP server, what came back. |
 | 0:10 | Left | Wait for `get_bike` | "Differs from catalog: freehub". Emma upgraded her wheels. |
 | 0:15 | Left | Wait for `list_fitting_parts`, `supplier_options`, `plan_order` | Only one cassette fits, it's out of stock, and the Agent plans Velo because 2 days meets the date (Northgate is cheaper but slower). |
-| 0:30 | Left | The reply and the side panel | The quote, the draft to Emma (**Expand** to read it full size), and "The Agent can't send messages. Only you can." |
-| 0:40 | Left | **Send to Emma** | Only a person sends. |
+| 0:30 | Left | The reply, and the work order beside it | The screen turned into the job: the quote and the next step on the right, and a manila "To Emma" card in the chat where the Agent drafted the message. |
+| 0:40 | Left | **Review and send →** on the card, then **Send to Emma** | The card only points to the draft (**Expand** reads it full size): "The Agent can't send messages. Only you can." |
 | 0:45 | Right | Front door → **Be the Customer** | The quote in plain words: no part numbers. |
 | 0:50 | Right | Optional: press Tab in the message box, then **Send** | The suggested question becomes real; the workshop shows it as a reply to answer. |
 | 0:55 | Right | **Approve $169.98** | Only the Customer approves. |
 | 1:00 | Left | Wait a few seconds, don't click | The badge and the next step change on their own: the shop placed the planned order. |
-| 1:00 | Left | Side panel: **Mark received → Book repair → Start repair → Repair done** | Booking defaults to the date Emma was promised. "Repair done" asks the Agent for the "ready" message. |
-| 1:15 | Left | **Send to Emma**, then **Open work order** → History | Who did what: the Agent, you, Emma, and the shop. Try the **Agent** and **Customer** filters. |
+| 1:00 | Left | Next step: **Mark received → Book repair → Start repair → Repair done** | Booking defaults to the date Emma was promised. "Repair done" asks the Agent for the "ready" message. |
+| 1:15 | Left | **Send to Emma**, then the **History** tab | Who did what: the Agent, you, Emma, and the shop. Try the **Agent** and **Customer** filters. |
 | 1:25 | Left | **Audit log** | Every tool call, written by the MCP servers themselves. |
 
 Optional ending: in the right window, reload and **Pay $169.98** with test card `4242 4242 4242 4242`.
