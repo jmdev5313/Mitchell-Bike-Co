@@ -83,7 +83,6 @@ function render(story) {
   // Whose turn
   const theirs = story.whose === "customer";
   workshop.classList.toggle("is-turn", story.whose === "mechanic");
-  workshop.querySelector(".turn").hidden = story.whose !== "mechanic";
   pov.classList.toggle("is-turn", theirs);
   povBadge.hidden = !theirs;
   povSub.textContent = theirs ? `Your turn as ${first}` : `${first}'s phone`;
@@ -117,40 +116,32 @@ function render(story) {
   cue(story);
 }
 
+/** Whose turn, and one short line. The rings show which button; the steps up top show where you are. */
 function guideText(story, first) {
   const total = story.total_cents !== null ? dollars(story.total_cents) : "the quote";
-  const lead = (text) => h("span", { class: "lead" }, text);
-  const where = story.whose === "customer" ? `Your turn as ${first}` : story.whose === "mechanic" ? "Your turn as the Mechanic" : "Done";
-  const head = story.step <= 5 ? lead(`Step ${story.step} of 5 · ${where}`) : lead(where);
-  const say = (...parts) => [head, h("span", {}, ...parts)];
+  const tag = story.whose === "customer" ? `Your turn · ${first}` : story.whose === "mechanic" ? "Your turn · Mechanic" : "Done";
+  const say = (...parts) => [h("span", { class: `lead whose-${story.whose}` }, tag), h("span", {}, ...parts)];
   switch (story.step) {
     case 1:
       return story.work_order_id
-        ? say("The Agent is working: watch its tool calls in the activity log. When it finishes, its draft to ", first, " appears as a card in the chat.")
-        : say("In the workshop, click ", h("b", {}, "Start with the Agent"), ", then ", h("b", {}, "Send"),
-          ". The Agent looks up the bike, checks what fits, quotes and drafts a message. A turn takes 20 to 40 seconds and costs a few cents.");
+        ? say("The Agent is working. Watch its tool calls; its draft to ", first, " appears in the chat.")
+        : say("Start with the Agent, then Send. A turn takes 20 to 40 seconds.");
     case 2:
-      return say("Click ", h("b", {}, "Review and send →"), " on the Agent's draft, then ", h("b", {}, `Send to ${first}`),
-        ". The Agent can't send messages; only you can.");
+      return say(`Send the Agent's quote to ${first}.`);
     case 3:
       return story.whose === "mechanic"
-        ? say(first, " wrote to the shop. In the workshop: ", h("b", {}, story.next_step), ", then send the answer. Then it's her turn to approve.")
-        : say("Open ", h("b", {}, "Customer POV"), " at the bottom right. On ", first, "'s phone, read the quote and tap ", h("b", {}, `Approve ${total}`),
-          ". Optional: press Tab in her message box to ask “Can it be ready by Friday?” first.");
+        ? say(first, " wrote to the shop: answer her, then it's her turn to approve.")
+        : say(`Open Customer POV and approve ${total}. Optional: press Tab to ask a question first.`);
     case 4:
-      return say("In the workshop: ", h("b", {}, story.next_step), ". Use the button in the next-step bar on the Overview tab.",
-        story.status === "approved" || story.status === "awaiting_parts" ? ` The shop ordered the parts the moment ${first} approved.` : "");
+      return say(`${story.next_step}.`);
     case 5:
-      if (story.whose === "mechanic") {
-        return say(first, " wrote to the shop. In the workshop: ", h("b", {}, story.next_step), ", then send the answer. She can pay any time.");
-      }
-      return say("Open ", h("b", {}, "Customer POV"), " at the bottom right and tap ", h("b", {}, `Pay ${total}`),
-        ". Stripe test mode opens in a new tab: card 4242 4242 4242 4242, any future date, any CVC.");
+      return story.whose === "mechanic"
+        ? say(first, " wrote to the shop: answer her. She can pay any time.")
+        : say(`Open Customer POV and pay ${total}. Test card 4242 4242 4242 4242.`);
     default:
       return story.status === "declined"
-        ? say(first, " declined the quote. Click Start over to run it again.")
-        : say("That's the whole story: the Agent proposed, you sent, ", first,
-          " decided and paid. Open the History tab in the workshop to see who did what, or click Start over.");
+        ? say(first, " declined the quote. Start over to run it again.")
+        : say("That's the whole story. See who did what in the work order's History tab, or Start over.");
   }
 }
 

@@ -262,7 +262,7 @@ body.customer {
 /* Progress strip on a work order: done solid, current striped, future light grey */
 .strip { list-style: none; margin: var(--s5) 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s1); }
 .strip li { font-size: 13px; color: var(--slate); }
-.strip li .bar { display: block; height: 8px; background: #DDE1E4; margin-bottom: 6px; }
+.strip li .bar { display: block; height: 5px; background: #DDE1E4; margin-bottom: 6px; }
 .strip li.done { color: var(--ink); }
 .strip li.done .bar { background: var(--ink); }
 .strip li.current { color: var(--ink); font-weight: 600; }
@@ -329,15 +329,22 @@ body.customer {
 .repair-steps .row .input { flex: 1 1 160px; width: auto; }
 
 /* The job screen: the conversation on the left, the work order on the right */
-.job { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h, 54px)); min-height: 400px; }
+.job { display: flex; flex-direction: column; height: 100dvh; min-height: 400px; }
 .job-head {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--s2) var(--s5);
-  padding: 12px var(--s5) 12px; border-bottom: 1px solid var(--hair);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s2) var(--s5);
+  padding: 10px var(--s5) 8px; border-bottom: 1px solid var(--hair);
 }
-.job-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s4); min-width: 0; }
-.job-title h1.display { font-size: 30px; margin: 0; }
-.job-title .subhead { margin: 0; }
-.job-tools { display: flex; align-items: center; gap: var(--s4); }
+.job-head h1.display { font-size: 28px; margin: 0; }
+.job-tools { display: flex; align-items: center; gap: var(--s2); }
+.panel-toggle { width: var(--control); padding: 0; justify-content: center; }
+
+/* The workshop's links, in each screen's heading row (there's no top bar) */
+.wnav { display: flex; gap: 2px; margin-right: var(--s2); }
+.wnav a { display: inline-flex; align-items: center; min-height: var(--control); padding: 0 10px; text-decoration: none; font-weight: 500; }
+.wnav a[aria-current="page"] { font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink); }
+.wnav a:hover { color: var(--slate); }
+.page-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s3) var(--s5); }
+.page-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
 .job-switch { display: none; margin: 0; padding: var(--s2) var(--s4); border-bottom: 1px solid var(--hair); }
 .job-body { display: flex; flex: 1; min-height: 0; }
 .job-chat { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
@@ -576,28 +583,25 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .stage-steps li.done .n { background: var(--ink); border-color: var(--ink); color: var(--white); }
 .stage-steps li.current { color: var(--ink); font-weight: 600; box-shadow: inset 0 -4px 0 var(--ink); }
 .stage-steps li.current .n { border: 2px solid var(--ink); }
-.stage-guide {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s3); padding: 12px var(--s5);
-  background: var(--white); border-bottom: 1px solid var(--hair); font-size: 16px; line-height: 1.45;
-}
-.stage-guide .lead { font-weight: 600; white-space: nowrap; }
-.stage-guide[hidden] { display: none; }
-.stage-body { flex: 1; min-height: 0; position: relative; display: flex; padding: var(--s3) var(--s4) 64px; }
-.stage-side { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; background: var(--white); border: 2px solid var(--hair); }
+.stage-body { flex: 1; min-height: 0; position: relative; display: flex; padding: var(--s3) var(--s4) 0; }
+.stage-side { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; background: var(--white); border: 2px solid var(--hair); border-bottom: 0; }
 .stage-side.is-turn { border-color: var(--ink); }
-.side-label {
-  display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
-  padding: 8px 12px; font-size: 14px; color: var(--slate); border-bottom: 1px solid var(--hair);
+/* The bottom bar: whose turn and one line on the left, Customer POV on the right */
+.stage-bottom {
+  position: relative; z-index: 4; display: flex; align-items: center; gap: var(--s4);
+  min-height: 52px; padding: 0 var(--s4); background: var(--white); border-top: 2px solid var(--ink);
 }
-.side-label strong { color: var(--ink); }
-.side-label .turn { background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600; padding: 3px 8px; }
-.side-label .turn[hidden] { display: none; }
+.stage-guide { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s3); padding: 8px 0; font-size: 15px; line-height: 1.4; margin-right: 300px; }
+.stage-guide .lead { font-size: 12px; font-weight: 600; white-space: nowrap; padding: 3px 8px; border: 1px solid var(--ink); }
+.stage-guide .lead.whose-mechanic { background: var(--ink); color: var(--white); }
+.stage-guide .lead.whose-customer { background: var(--manila); }
+.stage-guide[hidden] { display: none; }
 .side-workshop iframe { flex: 1; width: 100%; border: 0; }
 
 /* Customer POV: a tab at the bottom that opens the Customer's phone over the workshop */
 .pov-scrim { position: absolute; inset: 0; z-index: 3; background: rgba(22, 26, 31, 0.1); }
 .pov-scrim[hidden] { display: none; }
-.pov { position: absolute; right: var(--s5); bottom: 0; z-index: 4; display: flex; flex-direction: column-reverse; align-items: stretch; }
+.pov { position: absolute; right: var(--s4); bottom: 0; display: flex; flex-direction: column-reverse; align-items: stretch; }
 .pov-tab {
   display: flex; align-items: center; gap: var(--s2); min-height: 48px; padding: 0 var(--s4);
   font: inherit; color: var(--ink); background: var(--manila); cursor: pointer;
@@ -628,9 +632,9 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .phone-empty { height: 100%; box-sizing: border-box; padding: 48px 28px; color: var(--manila-text); font-size: 18px; }
 .phone-empty .display { font-size: 36px; color: var(--ink); margin: 0 0 12px; }
 @media (max-width: 700px) {
-  .stage-body { padding: var(--s2) var(--s2) 60px; }
+  .stage-body { padding: var(--s2) var(--s2) 0; }
   .pov { right: var(--s2); left: var(--s2); }
-  .stage-guide { font-size: 15px; padding: 10px var(--s4); }
+  .stage-guide { margin-right: 0; padding-bottom: 52px; }
 }
 
 /* The next control, rung by the demo stage (cue.js) */

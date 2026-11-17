@@ -19,13 +19,14 @@
     <button type="button" class="btn btn-outline" id="restart">Start over</button>
   </div>
 </header>
-<div class="stage-guide" id="guide" role="status" aria-live="polite"></div>
 <main class="stage-body" id="stage">
-  <section class="stage-side side-workshop" id="side-mechanic" aria-labelledby="label-mechanic">
-    <div class="side-label"><span id="label-mechanic"><strong>You're the Mechanic</strong> · the workshop</span><span class="turn" hidden>Your turn</span></div>
+  <section class="stage-side side-workshop" id="side-mechanic" aria-label="The workshop, as the Mechanic">
     <iframe id="frame-mechanic" title="The workshop, as the Mechanic sees it"></iframe>
   </section>
   <div class="pov-scrim" id="pov-scrim" hidden></div>
+</main>
+<footer class="stage-bottom">
+  <div class="stage-guide" id="guide" role="status" aria-live="polite"></div>
   <section class="pov" id="pov" aria-label="Customer POV">
     <button type="button" class="pov-tab" id="pov-tab" aria-expanded="false" aria-controls="pov-sheet">
       <span class="pov-title">Customer POV</span>
@@ -37,7 +38,7 @@
       <div class="phone" id="phone"><div class="phone-screen" id="phone-screen"></div></div>
     </div>
   </section>
-</main>
+</footer>
 <noscript><p class="page">The demo stage needs JavaScript.</p></noscript>
 </body>
 </html>
