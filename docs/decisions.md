@@ -259,8 +259,10 @@ One entry per choice: what was decided, what was rejected, and why.
 - **Why:** it would blur the boundary the project exists to show (the Agent drafts, only the Mechanic sends), put two composers on one screen where a message could go to the wrong person, and turn an append-only transcript into something that changes. A draft also scrolls out of view in a chat, and it's the thing waiting on the Mechanic.
 
 ### The hero photo is generated, and labelled
-- **Decided:** the hero message can carry a photo of the worn cassette, generated with an image model and prompted to show no logos or brand marks. It is labelled "Illustrative photo (AI-generated)" wherever it appears. The original stays in `data/photos/raw/` (gitignored); only a cropped copy is committed.
+- **Decided:** the hero message can carry a photo of the worn cassette, generated with Google Gemini (it carries Gemini's invisible SynthID watermark). It is labelled "Illustrative photo (AI-generated)" wherever it appears. The original stays in `data/photos/raw/` (gitignored); only a cropped copy is committed.
 - **Why:** the Agent can read photos, and showing it is worth more than describing it. The earlier rule against generated images was about decoration; this one is demo input, and the label keeps it honest.
+- **Brands in photos:** the shop's data keeps invented brands, parts and prices, but real brands may appear in an illustrative photo (the chosen image shows a real repair stand's logo). The prompt first asked for no logos; the image that read best as a real workshop had one, and that was judged fine.
+- **Rejected:** two real photos found online. One showed the wear best, but a published photo is still its owner's, and a credit line isn't permission; it could be used only with the owner's written OK.
 - **How it's labelled:** "Start with the Agent" and "Use this message" attach it to the hero message as a thumbnail (removable) when `web/static/img/hero-cassette.jpg` exists, and skip it when it doesn't. In a conversation, a photo is labelled "Illustrative photo (AI-generated)" when its bytes match that file exactly (the API compares hashes), so a Mechanic's own photos are never mislabelled. `make photo SRC=…` makes the committed copy from the raw image.
 
 ### The job screen replaces the separate Agent and work order pages

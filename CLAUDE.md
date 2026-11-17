@@ -36,7 +36,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **Open Agent conversations live in `api/agent_pool.py`**, one task per conversation: MCP connections must be opened and closed by the same task, so never call a runtime's `open`/`close` from a request handler directly.
 - **The API is thin too.** `api/` wraps `shop/` functions; staff routers depend on `require_staff`, and Customer routes resolve the link token first and check that every id they touch belongs to that work order.
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.
-- **Real standards, invented products.** Interface standards (freehubs, BB shells, axles, etc.) are real; brands, product names, and prices are invented.
+- **Real standards, invented products.** Interface standards (freehubs, BB shells, axles, etc.) are real; brands, product names, and prices are invented. Real brands may appear in illustrative photos, never in the shop's data.
 
 - **The web pages are plain HTML, CSS and JavaScript in `web/`**, served by the API (`/static`, `/c/{token}`), no framework or build step. Put text from the API on the page with `textContent` (the `h()` helper in `web/static/js/dom.js`), never `innerHTML`: messages are written by Customers and the Agent.
 - **The Agent's activity log is written in plain code** (`agents/activity.py`): `TOOL_SERVERS` maps each tool to its MCP server (a test checks it against the servers), and `describe()` summarizes each result. Add a summary there when you add a tool.
