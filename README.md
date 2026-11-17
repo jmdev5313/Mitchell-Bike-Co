@@ -60,6 +60,7 @@ Why it's built this way is in the [decisions log](docs/decisions.md).
 
 - **`make demo`** plays the hero story through the three servers with a scripted client, including the two calls the shop refuses. No API key needed. Its own database: `data/demo.db`.
 - **`make agent`** is a terminal chat as the Mechanic, with slash commands for what the Agent can't do (`/send`, `/approve`, `/reply`, `/photo`, `/usage`).
+- **`make evals`** runs the eval suite against the real model (three runs per scenario; `ARGS="--only stock-wheels --runs 1"` for one, `--list` to see them). It spends tokens.
 - **`make photo SRC=…`** makes the hero story's illustrative photo (AI-generated, and labelled so wherever it shows) from a raw image in `data/photos/raw/`.
 - **`make sample`** adds Emma's quoted work order and prints her link (`ARGS=--done` for a finished repair, ready to pay with test card `4242 4242 4242 4242`).
 - **Claude Code as the Agent:** the repo's `.mcp.json` connects Claude Code to the three servers.
@@ -78,5 +79,5 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M3 | The Agent, behind the `AgentRuntime` interface (Dust runtime deferred) | Done |
 | M4 | Backend API: Mechanic and Customer endpoints, Agent chat (streamed), Stripe test-mode payments | Done |
 | M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
-| M7 | Demo flow: the Agent on the work order screen, a side-by-side demo stage, reset without a sample, a photo on the hero message | In progress |
-| M5 | Eval suite: more scenarios than the hero story | Next |
+| M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
+| M5 | Eval suite: about ten scenarios (compatibility, diagnosis, guardrails, procurement), three runs each, judged by the shop's state | In progress |

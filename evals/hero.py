@@ -21,12 +21,13 @@ import re
 import sqlite3
 import sys
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 from agents import config, conversations
-from agents.runtime import AgentRuntime, TurnResult, open_agent
+from agents.runtime import AgentRuntime, open_agent
+from evals.common import Check, Report, date_mentions, record_turn  # noqa: F401  (re-exported)
 from evals.pricing import cost_usd
 from shop import db, flow, messages, procurement, schedule, seed
 from shop import work_orders as wo
@@ -46,42 +47,6 @@ TURN_1 = (
     "order and quote, and draft her a message with the quote."
 )
 TURN_2 = "Emma approved the quote. Check the cassette is on order and tell me what's next."
-
-
-@dataclass
-class Check:
-    name: str
-    passed: bool
-    detail: str = ""
-    required: bool = True
-
-
-@dataclass
-class Report:
-    runtime: str
-    model: str | None
-    conversation_id: str
-    checks: list[Check] = field(default_factory=list)
-    turns: list[dict] = field(default_factory=list)
-    usage: dict[str, int] = field(default_factory=dict)
-    cost_usd: float | None = None
-
-    @property
-    def passed(self) -> bool:
-        return all(c.passed for c in self.checks if c.required)
-
-    def add(self, name: str, passed: bool, detail: str = "", required: bool = True) -> bool:
-        self.checks.append(Check(name, bool(passed), detail, required))
-        return bool(passed)
-
-
-def date_mentions(day: date) -> list[str]:
-    """Ways a message might write `day`: 2026-11-18, November 18, Nov 18, 18 November."""
-    return [
-        day.isoformat(),
-        f"{day:%B} {day.day}", f"{day:%b} {day.day}",
-        f"{day.day} {day:%B}", f"{day.day} {day:%b}",
-    ]
 
 
 def check_quote_turn(conn: sqlite3.Connection, report: Report, today: date) -> dict | None:
@@ -187,15 +152,25 @@ def check_order_turn(conn: sqlite3.Connection, report: Report, draft: dict) -> N
                f"status: {wo.status(conn, work_order_id)}")
 
 
-def record_turn(report: Report, result: TurnResult) -> None:
-    report.turns.append({
-        "reply": result.reply,
-        "stop_reason": result.stop_reason,
-        "tools": [c.name + (" (refused)" if c.is_error else "") for c in result.tool_calls],
-        "progress": result.progress,
-    })
-    for key, value in result.usage.items():
-        report.usage[key] = report.usage.get(key, 0) + value
+async def play(agent: AgentRuntime, conn: sqlite3.Connection, report: Report, today: date) -> None:
+    """The hero story's turns and checks, for a runtime that's already open."""
+    result = await agent.send(TURN_1)
+    record_turn(report, result)
+    report.add("turn 1 finished", result.stop_reason == "end_turn", result.stop_reason)
+    draft = check_quote_turn(conn, report, today)
+
+    if draft and report.passed:
+        messages.send_draft(conn, draft["id"])
+        approval = flow.customer_decides(conn, draft["id"], approved=True)  # the shop places the plan
+        report.add("the shop placed the planned order on approval", bool(approval["placed"]) and not approval["failed"],
+                   f"placed {approval['placed']}, failed {approval['failed']}")
+        result = await agent.send(
+            f"(Shop update: The mechanic sent message {draft['id']} to the customer. "
+            f"The customer approved the quote in message {draft['id']}, and the shop placed the planned order.)\n\n{TURN_2}"
+        )
+        record_turn(report, result)
+        report.add("turn 2 finished", result.stop_reason == "end_turn", result.stop_reason)
+        check_order_turn(conn, report, draft)
 
 
 async def run(make_agent: Callable[[], AgentRuntime], today: date | None = None) -> Report:
@@ -204,24 +179,7 @@ async def run(make_agent: Callable[[], AgentRuntime], today: date | None = None)
     agent = make_agent()
     async with agent:
         report = Report(agent.name, getattr(agent, "model", None), agent.conversation_id)
-
-        result = await agent.send(TURN_1)
-        record_turn(report, result)
-        report.add("turn 1 finished", result.stop_reason == "end_turn", result.stop_reason)
-        draft = check_quote_turn(conn, report, today)
-
-        if draft and report.passed:
-            messages.send_draft(conn, draft["id"])
-            approval = flow.customer_decides(conn, draft["id"], approved=True)  # the shop places the plan
-            report.add("the shop placed the planned order on approval", bool(approval["placed"]) and not approval["failed"],
-                       f"placed {approval['placed']}, failed {approval['failed']}")
-            result = await agent.send(
-                f"(Shop update: The mechanic sent message {draft['id']} to the customer. "
-                f"The customer approved the quote in message {draft['id']}, and the shop placed the planned order.)\n\n{TURN_2}"
-            )
-            record_turn(report, result)
-            report.add("turn 2 finished", result.stop_reason == "end_turn", result.stop_reason)
-            check_order_turn(conn, report, draft)
+        await play(agent, conn, report, today)
 
     refused = conn.execute(
         "SELECT COUNT(*) FROM audit_log WHERE conversation_id = ? AND result_summary LIKE 'refused:%'",
