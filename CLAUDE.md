@@ -10,6 +10,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - `make api` serves everything: the front door at `/`, the workshop at `/workshop`, Customer pages at `/c/{token}`, API docs at `/docs`. `DEMO_MODE=1` turns on the front door's shortcuts and reset (`api/demo.py`); never with real data
 - `make api` runs the API on port 8000 (docs at `/docs`); staff endpoints need `STAFF_PASSCODE` from `.env` as a bearer token
 - `make agent-check` runs the hero story against the real model and checks the database outcome (its own `data/check.db`; spends a few cents)
+- `make evals` runs the eval suite (`evals/scenarios/<group>/`, each a `Scenario` with a `play`) against the real model, 3 runs per scenario, on its own `data/eval.db`; `ARGS="--only <key|group> --runs 1"`. Judge by the shop's state, never by a model grading wording
 - `make agent` chats with the Agent as the Mechanic (needs `ANTHROPIC_API_KEY` in `.env`; spends tokens)
 - `make demo` runs the hero story through the servers (its own `data/demo.db`)
 - `make servers` runs the three MCP servers over HTTP; `uv run python -m mcp_servers.<name>` runs one over stdio

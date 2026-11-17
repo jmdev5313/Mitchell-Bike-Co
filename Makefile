@@ -13,7 +13,7 @@ help:
 	@echo "make agent-check  Run the hero story against the real model and check the outcome (spends tokens)"
 	@echo "make api     Run the API on http://127.0.0.1:8000 (docs at /docs)"
 	@echo "make web     Run the frontend (not built yet)"
-	@echo "make evals   Run the eval suite (not built yet)"
+	@echo "make evals   Run the eval suite against the real model, 3 runs per scenario (spends tokens; ARGS=\"--only <key or group> --runs 1\", or --list)"
 
 db:
 	uv run python -m shop.db init
@@ -60,4 +60,4 @@ web:
 	@echo "Not built yet: M6 (web)"
 
 evals:
-	@echo "Not built yet: M5 (evals)"
+	uv run python -m evals.suite $(ARGS)
