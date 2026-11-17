@@ -81,3 +81,16 @@ def quote_message(conn: sqlite3.Connection, report: Report, work_order_id: int, 
 def nothing_ordered(conn: sqlite3.Connection, report: Report) -> None:
     report.add("nothing was ordered before the Customer approved",
                not conn.execute("SELECT 1 FROM purchase_orders").fetchone())
+
+
+def all_quoted_skus(conn: sqlite3.Connection) -> list[str]:
+    """Every part on every work order, so a scenario can check nothing unwanted was added anywhere."""
+    return [r[0] for r in conn.execute(
+        "SELECT p.sku FROM work_order_lines l JOIN parts p ON p.id = l.part_id WHERE l.part_id IS NOT NULL"
+    )]
+
+
+def all_quoted_services(conn: sqlite3.Connection) -> list[str]:
+    return [r[0] for r in conn.execute(
+        "SELECT s.name FROM work_order_lines l JOIN services s ON s.id = l.service_id WHERE l.service_id IS NOT NULL"
+    )]
