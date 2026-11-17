@@ -1,6 +1,7 @@
 // The Mechanic's workspace: /workshop#/work-orders, the job screen at #/work-orders/{id}[/{conversation}],
 // a job not yet on a work order at #/agent/{conversation}, and #/audit.
 
+import "./cue.js";
 import { h, dollars } from "./dom.js";
 import { staff, passcode, setPasscode, Unauthorized, stageMeter, newBadge, startWithAgent } from "./staff.js";
 import { jobScreen } from "./job.js";
@@ -45,7 +46,8 @@ window.addEventListener("hashchange", route);
 let latestEvent = null;
 function userIsBusy() {
   const el = document.activeElement;
-  const typing = el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button")) && el.value;
+  const typing = el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button"))
+    && el.value && el.value !== el.dataset.prefill;
   return Boolean(typing || window.mbcStreaming || document.querySelector("dialog[open]"));
 }
 async function poll() {
@@ -111,7 +113,7 @@ async function workOrders() {
     app.replaceChildren(h("div", { class: "page" },
       h("div", { style: "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px" },
         h("h1", { class: "display" }, "Work orders"),
-        h("button", { type: "button", class: "btn", onclick: () => startWithAgent().catch(handle) }, "Start with the Agent")),
+        h("button", { type: "button", class: "btn start-agent", onclick: () => startWithAgent().catch(handle) }, "Start with the Agent")),
       h("div", { class: "filters", role: "group", "aria-label": "Filter by who it's waiting on" },
         FILTERS.map((f) => h("button", {
           type: "button", "aria-pressed": String(f.id === filter),

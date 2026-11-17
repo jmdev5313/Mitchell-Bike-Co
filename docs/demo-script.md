@@ -1,15 +1,15 @@
 # Demo script
 
-A walkthrough of the hero story in about 90 seconds, for a screen recording or a live demo. Two browser windows side by side: the workshop on the left, Emma's page on the right.
+A walkthrough of the hero story in about 90 seconds, for a screen recording or a live demo. Use the demo stage at `/demo`: the workshop on the left, Emma's phone on the right, and a guide across the top that says whose turn it is. The next button on that side has a pulsing ring.
 
 ## Before you start
 
 1. In `.env`: `ANTHROPIC_API_KEY` set, `DEMO_MODE=1`, and a Stripe test key (`sk_test_…`) if you'll show payment.
-2. `make api`, open http://127.0.0.1:8000, and press **Reset the demo**. The shop starts empty: no work orders, nothing waiting.
-3. Left window: **Be the Mechanic** (you're signed in automatically). Right window: keep the front door open for **Be the Customer** later; Emma's link appears once you send her the quote.
-4. Optional: open **Agent** once and close it, so the first turn doesn't include starting the MCP servers.
+2. `make api`, open http://127.0.0.1:8000/demo (or **Play both sides at once** on the front door), and press **Start over**. The shop starts empty: no work orders, nothing waiting.
+3. Use a wide window (1280px or more). Narrower, the stage shows one side at a time and switches to whoever's turn it is.
+4. Optional: run one Agent turn before recording, then **Start over**, so the first turn doesn't include starting the MCP servers.
 
-Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the Agent's wording changes from run to run, but the tool calls rarely do.
+Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the Agent's wording changes from run to run, but the tool calls rarely do. Without the stage, the same run works in two windows: **Be the Mechanic** in one, **Be the Customer** in the other once the quote is sent.
 
 ## The run
 
@@ -20,7 +20,7 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 | 0:15 | Left | Wait for `list_fitting_parts`, `supplier_options`, `plan_order` | Only one cassette fits, it's out of stock, and the Agent plans Velo because 2 days meets the date (Northgate is cheaper but slower). |
 | 0:30 | Left | The reply, and the work order beside it | The screen turned into the job: the quote and the next step on the right, and a manila "To Emma" card in the chat where the Agent drafted the message. |
 | 0:40 | Left | **Review and send →** on the card (it opens the **Messages** tab), then **Send to Emma** | The card only points to the draft (**Expand** reads it full size): "The Agent can't send messages. Only you can." |
-| 0:45 | Right | Front door → **Be the Customer** | The quote in plain words: no part numbers. |
+| 0:45 | Right | Emma's phone lights up with her link | The guide moves to step 3, "Your turn as Emma". The quote in plain words: no part numbers. |
 | 0:50 | Right | Optional: press Tab in the message box, then **Send** | The suggested question becomes real; the workshop shows it as a reply to answer. |
 | 0:55 | Right | **Approve $169.98** | Only the Customer approves. |
 | 1:00 | Left | Wait a few seconds, don't click | The badge and the next step change on their own: the shop placed the planned order. |
@@ -28,7 +28,7 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 | 1:15 | Left | **Send to Emma**, then the **History** tab | Who did what: the Agent, you, Emma, and the shop. Try the **Agent** and **Customer** filters. |
 | 1:25 | Left | **Audit log** | Every tool call, written by the MCP servers themselves. |
 
-Optional ending: in the right window, reload and **Pay $169.98** with test card `4242 4242 4242 4242`.
+Optional ending: on Emma's phone, **Pay $169.98**. Stripe's test checkout opens in a new tab (it can't run inside a frame); use test card `4242 4242 4242 4242`. The stage moves to "That's the whole story" when the payment is confirmed.
 
 To show only the Customer's side, skip the Agent: on the front door, press **Generate a sample quote**, then **Be the Customer**.
 

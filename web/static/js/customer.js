@@ -1,6 +1,7 @@
 // The Customer's page, from their private link: /c/{token}.
 // One screen per stage of the repair, one obvious action on each.
 
+import "./cue.js";
 import { h, icon, CHECK, LOCK, dollars, shortDate, longDate, api } from "./dom.js";
 
 const token = decodeURIComponent(location.pathname.split("/").filter(Boolean)[1] || "");
@@ -10,6 +11,7 @@ const workOrderLabel = document.getElementById("work-order-label");
 const params = new URLSearchParams(location.search);
 
 let busy = false;
+let checkoutLink = null;  // inside the demo stage, when the browser blocks the checkout tab
 let confirmingDecline = false;
 let error = null;
 
@@ -271,11 +273,30 @@ function onIt(view) {
 
 function readyScreen(view) {
   const latest = latestShopMessage(view);
-  const pay = () => act(async () => {
-    const { checkout_url } = await api(`${base}/checkout`, { method: "POST" });
-    location.assign(checkout_url);
-    return null;
-  });
+  const pay = () => {
+    // Stripe Checkout can't run inside a frame, so inside the demo stage it opens in a new tab.
+    // The tab is opened now, during the click, so the browser doesn't block it as a pop-up.
+    const framed = window.parent !== window;
+    const tab = framed ? window.open("", "_blank") : null;
+    return act(async () => {
+      let checkout_url;
+      try {
+        ({ checkout_url } = await api(`${base}/checkout`, { method: "POST" }));
+      } catch (e) {
+        if (tab) tab.close();
+        throw e;
+      }
+      if (tab) {
+        tab.opener = null;
+        tab.location.href = checkout_url;
+      } else if (framed) {
+        checkoutLink = checkout_url;  // the browser blocked the new tab: offer a link instead
+      } else {
+        location.assign(checkout_url);
+      }
+      return framed ? api(base) : null;  // in the stage this page stays, so show it again
+    });
+  };
   return [
     ...heading("Your bike is ready", `Hi ${firstName(view)}. This is for your ${bikeName(view)}.`),
     steps(view),
@@ -290,7 +311,9 @@ function readyScreen(view) {
     h("div", { style: "margin-top: 16px" },
       h("button", { type: "button", class: "btn btn-big", disabled: busy, onclick: pay },
         busy ? "Opening secure checkout…" : `Pay ${dollars(view.quote.total_cents)}`),
-      h("div", { class: "secure-note" }, icon(LOCK, 14, 1.8), "Secure checkout by Stripe, test mode")),
+      h("div", { class: "secure-note" }, icon(LOCK, 14, 1.8), "Secure checkout by Stripe, test mode"),
+      checkoutLink ? h("p", { class: "note", role: "status" }, "Your browser kept the checkout from opening. ",
+        h("a", { href: checkoutLink, target: "_blank", rel: "noopener noreferrer" }, "Open the secure checkout in a new tab")) : null),
     errorNotice(),
     thread(view, { excludeId: latest && latest.id, title: "Earlier messages" }),
   ];

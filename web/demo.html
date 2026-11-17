@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Demo · Mitchell Bike Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/shop.css">
+<script type="module" src="/static/js/stage.js"></script>
+</head>
+<body class="stage-page">
+<header class="stage-top">
+  <a class="brand" href="/"><span class="wordmark">Mitchell Bike Co.</span><span class="sub">Demo</span></a>
+  <ol class="stage-steps" id="steps" aria-label="The story"></ol>
+  <div class="stage-actions">
+    <button type="button" class="btn btn-outline" id="restart">Start over</button>
+  </div>
+</header>
+<div class="stage-guide" id="guide" role="status" aria-live="polite"></div>
+<div class="stage-tabs filters" id="tabs" role="group" aria-label="Show"></div>
+<main class="stage-body" id="stage">
+  <section class="stage-side side-workshop" id="side-mechanic" aria-labelledby="label-mechanic">
+    <div class="side-label"><span id="label-mechanic"><strong>You're the Mechanic</strong> · the workshop</span><span class="turn" hidden>Your turn</span></div>
+    <iframe id="frame-mechanic" title="The workshop, as the Mechanic sees it"></iframe>
+  </section>
+  <section class="stage-side side-phone" id="side-customer" aria-labelledby="label-customer">
+    <div class="side-label"><span id="label-customer"><strong>You're Emma</strong> · her phone</span><span class="turn" hidden>Your turn</span></div>
+    <div class="phone" id="phone">
+      <div class="phone-screen" id="phone-screen"></div>
+    </div>
+  </section>
+</main>
+<noscript><p class="page">The demo stage needs JavaScript.</p></noscript>
+</body>
+</html>

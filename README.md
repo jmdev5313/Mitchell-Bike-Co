@@ -16,7 +16,7 @@ make reset                # create the database and load the seed data
 make api                  # then open http://127.0.0.1:8000
 ```
 
-The front door has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+In demo mode the front door opens the demo stage (**Play both sides at once**): the workshop and Emma's phone side by side, with a guide that says whose turn it is and rings the next button. It also has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
 ## What to look for
 

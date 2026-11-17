@@ -59,6 +59,12 @@ def workshop_page() -> FileResponse:
     return FileResponse(WEB / "workshop.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/demo", include_in_schema=False)
+def demo_stage() -> FileResponse:
+    """The demo stage: the workshop and the Customer's phone side by side, with a step guide (demo mode)."""
+    return FileResponse(WEB / "demo.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/c/{token}", include_in_schema=False)
 def customer_page(token: str) -> FileResponse:
     """The Customer's page. It reads its data from /api/customer/{token}, so a bad link shows its own message."""
