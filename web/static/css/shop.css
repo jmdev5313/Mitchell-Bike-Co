@@ -599,7 +599,7 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .side-workshop iframe { flex: 1; width: 100%; border: 0; }
 
 /* Customer POV: a tab at the bottom that opens the Customer's phone over the workshop */
-.pov-scrim { position: absolute; inset: 0; z-index: 3; background: rgba(22, 26, 31, 0.1); }
+.pov-scrim { position: absolute; inset: 0; z-index: 3; background: rgba(22, 26, 31, 0.25); }
 .pov-scrim[hidden] { display: none; }
 .pov { position: absolute; right: var(--s4); bottom: 0; display: flex; flex-direction: column-reverse; align-items: stretch; }
 .pov-tab {
@@ -616,19 +616,33 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 @media (prefers-reduced-motion: reduce) { .pov-badge { animation: none; } }
 .pov-caret { font-size: 11px; margin-left: var(--s1); }
 .pov-tab.cue { outline-offset: 4px; }
-.pov.is-open .pov-tab { border-radius: 0; border-bottom: 1px solid var(--manila-text); }
-.pov-sheet {
-  background: var(--bench); border: 2px solid var(--ink); border-bottom: 0;
-  box-shadow: 0 -12px 40px rgba(22, 26, 31, 0.22); padding: var(--s5) var(--s5) 0;
-  display: flex; justify-content: center;
-}
+/* Open: the phone floats above its tab, like a mirrored device */
+.pov-sheet { display: flex; justify-content: center; padding: 0 0 14px; }
 .pov-sheet[hidden] { display: none; }
+.device { position: relative; }
+.device::before, .device::after { content: ""; position: absolute; width: 4px; background: #2B3036; border-radius: 2px; }
+.device::before { left: -4px; top: 18%; height: 64px; box-shadow: 0 84px 0 #2B3036; }  /* volume up and down */
+.device::after { right: -4px; top: 24%; height: 96px; }  /* side button */
 .phone {
-  box-sizing: border-box; border: 10px solid var(--ink); border-bottom-width: 0; border-radius: 36px 36px 0 0;
-  overflow: hidden; background: var(--manila); position: relative; flex: none;
+  position: relative; flex: none; overflow: hidden; background: var(--manila);
+  border: 12px solid #161A1F; border-radius: 54px;
+  box-shadow: 0 0 0 2px #3A4047, 0 28px 70px rgba(22, 26, 31, 0.45);
 }
-.phone-screen { transform-origin: top left; }
-.phone-screen iframe { width: 100%; height: 100%; border: 0; display: block; }
+.phone-screen { position: relative; display: flex; flex-direction: column; transform-origin: top left; background: var(--manila); }
+.phone-status {
+  flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 30px 0 36px; font-weight: 600; font-size: 16px; position: relative;
+}
+.phone-status .island {
+  position: absolute; left: 50%; top: 11px; transform: translateX(-50%);
+  width: 122px; height: 34px; border-radius: 17px; background: #0B0D10;
+}
+.phone-app { flex: 1; min-height: 0; }
+.phone-app iframe { width: 100%; height: 100%; border: 0; display: block; }
+.home-bar {
+  position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 3px; background: rgba(22, 26, 31, 0.75);
+}
 .phone-empty { height: 100%; box-sizing: border-box; padding: 48px 28px; color: var(--manila-text); font-size: 18px; }
 .phone-empty .display { font-size: 36px; color: var(--ink); margin: 0 0 12px; }
 @media (max-width: 700px) {

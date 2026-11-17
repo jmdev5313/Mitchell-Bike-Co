@@ -19,6 +19,7 @@ const sheet = document.getElementById("pov-sheet");
 const scrim = document.getElementById("pov-scrim");
 const phone = document.getElementById("phone");
 const screen = document.getElementById("phone-screen");
+const phoneApp = document.getElementById("phone-app");  // the page under the phone's status bar
 
 const PHONE_W = 390;
 const PHONE_H = 844;
@@ -94,10 +95,10 @@ function render(story) {
     if (story.customer_token) {
       frameCustomer = h("iframe", { title: `${first}'s page, on her phone`, src: `/c/${story.customer_token}` });
       frameCustomer.addEventListener("load", () => cue(last.story));
-      screen.replaceChildren(frameCustomer);
+      phoneApp.replaceChildren(frameCustomer);
     } else {
       frameCustomer = null;
-      screen.replaceChildren(h("div", { class: "phone-empty" },
+      phoneApp.replaceChildren(h("div", { class: "phone-empty" },
         h("p", { class: "display" }, "No messages yet"),
         h("p", {}, `${first} gets a private link when the Mechanic sends her the quote. It opens here.`)));
     }
@@ -182,10 +183,11 @@ function setOpen(open) {
 /** Scale the phone to fit the overlay, keeping a real phone's proportions. */
 function fitPhone() {
   if (sheet.hidden) return;
-  const room = { w: Math.min(innerWidth - 64, 460), h: stage.clientHeight - povTab.offsetHeight - 48 };
-  const scale = Math.max(0.4, Math.min(1, room.w / (PHONE_W + 20), room.h / (PHONE_H + 20)));
-  phone.style.width = `${Math.round(PHONE_W * scale) + 20}px`;
-  phone.style.height = `${Math.round(PHONE_H * scale) + 20}px`;
+  const room = { w: Math.min(innerWidth - 64, 460), h: stage.clientHeight - 24 };  // the tab sits in the bottom bar, below
+  const bezel = 2 * 12;  // the phone's frame, in CSS (.phone border)
+  const scale = Math.max(0.4, Math.min(1, room.w / (PHONE_W + bezel), (room.h - 16) / (PHONE_H + bezel)));
+  phone.style.width = `${Math.round(PHONE_W * scale) + bezel}px`;
+  phone.style.height = `${Math.round(PHONE_H * scale) + bezel}px`;
   screen.style.width = `${PHONE_W}px`;
   screen.style.height = `${PHONE_H}px`;
   screen.style.transform = `scale(${scale})`;
