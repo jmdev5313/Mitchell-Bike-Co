@@ -286,7 +286,7 @@ export function historySection(order) {
       class: [e.is_error ? "is-refused" : "", newIds.has(e.id) ? "is-new" : ""].join(" ").trim() || null,
     },
       h("span", { class: "when" }, when(e.at)),
-      h("span", { class: `actor ${e.actor}` }, ACTOR_LABEL[e.actor]),
+      h("span", { class: `actor actor-${e.actor}` }, ACTOR_LABEL[e.actor]),
       h("span", { class: "summary" },
         newIds.has(e.id) ? h("span", { class: "visually-hidden" }, "New: ") : null,
         e.is_error ? [h("strong", {}, "Refused: "), e.summary.replace(/^Refused: /, "")] : e.summary,

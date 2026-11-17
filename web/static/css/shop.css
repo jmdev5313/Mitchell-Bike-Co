@@ -137,7 +137,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 /* ---------------------------------------------------------------------------
    Customer page: manila ground, one column, one obvious action. */
-.customer {
+body.customer {
   background: var(--manila);
   font-size: 17px;
   line-height: 1.5;
@@ -495,13 +495,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .history li:last-child { border-bottom: 0; }
 .history .when { color: var(--slate); font-variant-numeric: tabular-nums; font-size: 13px; }
 .history .actor { font-weight: 600; font-size: 13px; }
-.history .actor.agent::before, .history .actor.mechanic::before, .history .actor.customer::before, .history .actor.shop::before {
+.history .actor-agent::before, .history .actor-mechanic::before, .history .actor-customer::before, .history .actor-shop::before {
   content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; vertical-align: 1px;
 }
-.history .actor.agent::before { border: 2px solid var(--ink); }
-.history .actor.mechanic::before { background: var(--ink); }
-.history .actor.customer::before { background: var(--manila); border: 1px solid var(--manila-text); }
-.history .actor.shop::before { background: var(--slate); border-radius: 50%; }
+.history .actor-agent::before { border: 2px solid var(--ink); }
+.history .actor-mechanic::before { background: var(--ink); }
+.history .actor-customer::before { background: var(--manila); border: 1px solid var(--manila-text); }
+.history .actor-shop::before { background: var(--slate); border-radius: 50%; }
 .history .server { color: var(--slate); font-size: 13px; }
 .history li.is-refused { border-left-color: var(--red); background: var(--red-tint); }
 .history li.is-refused .summary strong { color: var(--red); }
