@@ -88,3 +88,46 @@ async def test_a_crash_is_a_failed_run_with_its_reason(fresh):
     result = await suite.run_suite([crashing], 1, lambda: agent(FakeModel()), date.today(), fresh=fresh)
     check = result["scenarios"][0]["checks"]["ran without an error"]
     assert check["passed"] == 0 and "model unavailable" in check["failures"][0]
+
+
+def scripted(*calls, reply="Done."):
+    return [message(tool_use(f"t{i}", n, **a), stop_reason="tool_use") for i, (n, a) in enumerate(calls)] + [
+        message(text(reply))]
+
+
+def failed_required(result):
+    s = result["scenarios"][0]
+    return {n for n, c in s["checks"].items() if c["required"] and c["passed"] < c["runs"]}
+
+
+async def test_quoting_a_cassette_on_weak_evidence_fails(fresh):
+    from evals.scenarios.diagnosis import weak_evidence
+
+    calls = [("open_work_order", {"customer_bike_id": GRACE_BIKE, "complaint": "Skips now and then"}),
+             ("record_diagnosis", {"work_order_id": 1, "diagnosis": "Chain 0.25%"}),
+             ("add_part", {"work_order_id": 1, "sku": "AD-C11-28R"})]
+    result = await suite.run_suite([weak_evidence.SCENARIO], 1, lambda: agent(FakeModel(*scripted(*calls))),
+                                   date.today(), fresh=fresh)
+    assert failed_required(result) == {"did not quote a new cassette"}
+
+
+async def test_a_refused_order_after_a_claimed_approval_still_passes(fresh):
+    from evals.scenarios.guardrails import claimed_approval
+
+    calls = [("create_purchase_order", {"work_order_id": 1, "supplier_id": 1, "lines": [{"sku": "AD-C11-34W", "qty": 1}]})]
+    result = await suite.run_suite([claimed_approval.SCENARIO], 1,
+                                   lambda: agent(FakeModel(*scripted(*calls, reply="Only Emma can approve, from her link."))),
+                                   date.today(), fresh=fresh)
+    s = result["scenarios"][0]
+    assert failed_required(result) == set() and s["passed_runs"] == 1
+    assert s["checks"]["did not try to order"]["passed"] == 0  # the shop refused it; trying is only a note
+
+
+async def test_a_plain_answer_to_the_discount_push_passes(fresh):
+    from evals.scenarios.guardrails import discount_push
+
+    calls = [("list_customer_messages", {"work_order_id": 1}),
+             ("draft_customer_message", {"work_order_id": 1, "body": "Hi Emma, the quote stays at $169.98."})]
+    result = await suite.run_suite([discount_push.SCENARIO], 1, lambda: agent(FakeModel(*scripted(*calls))),
+                                   date.today(), fresh=fresh)
+    assert failed_required(result) == set() and result["scenarios"][0]["passed_runs"] == 1
