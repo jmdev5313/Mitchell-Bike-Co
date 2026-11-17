@@ -3,7 +3,7 @@
 
 import { h, dollars, shortDate, longDate } from "./dom.js";
 import {
-  staff, Unauthorized, stageMeter, ledger, draftBand, customerLink, nextStepBar, historySection,
+  staff, Unauthorized, progressStrip, ledger, draftBand, customerLink, nextStepBar, historySection,
   takePrefill, HERO, startWithAgent,
 } from "./staff.js";
 import { mechanicTurn, agentTurn, composerForm } from "./agent.js";
@@ -226,18 +226,74 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
       h("span", { class: "subhead" }, order
         ? `${order.bike.model} “${order.bike.nickname}”`
         : "Describe the bike on the stand. When the Agent opens a work order, it appears beside the conversation.")),
-    h("div", { class: "job-tools" }, order ? stageMeter(order.status) : null, toggleButton));
+    h("div", { class: "job-tools" }, toggleButton),
+    // The case flow: where this job is, from diagnosis to paid.
+    order ? h("div", { class: "job-flow" }, progressStrip(order.status)) : null);
+
+  // The divider between the conversation and the work order: drag it, or focus it and use the arrow keys.
+  const resizer = h("div", {
+    class: "job-resizer", role: "separator", tabindex: "0", "aria-orientation": "vertical",
+    "aria-controls": "job-panel", "aria-label": "Resize the work order panel",
+    title: "Drag to resize. Double-click to reset.",
+  });
+  const bounds = () => {
+    const width = root.querySelector(".job-body").clientWidth;
+    return { min: 340, max: Math.max(340, width - 420) };
+  };
+  function setWidth(px, save = true) {
+    const { min, max } = bounds();
+    const width = Math.round(Math.min(max, Math.max(min, px)));
+    root.style.setProperty("--panel-w", `${width}px`);
+    resizer.setAttribute("aria-valuemin", String(min));
+    resizer.setAttribute("aria-valuemax", String(max));
+    resizer.setAttribute("aria-valuenow", String(width));
+    if (save) { try { localStorage.setItem("mbc-panel-width", String(width)); } catch { /* private mode */ } }
+  }
+  resizer.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    resizer.setPointerCapture(event.pointerId);
+    root.classList.add("is-resizing");
+    const right = root.querySelector(".job-body").getBoundingClientRect().right;
+    const move = (e) => setWidth(right - e.clientX);
+    const stop = () => {
+      root.classList.remove("is-resizing");
+      resizer.removeEventListener("pointermove", move);
+      resizer.removeEventListener("pointerup", stop);
+      resizer.removeEventListener("pointercancel", stop);
+    };
+    resizer.addEventListener("pointermove", move);
+    resizer.addEventListener("pointerup", stop);
+    resizer.addEventListener("pointercancel", stop);
+  });
+  resizer.addEventListener("keydown", (event) => {
+    const now = panel.getBoundingClientRect().width;
+    const step = event.shiftKey ? 96 : 24;
+    const { min, max } = bounds();
+    const to = { ArrowLeft: now + step, ArrowRight: now - step, Home: max, End: min }[event.key];
+    if (to === undefined) return;
+    event.preventDefault();
+    setWidth(to);
+  });
+  resizer.addEventListener("dblclick", () => {
+    root.style.removeProperty("--panel-w");
+    try { localStorage.removeItem("mbc-panel-width"); } catch { /* private mode */ }
+    resizer.setAttribute("aria-valuenow", String(Math.round(panel.getBoundingClientRect().width)));
+  });
 
   const root = h("div", { class: "job", "data-order": String(id), "data-convo": String(currentConvo), "data-view": ui.view },
     head,
     h("div", { class: "job-switch filters", role: "group", "aria-label": "Show" }, switches),
-    h("div", { class: "job-body" }, chat, strip, panel));
+    h("div", { class: "job-body" }, chat, resizer, strip, panel));
   root.classList.toggle("is-collapsed", isCollapsed());
   drawToggle();
   drawPanel();
 
   app.replaceChildren(root);
   document.documentElement.style.setProperty("--topbar-h", `${document.querySelector(".topbar").offsetHeight}px`);
+  let saved = null;
+  try { saved = Number(localStorage.getItem("mbc-panel-width")) || null; } catch { /* private mode */ }
+  if (saved) setWidth(saved, false);
+  else resizer.setAttribute("aria-valuenow", String(Math.round(panel.getBoundingClientRect().width)));
   if (keep) {
     transcript.scrollTop = keep.chat;
     panel.scrollTop = keep.panel;
