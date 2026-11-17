@@ -17,7 +17,8 @@ const TABS = [
       const draft = order.messages.some((m) => m.status === "draft");
       const fromCustomer = ui.unread.size;
       return [`Messages · ${sent}`,
-        fromCustomer ? h("span", { class: "badge tab-badge", "aria-hidden": "true" }, String(fromCustomer)) : null,
+        // Worded like the other New badges, so it doesn't read as a second count next to the total.
+        fromCustomer ? h("span", { class: "badge tab-badge", "aria-hidden": "true" }, fromCustomer > 1 ? `${fromCustomer} new` : "New") : null,
         fromCustomer ? h("span", { class: "visually-hidden" }, `, ${fromCustomer} new from ${order.bike.customer.split(" ")[0]}`) : null,
         draft ? h("span", { class: "tab-dot", title: "A draft is waiting" },
           h("span", { class: "visually-hidden" }, ", a draft is waiting")) : null];
