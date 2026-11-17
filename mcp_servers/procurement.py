@@ -42,16 +42,18 @@ def supplier_options(conn: sqlite3.Connection, sku: str, qty: int) -> list[dict[
 def estimate_ready_date(conn: sqlite3.Connection, supplier_ids: list[int] | None = None) -> dict[str, Any]:
     """The earliest date the repair can be ready if parts are ordered today from these
     suppliers (the slowest one counts). Pass no suppliers when every part is in stock."""
-    lead_times = []
+    lead_times, names = [], []
     for supplier_id in supplier_ids or []:
-        row = conn.execute("SELECT lead_time_days FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()
+        row = conn.execute("SELECT name, lead_time_days FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()
         if row is None:
             raise NotFound(f"no supplier with id {supplier_id}")
         lead_times.append(row["lead_time_days"])
+        names.append(row["name"])
     today = date.today()
     lead = max(lead_times, default=0)
     return {
         "order_date": today.isoformat(),
+        "suppliers": names,
         "lead_time_days": lead,
         "ready_date": schedule.ready_date(today, lead).isoformat(),
     }
@@ -66,7 +68,8 @@ def create_purchase_order(
     po = procurement.create_purchase_order(
         conn, work_order_id, supplier_id, [(line["sku"], line["qty"]) for line in lines]
     )
-    return asdict(po)
+    supplier = conn.execute("SELECT name, lead_time_days FROM suppliers WHERE id = ?", (supplier_id,)).fetchone()
+    return {**asdict(po), "supplier_name": supplier["name"], "lead_time_days": supplier["lead_time_days"]}
 
 
 if __name__ == "__main__":

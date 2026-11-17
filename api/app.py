@@ -46,6 +46,12 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
 
 
+@app.get("/workshop", include_in_schema=False)
+def workshop_page() -> FileResponse:
+    """The Mechanic's workspace. Its data comes from the staff API, which needs the passcode."""
+    return FileResponse(WEB / "workshop.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/c/{token}", include_in_schema=False)
 def customer_page(token: str) -> FileResponse:
     """The Customer's page. It reads its data from /api/customer/{token}, so a bad link shows its own message."""

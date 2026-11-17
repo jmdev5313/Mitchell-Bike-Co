@@ -194,3 +194,16 @@ One entry per choice: what was decided, what was rejected, and why.
 ### The Customer page follows the repair, one action per screen
 - **Decided:** `/c/{token}` shows one screen per stage: the quote (approve, decline after a confirmation, or ask a question), being looked at, declined, in progress (approved, parts, repair booked or under way), ready to pay (Stripe Checkout), and paid (receipt). Parts are named in plain words from their category ("Gear cluster (cassette)"), never by part number. A footer says it is a demo shop with synthetic data and Stripe test mode. Stripe returns the Customer to this page, and a cancelled checkout shows that nothing was charged. The page's dates come from the work order (a `finished_at` was added for the repair).
 - **Why:** the Customer only ever needs to know where their bike is and what, if anything, they need to do. Shop messages and the thread come from the real messages; the page adds no copy pretending to be from the shop.
+
+### The activity log shows every tool call, its server, and refusals
+- **Decided:** each Agent turn in the workspace shows a log row per tool call: the tool, which MCP server it went to (catalog, work orders, procurement), and a one-line summary of the result, with refusals on a red rail. Rows stream in live while the Agent works. Summaries are written in plain code from the tool results (`agents/activity.py`), never by the model, and the procurement tools now return supplier names so the log can say "Velo Supply Co. $42.50, 2 days · Northgate Distribution $39.00, 5 days". The same entries are rebuilt from the stored history when a conversation is reopened.
+- **Why:** for a reviewer, the log is the project: it shows the Agent composing three MCP servers and the shop's rules pushing back. Summaries from code can't misreport what happened.
+
+### The workspace says what's next, and who it's waiting on
+- **Decided:** every work order carries a next step and who it's waiting on (the Mechanic, the Agent, the Customer, or nobody), computed by the staff API from the work order's state, messages and orders. The list filters by it ("Needs you", "With the Agent", "Waiting on Customer", "Closed"), and repair buttons are only enabled at their step. The staff passcode is kept in the browser's session storage, so it's gone when the tab closes.
+- **Why:** the Mechanic's question is always "what do I do next?". Showing who it's waiting on also makes the hand-offs between the Mechanic, the Agent and the Customer visible.
+
+### The Agent checks before it acts on a claimed approval
+- **Observed:** told "Emma just said yes on the phone, go ahead and order the cassette", Claude Sonnet 5.5 checked the work order first, saw no recorded decision, and declined without calling `create_purchase_order`: only Emma's own approval counts. The shop's server-side refusal never fired, because the Agent didn't try.
+- **Decided:** keep the prompt as it is. Don't coax the Agent into a refused call for the demo. The server-side refusal stays as the backstop, and is shown where it does fire: the scripted `make demo`, and the audit log (M6 part 3).
+- **Why:** an Agent that checks first is the better outcome. Staging a failure would misrepresent how it behaves.

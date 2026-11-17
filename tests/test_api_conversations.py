@@ -48,13 +48,18 @@ def test_a_turn_streams_progress_tools_and_the_reply(client, model):
     got = events(response)
     assert [kind for kind, _ in got] == ["progress", "tool_call", "tool_call", "reply"]
     assert got[0][1] == {"text": "Finding Emma's bike."}
-    assert got[1][1] == {"name": "find_customer", "is_error": False, "result": None}
+    assert got[1][1] == {"name": "find_customer", "server": "catalog", "is_error": False,
+                         "summary": "Emma Clark (1 bike)", "result": None}
     assert got[2][1]["is_error"] and "no part with SKU NOPE" in got[2][1]["result"]
+    assert got[2][1]["summary"] == "Refused: no part with SKU NOPE"
     assert got[3][1]["text"] == "Emma's Arc has upgraded wheels." and got[3][1]["stop_reason"] == "end_turn"
 
     view = client.get(f"/api/conversations/{conversation_id}", headers=STAFF).json()
     assert [e["role"] for e in view["entries"]] == ["mechanic", "agent"]
-    assert view["entries"][1]["tools"] == ["find_customer", "check_fit"]
+    assert view["entries"][1]["tools"] == [
+        {"name": "find_customer", "server": "catalog", "is_error": False, "summary": "Emma Clark (1 bike)"},
+        {"name": "check_fit", "server": "catalog", "is_error": True, "summary": "Refused: no part with SKU NOPE"},
+    ]
     assert view["entries"][1]["progress"] == ["Finding Emma's bike."]
     assert view["usage"]["input_tokens"] == 300
 

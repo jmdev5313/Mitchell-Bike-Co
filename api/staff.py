@@ -22,6 +22,37 @@ class Schedule(BaseModel):
     scheduled_for: str = Field(description="YYYY-MM-DD", examples=["2026-11-19"])
 
 
+def next_step(conn: sqlite3.Connection, work_order_id: int, status: str) -> dict[str, str]:
+    """What happens next on a work order, and who it's waiting on: mechanic, agent, customer, or nobody."""
+    thread = messages.list_messages(conn, work_order_id)
+    drafts = [m for m in thread if m.status == "draft"]
+    sent_quote = any(m.status == "sent" and m.quoted_total_cents is not None for m in thread)
+    orders = procurement.list_purchase_orders(conn, work_order_id)
+    open_orders = [o for o in orders if o["status"] == "ordered"]
+    if status in ("intake", "diagnosed"):
+        return ({"text": "Review and send the draft", "waiting_on": "mechanic"} if drafts
+                else {"text": "The Agent is building the quote", "waiting_on": "agent"})
+    if status == "quoted":
+        if any(m.quoted_total_cents is not None for m in drafts):
+            return {"text": "Review and send the quote", "waiting_on": "mechanic"}
+        if sent_quote:
+            return {"text": "Waiting for the Customer to answer the quote", "waiting_on": "customer"}
+        return {"text": "The Agent drafts the quote message", "waiting_on": "agent"}
+    if status in ("approved", "awaiting_parts"):
+        if open_orders:
+            return {"text": "Mark parts received when they arrive", "waiting_on": "mechanic"}
+        if wo.parts_short(conn, work_order_id):
+            return {"text": "The Agent orders the parts", "waiting_on": "agent"}
+        return {"text": "Schedule the repair", "waiting_on": "mechanic"}
+    return {
+        "scheduled": {"text": "Start the repair", "waiting_on": "mechanic"},
+        "in_progress": {"text": "Finish the repair", "waiting_on": "mechanic"},
+        "done": {"text": "Waiting for the Customer to pay", "waiting_on": "customer"},
+        "paid": {"text": "Paid", "waiting_on": "nobody"},
+        "declined": {"text": "Declined by the Customer", "waiting_on": "nobody"},
+    }.get(status, {"text": status, "waiting_on": "nobody"})
+
+
 def work_order_detail(conn: sqlite3.Connection, work_order_id: int) -> dict[str, Any]:
     order = wo.summary(conn, work_order_id)
     link = conn.execute(
@@ -34,13 +65,20 @@ def work_order_detail(conn: sqlite3.Connection, work_order_id: int) -> dict[str,
         "purchase_orders": procurement.list_purchase_orders(conn, work_order_id),
         "payments": [asdict(p) for p in payments.list_payments(conn, work_order_id)],
         "customer_link_token": link["token"] if link else None,
+        "next_step": next_step(conn, work_order_id, order["status"]),
+        "conversation_ids": [
+            r["id"] for r in conn.execute(
+                "SELECT id FROM agent_conversations WHERE work_order_id = ? ORDER BY created_at DESC, rowid DESC",
+                (work_order_id,),
+            )
+        ],
     }
 
 
 @router.get("/work-orders")
 def list_work_orders(status: str | None = None, conn: sqlite3.Connection = Depends(get_db)) -> list[dict[str, Any]]:
     """All work orders, newest first. Filter with ?status=quoted, for example."""
-    return wo.list_work_orders(conn, status)
+    return [{**o, "next_step": next_step(conn, o["id"], o["status"])} for o in wo.list_work_orders(conn, status)]
 
 
 @router.get("/work-orders/{work_order_id}")

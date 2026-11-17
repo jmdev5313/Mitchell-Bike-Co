@@ -106,17 +106,29 @@ def list_conversations(conn: sqlite3.Connection) -> list[dict]:
 def transcript(conn: sqlite3.Connection, conversation_id: str) -> list[dict]:
     """The conversation as people see it: Mechanic messages and Agent replies.
 
-    Tool results are folded into the Agent's entry as tool names; photos show as a
-    count. The raw history (with thinking blocks) stays in `history`.
+    Each Agent entry carries its tool calls (name, MCP server, a summary of the
+    result, and whether it was refused); photos show as a count. The raw history
+    (with thinking blocks) stays in `history`.
     """
+    from agents import activity
+
     get(conn, conversation_id)
     entries: list[dict] = []
     agent: dict | None = None
+    pending: dict[str, dict] = {}  # tool_use id -> its call, until the result arrives
     for message in history(conn, conversation_id):
         blocks = message["content"] if isinstance(message["content"], list) else [
             {"type": "text", "text": message["content"]}
         ]
         if message["role"] == "user":
+            for b in blocks:
+                if b.get("type") == "tool_result" and b.get("tool_use_id") in pending:
+                    call = pending.pop(b["tool_use_id"])
+                    content = b.get("content")
+                    text = content if isinstance(content, str) else "\n".join(
+                        c.get("text", "") for c in content or [] if isinstance(c, dict)
+                    )
+                    call.update(activity.entry(call["name"], call.pop("arguments"), text, bool(b.get("is_error"))))
             texts = [b["text"] for b in blocks if b.get("type") == "text"]
             if not texts:
                 continue  # tool results only
@@ -134,7 +146,13 @@ def transcript(conn: sqlite3.Connection, conversation_id: str) -> list[dict]:
             if b.get("type") == "text" and b.get("text"):
                 agent["text"] = (agent["text"] + "\n\n" + b["text"]).strip()
             elif b.get("type") == "tool_use":
-                agent["tools"].append(b["name"])
+                call = {"name": b["name"], "server": activity.server_for(b["name"]), "arguments": b.get("input") or {},
+                        "is_error": False, "summary": ""}
+                pending[b["id"]] = call
+                agent["tools"].append(call)
             elif b.get("type") == "thinking" and b.get("thinking"):
                 agent["progress"].append(b["thinking"])
+    for call in pending.values():  # a turn that stopped before its results came back
+        call.pop("arguments", None)
+        call["summary"] = "No result"
     return entries
