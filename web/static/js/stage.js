@@ -1,5 +1,6 @@
-// The demo stage (/demo): the workshop and the Customer's phone side by side. A step guide says
-// whose turn it is, and the next button on that side gets a ring (cue.js, inside each page).
+// The demo stage (/demo): the workshop at full width, and the Customer's phone in a "Customer POV"
+// overlay that opens from a tab at the bottom. A step guide says whose turn it is; the tab says
+// "New" when it's the Customer's turn, and the next button on that side gets a ring (cue.js).
 // Demo mode only: it signs in to the workshop and opens the Customer's link for you.
 
 import { h, api, dollars } from "./dom.js";
@@ -7,20 +8,24 @@ import { h, api, dollars } from "./dom.js";
 const stage = document.getElementById("stage");
 const guide = document.getElementById("guide");
 const stepsList = document.getElementById("steps");
-const tabs = document.getElementById("tabs");
 const restart = document.getElementById("restart");
 const frameMechanic = document.getElementById("frame-mechanic");
+const workshop = document.getElementById("side-mechanic");
+const pov = document.getElementById("pov");
+const povTab = document.getElementById("pov-tab");
+const povSub = document.getElementById("pov-sub");
+const povBadge = document.getElementById("pov-badge");
+const sheet = document.getElementById("pov-sheet");
+const scrim = document.getElementById("pov-scrim");
 const phone = document.getElementById("phone");
 const screen = document.getElementById("phone-screen");
-const sides = { mechanic: document.getElementById("side-mechanic"), customer: document.getElementById("side-customer") };
 
-const NARROW = matchMedia("(max-width: 1100px)");
 const PHONE_W = 390;
 const PHONE_H = 844;
 
 let frameCustomer = null;
 let last = { step: null, whose: null, token: undefined };
-let view = "mechanic";  // which side shows at narrow widths
+let collapseTimer = null;
 
 const stepNames = (first) => ["Ask the Agent", "Send the quote", `${first} approves`, "The repair", `${first} pays`];
 
@@ -33,7 +38,7 @@ async function boot() {
     return;
   }
   if (!info.demo_mode) {
-    for (const el of [stepsList, tabs, restart]) el.hidden = true;
+    for (const el of [stepsList, restart]) el.hidden = true;
     guide.hidden = true;
     stage.replaceChildren(h("div", { class: "page" },
       h("h1", { class: "display" }, "The demo stage needs demo mode"),
@@ -51,7 +56,9 @@ async function boot() {
   render(story);
   setInterval(tick, 2000);
   addEventListener("resize", fitPhone);
-  NARROW.addEventListener("change", () => { showSide(view); fitPhone(); });
+  povTab.addEventListener("click", () => setOpen(sheet.hidden));
+  scrim.addEventListener("click", () => setOpen(false));
+  addEventListener("keydown", (event) => { if (event.key === "Escape" && !sheet.hidden) setOpen(false); });
 }
 
 async function tick() {
@@ -74,13 +81,13 @@ function render(story) {
   }));
 
   // Whose turn
-  for (const [who, side] of Object.entries(sides)) {
-    const turn = story.whose === who;
-    side.classList.toggle("is-turn", turn);
-    side.querySelector(".turn").hidden = !turn;
-  }
-  document.getElementById("label-customer").replaceChildren(h("strong", {}, `You're ${first}`), " · her phone");
-  // Within a step (the repair has several), the guide follows the work order's next step.
+  const theirs = story.whose === "customer";
+  workshop.classList.toggle("is-turn", story.whose === "mechanic");
+  workshop.querySelector(".turn").hidden = story.whose !== "mechanic";
+  pov.classList.toggle("is-turn", theirs);
+  povBadge.hidden = !theirs;
+  povSub.textContent = theirs ? `Your turn as ${first}` : `${first}'s phone`;
+  // Guide and steps first, so the screen reader hears the step, then the change.
   if (changed || story.next_step !== last.story?.next_step) guide.replaceChildren(...guideText(story, first));
 
   // The Customer's phone: her link appears once the shop has sent her something
@@ -96,16 +103,15 @@ function render(story) {
         h("p", {}, `${first} gets a private link when the Mechanic sends her the quote. It opens here.`)));
     }
     fitPhone();
-  } else if (changed && frameCustomer && (story.whose === "customer" || story.step === 6)) {
+  } else if (changed && frameCustomer && (theirs || story.step === 6)) {
     frameCustomer.contentWindow.location.reload();  // her page doesn't refresh itself
   }
 
-  // At narrow widths, follow the turn
-  tabs.replaceChildren(...[["mechanic", "Workshop"], ["customer", `${first}'s phone`]].map(([who, label]) =>
-    h("button", { type: "button", "data-who": who, "aria-pressed": String(view === who), onclick: () => showSide(who) },
-      label, story.whose === who ? h("span", { class: "tab-dot turn-dot", title: "Your turn" },
-        h("span", { class: "visually-hidden" }, ", your turn")) : null)));
-  if (changed && (story.whose === "mechanic" || story.whose === "customer")) showSide(story.whose);
+  // When her turn ends, give her page a moment to show what happened, then fold it away.
+  if (changed && last.whose === "customer" && story.whose === "mechanic" && !sheet.hidden) {
+    clearTimeout(collapseTimer);
+    collapseTimer = setTimeout(() => setOpen(false), 1800);
+  }
 
   last = { step: story.step, whose: story.whose, token: story.customer_token, story };
   cue(story);
@@ -129,7 +135,7 @@ function guideText(story, first) {
     case 3:
       return story.whose === "mechanic"
         ? say(first, " wrote to the shop. In the workshop: ", h("b", {}, story.next_step), ", then send the answer. Then it's her turn to approve.")
-        : say("On ", first, "'s phone, read the quote and tap ", h("b", {}, `Approve ${total}`),
+        : say("Open ", h("b", {}, "Customer POV"), " at the bottom right. On ", first, "'s phone, read the quote and tap ", h("b", {}, `Approve ${total}`),
           ". Optional: press Tab in her message box to ask “Can it be ready by Friday?” first.");
     case 4:
       return say("In the workshop: ", h("b", {}, story.next_step), ". Use the button in the next-step bar on the Overview tab.",
@@ -138,7 +144,7 @@ function guideText(story, first) {
       if (story.whose === "mechanic") {
         return say(first, " wrote to the shop. In the workshop: ", h("b", {}, story.next_step), ", then send the answer. She can pay any time.");
       }
-      return say("On ", first, "'s phone, tap ", h("b", {}, `Pay ${total}`),
+      return say("Open ", h("b", {}, "Customer POV"), " at the bottom right and tap ", h("b", {}, `Pay ${total}`),
         ". Stripe test mode opens in a new tab: card 4242 4242 4242 4242, any future date, any CVC.");
     default:
       return story.status === "declined"
@@ -161,6 +167,7 @@ function cue(story) {
       '.job[data-view="chat"] .job-switch button:last-child'];  // the next button is on the work order half
   }
   const customer = story.whose === "customer" ? [".btn-big"] : [];
+  povTab.classList.toggle("cue", story.whose === "customer" && sheet.hidden);
   post(frameMechanic, mechanic);
   if (frameCustomer) post(frameCustomer, customer);
 }
@@ -169,20 +176,23 @@ function post(frame, selectors) {
   try { frame.contentWindow.postMessage({ type: "mbc-cue", selectors }, location.origin); } catch { /* not loaded yet */ }
 }
 
-function showSide(who) {
-  view = who;
-  stage.dataset.view = who;
-  for (const b of tabs.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.who === who));
-  fitPhone();
+/** Open or fold away the Customer POV overlay. */
+function setOpen(open) {
+  clearTimeout(collapseTimer);
+  sheet.hidden = !open;
+  scrim.hidden = !open;
+  pov.classList.toggle("is-open", open);
+  povTab.setAttribute("aria-expanded", String(open));
+  povTab.querySelector(".pov-caret").textContent = open ? "▼" : "▲";
+  povTab.classList.toggle("cue", !open && last.whose === "customer");
+  if (open) fitPhone();
 }
 
-/** Scale the phone to fit the space it has, keeping a real phone's proportions. */
+/** Scale the phone to fit the overlay, keeping a real phone's proportions. */
 function fitPhone() {
-  const side = sides.customer;
-  const label = side.querySelector(".side-label").offsetHeight;
-  const room = { w: side.clientWidth - 32, h: side.clientHeight - label - 32 };
-  if (room.w <= 0 || room.h <= 0) return;
-  const scale = Math.min(1, room.w / (PHONE_W + 20), room.h / (PHONE_H + 20));
+  if (sheet.hidden) return;
+  const room = { w: Math.min(innerWidth - 64, 460), h: stage.clientHeight - povTab.offsetHeight - 48 };
+  const scale = Math.max(0.4, Math.min(1, room.w / (PHONE_W + 20), room.h / (PHONE_H + 20)));
   phone.style.width = `${Math.round(PHONE_W * scale) + 20}px`;
   phone.style.height = `${Math.round(PHONE_H * scale) + 20}px`;
   screen.style.width = `${PHONE_W}px`;
@@ -196,6 +206,7 @@ restart.addEventListener("click", async () => {
   try {
     await api("/api/demo/reset", { method: "POST" });
     frameMechanic.src = `/workshop?fresh=${Date.now()}#/work-orders`;  // a new load, even if the address was the same
+    setOpen(false);
     last = { step: null, whose: null, token: undefined };
     await tick();
   } catch (e) {

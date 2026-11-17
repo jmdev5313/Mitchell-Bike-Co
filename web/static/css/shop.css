@@ -329,7 +329,7 @@ body.customer {
 .repair-steps .row .input { flex: 1 1 160px; width: auto; }
 
 /* The job screen: the conversation on the left, the work order on the right */
-.job { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h, 54px)); min-height: 560px; }
+.job { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h, 54px)); min-height: 400px; }
 .job-head {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--s2) var(--s5);
   padding: 12px var(--s5) 12px; border-bottom: 1px solid var(--hair);
@@ -581,11 +581,9 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
   background: var(--white); border-bottom: 1px solid var(--hair); font-size: 16px; line-height: 1.45;
 }
 .stage-guide .lead { font-weight: 600; white-space: nowrap; }
-.stage-guide[hidden], .stage-tabs[hidden] { display: none; }
-.stage-tabs { display: none; margin: 0; padding: var(--s2) var(--s4); background: var(--white); border-bottom: 1px solid var(--hair); }
-.turn-dot { background: var(--ink); border-color: var(--ink); }
-.stage-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 28vw, 440px); gap: var(--s4); padding: var(--s4); }
-.stage-side { display: flex; flex-direction: column; min-height: 0; min-width: 0; background: var(--white); border: 2px solid var(--hair); }
+.stage-guide[hidden] { display: none; }
+.stage-body { flex: 1; min-height: 0; position: relative; display: flex; padding: var(--s3) var(--s4) 64px; }
+.stage-side { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; background: var(--white); border: 2px solid var(--hair); }
 .stage-side.is-turn { border-color: var(--ink); }
 .side-label {
   display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
@@ -595,20 +593,43 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .side-label .turn { background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600; padding: 3px 8px; }
 .side-label .turn[hidden] { display: none; }
 .side-workshop iframe { flex: 1; width: 100%; border: 0; }
-.side-phone { align-items: center; background: var(--bench); }
-.side-phone .side-label { align-self: stretch; background: var(--white); }
+
+/* Customer POV: a tab at the bottom that opens the Customer's phone over the workshop */
+.pov-scrim { position: absolute; inset: 0; z-index: 3; background: rgba(22, 26, 31, 0.1); }
+.pov-scrim[hidden] { display: none; }
+.pov { position: absolute; right: var(--s5); bottom: 0; z-index: 4; display: flex; flex-direction: column-reverse; align-items: stretch; }
+.pov-tab {
+  display: flex; align-items: center; gap: var(--s2); min-height: 48px; padding: 0 var(--s4);
+  font: inherit; color: var(--ink); background: var(--manila); cursor: pointer;
+  border: 2px solid var(--ink); border-bottom: 0; border-radius: 6px 6px 0 0;
+}
+.pov-title { font-weight: 600; }
+.pov-sub { font-size: 14px; color: var(--manila-text); }
+.pov.is-turn .pov-sub { color: var(--ink); font-weight: 600; }
+.pov-badge[hidden] { display: none; }
+.pov-badge { animation: pov-flash 1.2s ease-in-out infinite; }
+@keyframes pov-flash { 50% { background: var(--manila); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .pov-badge { animation: none; } }
+.pov-caret { font-size: 11px; margin-left: var(--s1); }
+.pov-tab.cue { outline-offset: 4px; }
+.pov.is-open .pov-tab { border-radius: 0; border-bottom: 1px solid var(--manila-text); }
+.pov-sheet {
+  background: var(--bench); border: 2px solid var(--ink); border-bottom: 0;
+  box-shadow: 0 -12px 40px rgba(22, 26, 31, 0.22); padding: var(--s5) var(--s5) 0;
+  display: flex; justify-content: center;
+}
+.pov-sheet[hidden] { display: none; }
 .phone {
-  margin: var(--s4) auto; box-sizing: border-box; border: 10px solid var(--ink); border-radius: 36px;
+  box-sizing: border-box; border: 10px solid var(--ink); border-bottom-width: 0; border-radius: 36px 36px 0 0;
   overflow: hidden; background: var(--manila); position: relative; flex: none;
 }
 .phone-screen { transform-origin: top left; }
 .phone-screen iframe { width: 100%; height: 100%; border: 0; display: block; }
 .phone-empty { height: 100%; box-sizing: border-box; padding: 48px 28px; color: var(--manila-text); font-size: 18px; }
 .phone-empty .display { font-size: 36px; color: var(--ink); margin: 0 0 12px; }
-@media (max-width: 1100px) {
-  .stage-tabs { display: flex; }
-  .stage-body { grid-template-columns: minmax(0, 1fr); padding: var(--s2); }
-  .stage-body[data-view="mechanic"] .side-phone, .stage-body[data-view="customer"] .side-workshop { display: none; }
+@media (max-width: 700px) {
+  .stage-body { padding: var(--s2) var(--s2) 60px; }
+  .pov { right: var(--s2); left: var(--s2); }
   .stage-guide { font-size: 15px; padding: 10px var(--s4); }
 }
 
