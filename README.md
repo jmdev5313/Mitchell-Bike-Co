@@ -59,6 +59,7 @@ Why it's built this way is in the [decisions log](docs/decisions.md).
 
 - **`make demo`** plays the hero story through the three servers with a scripted client, including the two calls the shop refuses. No API key needed. Its own database: `data/demo.db`.
 - **`make agent`** is a terminal chat as the Mechanic, with slash commands for what the Agent can't do (`/send`, `/approve`, `/reply`, `/photo`, `/usage`).
+- **`make photo SRC=…`** makes the hero story's illustrative photo (AI-generated, and labelled so wherever it shows) from a raw image in `data/photos/raw/`.
 - **`make sample`** adds Emma's quoted work order and prints her link (`ARGS=--done` for a finished repair, ready to pay with test card `4242 4242 4242 4242`).
 - **Claude Code as the Agent:** the repo's `.mcp.json` connects Claude Code to the three servers.
 - **The API by hand:** `make api`, then http://127.0.0.1:8000/docs.

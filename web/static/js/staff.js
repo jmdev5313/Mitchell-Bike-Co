@@ -197,6 +197,9 @@ export function workshopNav(current) {
 
 const WHOSE = { mechanic: "Your turn", agent: "The Agent's turn", customer: "The Customer's turn", shop: "The shop's turn", nobody: "Nothing to do" };
 
+/** The hero story's photo of the worn cassette, made with an image model (labelled wherever it shows). */
+export const HERO_PHOTO = { url: "/static/img/hero-cassette.jpg", name: "hero-cassette-illustrative.jpg" };
+
 /** The hero story's opening message, offered wherever a conversation starts. */
 export const HERO = "Emma Clark's gravel bike is on the stand. Gears skip under load in the smaller cogs, and my chain checker reads 0.75%. Work out what it needs and draft her a quote.";
 

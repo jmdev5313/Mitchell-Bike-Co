@@ -1,10 +1,11 @@
-.PHONY: help db seed reset sample test servers demo agent agent-check api web evals
+.PHONY: help db seed reset sample photo test servers demo agent agent-check api web evals
 
 help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
 	@echo "make seed    Load seed data into the database"
 	@echo "make reset   Delete, rebuild, and seed the database"
 	@echo "make sample  Add a quoted hero work order and print its Customer token (ARGS=--done: ready to pay)"
+	@echo "make photo SRC=data/photos/raw/<file>  Make the hero photo (1200px JPEG, metadata stripped) from a raw image (macOS)"
 	@echo "make test    Run unit tests"
 	@echo "make servers Run the three MCP servers over HTTP (ports 8101-8103)"
 	@echo "make demo    Run the hero story through the MCP servers"
@@ -25,6 +26,14 @@ reset:
 
 sample:
 	uv run python -m demo.sample $(ARGS)
+
+# The hero story's illustrative photo. sips (built into macOS) resizes and re-encodes it, which
+# also drops the raw file's metadata. The raw original stays in data/photos/raw/ (gitignored).
+photo:
+	@test -n "$(SRC)" || (echo "Usage: make photo SRC=data/photos/raw/<file>"; exit 1)
+	mkdir -p web/static/img
+	sips -Z 1200 -s format jpeg -s formatOptions 80 "$(SRC)" --out web/static/img/hero-cassette.jpg
+	@echo "Wrote web/static/img/hero-cassette.jpg. It's shown as an illustrative, AI-generated photo."
 
 test:
 	uv run pytest

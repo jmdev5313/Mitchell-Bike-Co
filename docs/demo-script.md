@@ -15,7 +15,7 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 
 | Time | Where | Do | Point out |
 | --- | --- | --- | --- |
-| 0:00 | Workshop | **Start with the Agent → Send** (the hero message is already in the box) | The activity log filling in: each tool, its MCP server, what came back. |
+| 0:00 | Workshop | **Start with the Agent → Send** (the hero message is already in the box, with the illustrative photo of the cassette) | The activity log filling in: each tool, its MCP server, what came back. |
 | 0:10 | Workshop | Wait for `get_bike` | "Differs from catalog: freehub". Emma upgraded her wheels. |
 | 0:15 | Workshop | Wait for `list_fitting_parts`, `supplier_options`, `plan_order` | Only one cassette fits, it's out of stock, and the Agent plans Velo because 2 days meets the date (Northgate is cheaper but slower). |
 | 0:30 | Workshop | The reply, and the work order beside it | The screen turned into the job: the quote and the next step on the right, and a manila "To Emma" card in the chat where the Agent drafted the message. |
