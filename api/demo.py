@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request, status
 
 from demo.sample import create_sample
-from shop import db
+from shop import db, messages
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
@@ -59,6 +59,61 @@ def _sample_link(conn) -> str | None:
     return row["token"] if row else None
 
 
+REPAIR = ("approved", "awaiting_parts", "scheduled", "in_progress", "done")
+
+
+def story(conn) -> dict[str, Any]:
+    """Where the hero story stands on the newest work order, for the demo stage's step guide.
+
+    Steps: 1 ask the Agent, 2 send the quote, 3 the Customer approves, 4 the repair,
+    5 the Customer pays, 6 finished. `whose` says which side acts next.
+    """
+    from api.staff import next_step
+
+    row = conn.execute(
+        """SELECT w.id, w.status, w.quoted_total_cents, c.name, l.token
+           FROM work_orders w JOIN customer_bikes b ON b.id = w.customer_bike_id
+           JOIN customers c ON c.id = b.customer_id
+           LEFT JOIN customer_links l ON l.work_order_id = w.id
+           ORDER BY w.id DESC LIMIT 1"""
+    ).fetchone()
+    if row is None:
+        return {"step": 1, "whose": "mechanic", "work_order_id": None, "customer_token": None,
+                "customer": None, "next_step": None, "action": None, "total_cents": None, "status": None}
+    status = row["status"]
+    step_info = next_step(conn, row["id"], status)
+    thread = messages.list_messages(conn, row["id"])
+    sent_quote = any(m.status == "sent" and m.quoted_total_cents is not None for m in thread)
+    draft_quote = any(m.status == "draft" and m.quoted_total_cents is not None for m in thread)
+    if status in ("paid", "declined"):
+        step = 6
+    elif status == "done" and _told_ready(conn, row["id"], thread):
+        step = 5
+    elif status in REPAIR:
+        step = 4
+    elif sent_quote:
+        step = 3
+    elif draft_quote:
+        step = 2
+    else:
+        step = 1
+    # Usually the Customer acts in steps 3 and 5, but a question from her hands the turn back to the shop.
+    whose = "nobody" if step == 6 else "customer" if step_info["waiting_on"] == "customer" else "mechanic"
+    return {
+        "step": step, "whose": whose, "status": status, "work_order_id": row["id"],
+        "customer": row["name"], "customer_token": row["token"], "total_cents": row["quoted_total_cents"],
+        "next_step": step_info["text"], "action": (step_info.get("action") or {}).get("kind"),
+    }
+
+
+def _told_ready(conn, work_order_id: int, thread) -> bool:
+    """Whether the shop has messaged the Customer since the repair was finished."""
+    finished = conn.execute("SELECT finished_at FROM work_orders WHERE id = ?", (work_order_id,)).fetchone()[0]
+    return bool(finished) and any(
+        m.direction == "to_customer" and m.status == "sent" and (m.sent_at or "") > finished for m in thread
+    )
+
+
 @router.get("")
 def demo_status() -> dict[str, Any]:
     """What the front door shows. The passcode and sample link are only given out in demo mode."""
@@ -68,6 +123,7 @@ def demo_status() -> dict[str, Any]:
         try:
             info["staff_passcode"] = os.environ.get("STAFF_PASSCODE") or None
             info["customer_token"] = _sample_link(conn)
+            info["story"] = story(conn)
         finally:
             conn.close()
     return info

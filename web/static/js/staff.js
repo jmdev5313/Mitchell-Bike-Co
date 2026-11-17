@@ -184,6 +184,15 @@ export function refusedNotice(message) {
   return h("p", { class: "notice-refused", role: "alert" }, h("strong", {}, "Refused: "), message);
 }
 
+// --- The workshop's links ----------------------------------------------------
+
+/** Work orders and Audit log. There's no top bar: each screen puts these in its heading row. */
+export function workshopNav(current) {
+  return h("nav", { class: "wnav", "aria-label": "Workshop" },
+    [["work-orders", "#/work-orders", "Work orders"], ["audit", "#/audit", "Audit log"]].map(([id, href, label]) =>
+      h("a", { href, "aria-current": id === current ? "page" : null }, label)));
+}
+
 // --- Next step, history, badges ------------------------------------------------
 
 const WHOSE = { mechanic: "Your turn", agent: "The Agent's turn", customer: "The Customer's turn", shop: "The shop's turn", nobody: "Nothing to do" };

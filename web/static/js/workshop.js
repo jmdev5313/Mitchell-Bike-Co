@@ -1,21 +1,17 @@
 // The Mechanic's workspace: /workshop#/work-orders, the job screen at #/work-orders/{id}[/{conversation}],
 // a job not yet on a work order at #/agent/{conversation}, and #/audit.
 
+import "./cue.js";
 import { h, dollars } from "./dom.js";
-import { staff, passcode, setPasscode, Unauthorized, stageMeter, newBadge, startWithAgent } from "./staff.js";
+import { staff, passcode, setPasscode, Unauthorized, stageMeter, newBadge, startWithAgent, workshopNav } from "./staff.js";
 import { jobScreen } from "./job.js";
 
 const app = document.getElementById("app");
-const nav = document.getElementById("nav");
 
 // --- Routing -----------------------------------------------------------------
 
 function route() {
   const [section = "work-orders", id, conversationId] = location.hash.replace(/^#\/?/, "").split("/");
-  for (const link of nav.querySelectorAll("a")) {
-    link.toggleAttribute("aria-current", link.dataset.section === section);
-    if (link.dataset.section === section) link.setAttribute("aria-current", "page");
-  }
   if (!passcode()) return Promise.resolve(gate());
   const screens = {
     "work-orders": () => (id ? jobScreen(app, { orderId: Number(id), conversationId, onUnauthorized: signOut }) : workOrders()),
@@ -45,16 +41,14 @@ window.addEventListener("hashchange", route);
 let latestEvent = null;
 function userIsBusy() {
   const el = document.activeElement;
-  const typing = el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button")) && el.value;
+  const typing = el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && el.type !== "button"))
+    && el.value && el.value !== el.dataset.prefill;
   return Boolean(typing || window.mbcStreaming || document.querySelector("dialog[open]"));
 }
 async function poll() {
   if (!passcode() || document.hidden) return;
   try {
-    const { latest_event_id, needs_you } = await staff("/api/activity/latest");
-    const link = nav.querySelector('[data-section="work-orders"]');
-    link.querySelector(".badge")?.remove();
-    if (needs_you) link.append(h("span", { class: "badge", "aria-label": `${needs_you} need you` }, String(needs_you)));
+    const { latest_event_id } = await staff("/api/activity/latest");
     if (latestEvent !== null && latest_event_id !== latestEvent && !userIsBusy()) {
       const y = window.scrollY;  // refresh in place: keep the reader where they were
       await route();
@@ -109,9 +103,10 @@ async function workOrders() {
   const render = () => {
     const shown = orders.filter(FILTERS.find((f) => f.id === filter).test);
     app.replaceChildren(h("div", { class: "page" },
-      h("div", { style: "display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px" },
+      h("div", { class: "page-head" },
         h("h1", { class: "display" }, "Work orders"),
-        h("button", { type: "button", class: "btn", onclick: () => startWithAgent().catch(handle) }, "Start with the Agent")),
+        h("div", { class: "page-tools" }, workshopNav("work-orders"),
+          h("button", { type: "button", class: "btn start-agent", onclick: () => startWithAgent().catch(handle) }, "Start with the Agent"))),
       h("div", { class: "filters", role: "group", "aria-label": "Filter by who it's waiting on" },
         FILTERS.map((f) => h("button", {
           type: "button", "aria-pressed": String(f.id === filter),
@@ -166,7 +161,7 @@ async function auditLog() {
     return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
   };
   app.replaceChildren(h("div", { class: "page" },
-    h("h1", { class: "display" }, "Audit log"),
+    h("div", { class: "page-head" }, h("h1", { class: "display" }, "Audit log"), h("div", { class: "page-tools" }, workshopNav("audit"))),
     h("p", { class: "subhead" },
       "Every tool call the Agent made, written by the shop's MCP servers themselves, so it's the same whichever agent platform called. ",
       "Each work order's History shows the friendly version, alongside the people's actions."),

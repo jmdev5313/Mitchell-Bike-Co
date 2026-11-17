@@ -1,10 +1,12 @@
 // One screen per job: the conversation with the Agent on the left, the work order on the right
 // (Overview, Bike, History). The panel collapses to a strip; at narrow widths the two become a switch.
 
-import { h, dollars, shortDate, longDate } from "./dom.js";
+import { h, icon, dollars, shortDate, longDate } from "./dom.js";
+
+const PANEL = "M2 3h14v12H2zM11 3v12";
 import {
   staff, Unauthorized, progressStrip, ledger, draftBand, customerLink, nextStepBar, historySection,
-  takePrefill, HERO, startWithAgent,
+  takePrefill, HERO, startWithAgent, workshopNav,
 } from "./staff.js";
 import { mechanicTurn, agentTurn, composerForm } from "./agent.js";
 
@@ -100,14 +102,15 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
     },
   });
 
-  const chatHead = h("div", { class: "job-chat-head" },
-    h("span", {}, "Conversation with the Agent"),
-    order && order.conversation_ids.length > 1 ? h("span", { class: "convo-pick" },
+  // Only a job with more than one conversation needs a way to pick (and start) them.
+  const chatHead = order && order.conversation_ids.length > 1 ? h("div", { class: "job-chat-head" },
+    h("span", {}, "Conversations"),
+    h("span", { class: "convo-pick" },
       order.conversation_ids.slice().reverse().map((cid, i) => h("a", {
         href: `#/work-orders/${id}/${cid}`, "aria-current": cid === currentConvo ? "true" : null,
         "aria-label": `Conversation ${i + 1}`,
-      }, String(i + 1)))) : null,
-    h("button", { type: "button", class: "linkish", onclick: () => newConversation().catch(rerender) }, "+ New conversation"));
+      }, String(i + 1)))),
+    h("button", { type: "button", class: "linkish", onclick: () => newConversation().catch(rerender) }, "+ New conversation")) : null;
 
   async function newConversation() {
     if (!id) return startWithAgent();
@@ -223,7 +226,8 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   }
 
   // --- Layout: collapse, and the narrow-width switch ---
-  const toggleButton = h("button", { type: "button", class: "btn btn-outline panel-toggle", "aria-controls": "job-panel", onclick: () => toggle() });
+  const toggleButton = h("button", { type: "button", class: "btn btn-outline panel-toggle", "aria-controls": "job-panel", onclick: () => toggle() },
+    icon(PANEL, 18, 1.6), h("span", { class: "visually-hidden" }, ""));
   const strip = h("button", { type: "button", class: "panel-strip", "aria-controls": "job-panel", onclick: () => toggle() },
     h("span", {}, order ? `Work order #${id}` : "Work order"));
   function toggle() {
@@ -234,7 +238,8 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   }
   function drawToggle() {
     const collapsed = root.classList.contains("is-collapsed");
-    toggleButton.textContent = collapsed ? "Show work order" : "Hide work order";
+    toggleButton.lastChild.textContent = collapsed ? "Show work order" : "Hide work order";
+    toggleButton.title = collapsed ? "Show work order" : "Hide work order";
     toggleButton.setAttribute("aria-expanded", String(!collapsed));
     strip.setAttribute("aria-expanded", String(!collapsed));
   }
@@ -248,13 +253,8 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   }
 
   const head = h("div", { class: "job-head" },
-    h("div", { class: "job-title" },
-      h("a", { class: "crumb", href: "#/work-orders" }, "← Work orders"),
-      h("h1", { class: "display" }, order ? `Work order #${id} · ${customer}` : "New job"),
-      h("span", { class: "subhead" }, order
-        ? `${order.bike.model} “${order.bike.nickname}”`
-        : "Describe the bike on the stand. When the Agent opens a work order, it appears beside the conversation.")),
-    h("div", { class: "job-tools" }, toggleButton),
+    h("h1", { class: "display" }, order ? `${customer} · Work order #${id}` : "New job"),
+    h("div", { class: "job-tools" }, workshopNav("work-orders"), toggleButton),
     // The case flow: where this job is, from diagnosis to paid.
     order ? h("div", { class: "job-flow" }, progressStrip(order.status)) : null);
 
@@ -317,7 +317,6 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   drawPanel();
 
   app.replaceChildren(root);
-  document.documentElement.style.setProperty("--topbar-h", `${document.querySelector(".topbar").offsetHeight}px`);
   let saved = null;
   try { saved = Number(localStorage.getItem("mbc-panel-width")) || null; } catch { /* private mode */ }
   if (saved) setWidth(saved, false);

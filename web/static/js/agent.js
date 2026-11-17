@@ -86,7 +86,7 @@ function clock(value) {
 /** The message box. `conversationId` is an async function, so a job can start its conversation on first send. */
 export function composerForm({ conversationId, transcript, rerender, onUnauthorized }) {
   const textarea = h("textarea", { id: "msg", class: "textarea", rows: 2, required: true,
-    placeholder: "Describe what you see and measure…" });
+    placeholder: "Message the Agent: what you see and measure…" });
   const grow = () => { textarea.style.height = "auto"; textarea.style.height = `${Math.min(textarea.scrollHeight + 2, 220)}px`; };
   textarea.addEventListener("input", grow);
   const files = h("input", { type: "file", accept: "image/jpeg,image/png,image/gif,image/webp", multiple: true, class: "visually-hidden", id: "photos", tabindex: "-1" });
@@ -140,7 +140,7 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
         h("button", { type: "submit", class: "btn" }, "Send"))));
 
   const form = h("form", { class: "composer", onsubmit: (event) => { event.preventDefault(); submit(textarea.value.trim()); } },
-    h("label", { class: "lbl", for: "msg" }, "Message the Agent"),
+    h("label", { class: "lbl visually-hidden", for: "msg" }, "Message the Agent"),  // the box and its Send button say it
     h("div", { class: "row" },
       h("button", { type: "button", class: "btn btn-outline attach-btn", "aria-label": "Attach photos", onclick: () => files.click() }, icon(CLIP, 18, 1.4)),
       textarea,
@@ -155,7 +155,9 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) dialog.querySelector("form").requestSubmit();
   });
   form.api = {
-    setText(text) { textarea.value = text; grow(); textarea.focus(); textarea.setSelectionRange(text.length, text.length); },
+    // Text put in the box for the Mechanic (not typed by them) is remembered, so auto-refresh
+    // only holds off once they've actually changed it.
+    setText(text) { textarea.value = text; textarea.dataset.prefill = text; grow(); textarea.focus(); textarea.setSelectionRange(text.length, text.length); },
     send(text) { submit(text); },
   };
   return form;

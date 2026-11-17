@@ -262,7 +262,7 @@ body.customer {
 /* Progress strip on a work order: done solid, current striped, future light grey */
 .strip { list-style: none; margin: var(--s5) 0 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s1); }
 .strip li { font-size: 13px; color: var(--slate); }
-.strip li .bar { display: block; height: 8px; background: #DDE1E4; margin-bottom: 6px; }
+.strip li .bar { display: block; height: 5px; background: #DDE1E4; margin-bottom: 6px; }
 .strip li.done { color: var(--ink); }
 .strip li.done .bar { background: var(--ink); }
 .strip li.current { color: var(--ink); font-weight: 600; }
@@ -329,15 +329,22 @@ body.customer {
 .repair-steps .row .input { flex: 1 1 160px; width: auto; }
 
 /* The job screen: the conversation on the left, the work order on the right */
-.job { display: flex; flex-direction: column; height: calc(100dvh - var(--topbar-h, 54px)); min-height: 560px; }
+.job { display: flex; flex-direction: column; height: 100dvh; min-height: 400px; }
 .job-head {
-  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--s2) var(--s5);
-  padding: 12px var(--s5) 12px; border-bottom: 1px solid var(--hair);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s2) var(--s5);
+  padding: 10px var(--s5) 8px; border-bottom: 1px solid var(--hair);
 }
-.job-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s4); min-width: 0; }
-.job-title h1.display { font-size: 30px; margin: 0; }
-.job-title .subhead { margin: 0; }
-.job-tools { display: flex; align-items: center; gap: var(--s4); }
+.job-head h1.display { font-size: 28px; margin: 0; }
+.job-tools { display: flex; align-items: center; gap: var(--s2); }
+.panel-toggle { width: var(--control); padding: 0; justify-content: center; }
+
+/* The workshop's links, in each screen's heading row (there's no top bar) */
+.wnav { display: flex; gap: 2px; margin-right: var(--s2); }
+.wnav a { display: inline-flex; align-items: center; min-height: var(--control); padding: 0 10px; text-decoration: none; font-weight: 500; }
+.wnav a[aria-current="page"] { font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink); }
+.wnav a:hover { color: var(--slate); }
+.page-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s3) var(--s5); }
+.page-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
 .job-switch { display: none; margin: 0; padding: var(--s2) var(--s4); border-bottom: 1px solid var(--hair); }
 .job-body { display: flex; flex: 1; min-height: 0; }
 .job-chat { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
@@ -350,7 +357,7 @@ body.customer {
 .convo-pick a { min-width: 28px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: var(--ink); }
 .convo-pick a[aria-current="true"] { background: var(--ink); color: var(--white); }
 .job-chat .transcript { flex: 1; overflow-y: auto; padding: 28px 40px 32px; display: flex; flex-direction: column; gap: var(--s5); }
-.job-panel { flex: 0 0 var(--panel-w, clamp(400px, 34vw, 520px)); min-width: 0; overflow-y: auto; }
+.job-panel { flex: 0 0 var(--panel-w, clamp(380px, 34vw, 520px)); min-width: 0; overflow-y: auto; }
 .job-flow { flex: 1 0 100%; }
 .job-flow .strip { margin-top: var(--s2); }
 .job-resizer {
@@ -368,8 +375,9 @@ body.customer {
 .job-panel .tabs { position: sticky; top: 0; z-index: 1; display: flex; gap: var(--s1); padding: 0 var(--s5); background: var(--bench); border-bottom: 1px solid var(--hair-bench); }
 .job-panel .tabs button {
   font: inherit; font-weight: 500; color: var(--ink); background: none; border: 0; cursor: pointer;
-  min-height: var(--control); padding: 0 12px;
+  min-height: var(--control); padding: 0 10px; white-space: nowrap;
 }
+.job-panel .tabs { overflow-x: auto; }
 .job-panel .tabs button[aria-selected="true"] { font-weight: 600; box-shadow: inset 0 -4px 0 var(--ink); }
 .job-panel .rail-section + .rail-section { border-top: 1px solid var(--hair-bench); }
 .job-panel .rail-section > h2 { font-size: 20px; }
@@ -388,8 +396,8 @@ body.customer {
 .loose { list-style: none; margin: 0; padding: 0; }
 .loose li { padding: var(--s2) 0; border-bottom: 1px solid var(--hair); }
 
-/* At narrow widths (a tablet, or the demo stage) the two halves become a switch */
-@media (max-width: 1000px) {
+/* At narrow widths (a tablet, or a phone) the two halves become a switch */
+@media (max-width: 860px) {
   .job { height: auto; min-height: 0; }
   .job-switch { display: flex; }
   .panel-toggle, .job.is-collapsed .panel-strip, .job-resizer { display: none; }
@@ -536,6 +544,9 @@ body.customer {
 .front { max-width: 980px; }
 .front h1.display { font-size: 56px; margin-top: var(--s5); max-width: 760px; }
 .front .lede { font-size: 20px; line-height: 1.5; max-width: 720px; margin: var(--s4) 0 0; color: var(--ink); }
+.stage-door { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s5); margin-top: var(--s6); padding: var(--s4) 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--hair); }
+.stage-door[hidden] { display: none; }
+.stage-door p { margin: 0; flex: 1 1 320px; max-width: 620px; }
 .doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s5); margin-top: var(--s6); }
 .door { border-top: 2px solid var(--ink); padding-top: var(--s4); }
 .door p { margin: var(--s3) 0 0; }
@@ -551,3 +562,96 @@ body.customer {
   .doors, .demo-tools { grid-template-columns: 1fr; }
   .front h1.display { font-size: 40px; }
 }
+
+/* ---------------------------------------------------------------------------
+   The demo stage (/demo): the workshop and the Customer's phone side by side. */
+body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.stage-top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2) var(--s5);
+  padding: 0 var(--s5); background: var(--white); border-bottom: 2px solid var(--ink);
+}
+.stage-top .brand { display: flex; align-items: baseline; gap: 10px; padding: 12px 0 10px; text-decoration: none; }
+.stage-top .brand .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 25px; }
+.stage-top .brand .sub { font-size: 14px; color: var(--slate); }
+.stage-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: 14px; }
+.stage-steps li { display: flex; align-items: center; gap: var(--s2); color: var(--slate); min-height: 36px; }
+.stage-steps .n {
+  display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+  border: 1px solid #B4BBC2; font-weight: 600; font-size: 13px;
+}
+.stage-steps li.done { color: var(--ink); }
+.stage-steps li.done .n { background: var(--ink); border-color: var(--ink); color: var(--white); }
+.stage-steps li.current { color: var(--ink); font-weight: 600; box-shadow: inset 0 -4px 0 var(--ink); }
+.stage-steps li.current .n { border: 2px solid var(--ink); }
+.stage-body { flex: 1; min-height: 0; position: relative; display: flex; padding: var(--s3) var(--s4) 0; }
+.stage-side { display: flex; flex-direction: column; flex: 1; min-height: 0; min-width: 0; background: var(--white); border: 2px solid var(--hair); border-bottom: 0; }
+.stage-side.is-turn { border-color: var(--ink); }
+/* The bottom bar: whose turn and one line on the left, Customer POV on the right */
+.stage-bottom {
+  position: relative; z-index: 4; display: flex; align-items: center; gap: var(--s4);
+  min-height: 52px; padding: 0 var(--s4); background: var(--white); border-top: 2px solid var(--ink);
+}
+.stage-guide { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--s3); padding: 8px 0; font-size: 15px; line-height: 1.4; margin-right: 300px; }
+.stage-guide .lead { font-size: 12px; font-weight: 600; white-space: nowrap; padding: 3px 8px; border: 1px solid var(--ink); }
+.stage-guide .lead.whose-mechanic { background: var(--ink); color: var(--white); }
+.stage-guide .lead.whose-customer { background: var(--manila); }
+.stage-guide[hidden] { display: none; }
+.side-workshop iframe { flex: 1; width: 100%; border: 0; }
+
+/* Customer POV: a tab at the bottom that opens the Customer's phone over the workshop */
+.pov-scrim { position: absolute; inset: 0; z-index: 3; background: rgba(22, 26, 31, 0.25); }
+.pov-scrim[hidden] { display: none; }
+.pov { position: absolute; right: var(--s4); bottom: 0; display: flex; flex-direction: column-reverse; align-items: stretch; }
+.pov-tab {
+  display: flex; align-items: center; gap: var(--s2); min-height: 48px; padding: 0 var(--s4);
+  font: inherit; color: var(--ink); background: var(--manila); cursor: pointer;
+  border: 2px solid var(--ink); border-bottom: 0; border-radius: 6px 6px 0 0;
+}
+.pov-title { font-weight: 600; }
+.pov-sub { font-size: 14px; color: var(--manila-text); }
+.pov.is-turn .pov-sub { color: var(--ink); font-weight: 600; }
+.pov-badge[hidden] { display: none; }
+.pov-badge { animation: pov-flash 1.2s ease-in-out infinite; }
+@keyframes pov-flash { 50% { background: var(--manila); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .pov-badge { animation: none; } }
+.pov-caret { font-size: 11px; margin-left: var(--s1); }
+.pov-tab.cue { outline-offset: 4px; }
+/* Open: the phone floats above its tab, like a mirrored device */
+.pov-sheet { display: flex; justify-content: center; padding: 0 0 14px; }
+.pov-sheet[hidden] { display: none; }
+.device { position: relative; }
+.device::before, .device::after { content: ""; position: absolute; width: 4px; background: #2B3036; border-radius: 2px; }
+.device::before { left: -4px; top: 18%; height: 64px; box-shadow: 0 84px 0 #2B3036; }  /* volume up and down */
+.device::after { right: -4px; top: 24%; height: 96px; }  /* side button */
+.phone {
+  position: relative; flex: none; overflow: hidden; background: var(--manila);
+  border: 12px solid #161A1F; border-radius: 54px;
+  box-shadow: 0 0 0 2px #3A4047, 0 28px 70px rgba(22, 26, 31, 0.45);
+}
+.phone-screen { position: relative; display: flex; flex-direction: column; transform-origin: top left; background: var(--manila); }
+.phone-status {
+  flex: none; height: 50px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 30px 0 36px; font-weight: 600; font-size: 16px; position: relative;
+}
+.phone-status .island {
+  position: absolute; left: 50%; top: 11px; transform: translateX(-50%);
+  width: 122px; height: 34px; border-radius: 17px; background: #0B0D10;
+}
+.phone-app { flex: 1; min-height: 0; }
+.phone-app iframe { width: 100%; height: 100%; border: 0; display: block; }
+.home-bar {
+  position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 3px; background: rgba(22, 26, 31, 0.75);
+}
+.phone-empty { height: 100%; box-sizing: border-box; padding: 48px 28px; color: var(--manila-text); font-size: 18px; }
+.phone-empty .display { font-size: 36px; color: var(--ink); margin: 0 0 12px; }
+@media (max-width: 700px) {
+  .stage-body { padding: var(--s2) var(--s2) 0; }
+  .pov { right: var(--s2); left: var(--s2); }
+  .stage-guide { margin-right: 0; padding-bottom: 52px; }
+}
+
+/* The next control, rung by the demo stage (cue.js) */
+.cue { outline: 3px solid var(--ink); outline-offset: 3px; animation: cue 1.4s ease-in-out infinite; }
+@keyframes cue { 50% { outline-offset: 7px; outline-color: rgba(22, 26, 31, 0.3); } }
+@media (prefers-reduced-motion: reduce) { .cue { animation: none; } }

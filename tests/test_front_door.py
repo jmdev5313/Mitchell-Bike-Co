@@ -27,6 +27,9 @@ def test_front_door_is_served(client):
     page = client.get("/")
     assert page.status_code == 200 and "Be the Mechanic" in page.text and "Be the Customer" in page.text
     assert client.get("/static/js/home.js").status_code == 200
+    stage = client.get("/demo")
+    assert stage.status_code == 200 and "stage.js" in stage.text
+    assert client.get("/static/js/stage.js").status_code == 200 and client.get("/static/js/cue.js").status_code == 200
 
 
 def test_outside_demo_mode_nothing_is_handed_out(client, conn):
@@ -97,3 +100,27 @@ def test_audit_log_lists_tool_calls_and_refusals(client, conn):
     assert data["entries"][0]["arguments"] == {"sku": "AD-C11-28R"}
     refused = client.get("/api/audit?refused_only=true", headers=STAFF).json()["entries"]
     assert [e["tool"] for e in refused] == ["add_part"]
+
+
+def test_the_story_follows_the_newest_work_order(client, conn, monkeypatch):
+    from shop import flow, messages
+
+    monkeypatch.setenv("DEMO_MODE", "1")
+    client.post("/api/demo/reset")
+    assert client.get("/api/demo").json()["story"]["step"] == 1
+    order, token, quote_id = create_sample(conn)
+    story = client.get("/api/demo").json()["story"]
+    assert (story["step"], story["whose"], story["customer_token"]) == (3, "customer", token)
+    flow.customer_decides(conn, quote_id, approved=True)
+    story = client.get("/api/demo").json()["story"]
+    assert (story["step"], story["whose"]) == (4, "mechanic")
+    client.post("/api/demo/reset")
+    order, _, _ = create_sample(conn, done=True)
+    story = client.get("/api/demo").json()["story"]
+    assert (story["step"], story["next_step"]) == (4, "Tell Emma the bike is ready")
+    ready = messages.draft_message(conn, order, "Your bike is ready.", author="mechanic")
+    messages.send_draft(conn, ready.id)
+    assert client.get("/api/demo").json()["story"]["step"] == 5
+    messages.receive_message(conn, order, "See you Friday!")
+    story = client.get("/api/demo").json()["story"]
+    assert (story["step"], story["whose"]) == (5, "mechanic")  # her question hands the turn back, same step

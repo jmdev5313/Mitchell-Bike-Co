@@ -35,6 +35,7 @@ async function load() {
 
   if (info.demo_mode) {
     resetSection.hidden = false;
+    document.getElementById("stage-door").hidden = false;
     if (info.staff_passcode) {
       passcodeNote.textContent = "Demo mode: you'll be signed in to the workshop automatically.";
       mechanic.addEventListener("click", () => {

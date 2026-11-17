@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Demo · Mitchell Bike Co.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/shop.css">
+<script type="module" src="/static/js/stage.js"></script>
+</head>
+<body class="stage-page">
+<header class="stage-top">
+  <a class="brand" href="/"><span class="wordmark">Mitchell Bike Co.</span><span class="sub">Demo</span></a>
+  <ol class="stage-steps" id="steps" aria-label="The story"></ol>
+  <div class="stage-actions">
+    <button type="button" class="btn btn-outline" id="restart">Start over</button>
+  </div>
+</header>
+<main class="stage-body" id="stage">
+  <section class="stage-side side-workshop" id="side-mechanic" aria-label="The workshop, as the Mechanic">
+    <iframe id="frame-mechanic" title="The workshop, as the Mechanic sees it"></iframe>
+  </section>
+  <div class="pov-scrim" id="pov-scrim" hidden></div>
+</main>
+<footer class="stage-bottom">
+  <div class="stage-guide" id="guide" role="status" aria-live="polite"></div>
+  <section class="pov" id="pov" aria-label="Customer POV">
+    <button type="button" class="pov-tab" id="pov-tab" aria-expanded="false" aria-controls="pov-sheet">
+      <span class="pov-title">Customer POV</span>
+      <span class="pov-sub" id="pov-sub">Emma's phone</span>
+      <span class="badge pov-badge" id="pov-badge" hidden>New</span>
+      <span class="pov-caret" aria-hidden="true">▲</span>
+    </button>
+    <div class="pov-sheet" id="pov-sheet" hidden>
+      <div class="device">
+        <div class="phone" id="phone">
+          <div class="phone-screen" id="phone-screen">
+            <div class="phone-status" aria-hidden="true">
+              <span class="time">9:41</span>
+              <span class="island"></span>
+              <span class="icons"><svg width="54" height="12" viewBox="0 0 54 12" fill="#161A1F"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="6" width="3" height="6" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><rect x="26" y="1" width="22" height="10" rx="3" fill="none" stroke="#161A1F" stroke-width="1.2"/><rect x="28" y="3" width="15" height="6" rx="1.5"/><rect x="49.5" y="4" width="2" height="4" rx="1"/></svg></span>
+            </div>
+            <div class="phone-app" id="phone-app"></div>
+            <span class="home-bar" aria-hidden="true"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</footer>
+<noscript><p class="page">The demo stage needs JavaScript.</p></noscript>
+</body>
+</html>
