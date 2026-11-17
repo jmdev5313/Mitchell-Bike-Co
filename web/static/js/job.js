@@ -15,8 +15,12 @@ const TABS = [
     label: (order) => {
       const sent = order.messages.filter((m) => m.status !== "draft").length;
       const draft = order.messages.some((m) => m.status === "draft");
-      return [`Messages · ${sent}`, draft ? h("span", { class: "tab-dot", title: "A draft is waiting" },
-        h("span", { class: "visually-hidden" }, ", a draft is waiting")) : null];
+      const fromCustomer = ui.unread.size;
+      return [`Messages · ${sent}`,
+        fromCustomer ? h("span", { class: "badge tab-badge", "aria-hidden": "true" }, String(fromCustomer)) : null,
+        fromCustomer ? h("span", { class: "visually-hidden" }, `, ${fromCustomer} new from ${order.bike.customer.split(" ")[0]}`) : null,
+        draft ? h("span", { class: "tab-dot", title: "A draft is waiting" },
+          h("span", { class: "visually-hidden" }, ", a draft is waiting")) : null];
     },
   },
   { id: "bike", label: () => "Bike" },
@@ -24,7 +28,7 @@ const TABS = [
 ];
 
 // Kept across re-renders (the workshop refreshes in place when something happens).
-const ui = { orderId: undefined, tab: "overview", view: "chat" };
+const ui = { orderId: undefined, tab: "overview", view: "chat", unread: new Set() };
 
 function isCollapsed() {
   try { return localStorage.getItem("mbc-panel") === "collapsed"; } catch { return false; }
@@ -50,7 +54,10 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   }
 
   const id = order ? order.work_order_id : null;
-  if (ui.orderId !== id) Object.assign(ui, { orderId: id, tab: "overview", view: "chat" });
+  if (ui.orderId !== id) Object.assign(ui, { orderId: id, tab: "overview", view: "chat", unread: new Set() });
+  // The Customer's new messages stay marked on the Messages tab until it's opened, even though
+  // opening the job marks the work order seen.
+  if (order) for (const e of order.unseen) if (e.kind === "replied") ui.unread.add(e.id);
   const customer = order ? order.bike.customer : "";
   const first = customer.split(" ")[0];
   document.title = `${order ? `Work order #${id}` : "New job"} · Workshop · Mitchell Bike Co.`;
@@ -138,6 +145,10 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
     const body = ui.tab === "bike" ? bikeTab(order)
       : ui.tab === "history" ? h("div", { class: "rail-section" }, historySection(order))
         : ui.tab === "messages" ? messagesTab() : overviewTab();
+    if (ui.tab === "messages" && ui.unread.size) {
+      ui.unread.clear();
+      return drawPanel();
+    }
     panel.replaceChildren(tablist, h("div", { id: "tabpanel", role: "tabpanel", "aria-labelledby": `tab-${ui.tab}` }, body));
   }
 
