@@ -1,0 +1,211 @@
+/* Mitchell Bike Co. visual system. See docs/decisions.md, "The M6 visual system".
+   Structure comes from rules, tables and whitespace: no cards, no radius on structure. */
+
+:root {
+  /* Colour, by role */
+  --ink: #161A1F;            /* text, rules, routine filled buttons, links */
+  --slate: #4A525B;          /* secondary text */
+  --white: #FFFFFF;          /* main surface */
+  --bench: #ECEFF1;          /* side rails */
+  --manila: #F2E3B8;         /* anything the Customer sees */
+  --manila-text: #4F4A38;    /* secondary text on manila */
+  --work-blue: #1B4AA6;      /* only "Send to Emma" and the focus ring */
+  --red: #A8281C;            /* only refusals, catalog mismatches, out of stock */
+  --red-tint: #FBE8E3;
+  --green: #1A6440;          /* only in stock and paid */
+  --hair: #D5D9DD;           /* hairline on white */
+  --hair-bench: #C3C9CF;     /* hairline on bench grey */
+  --hair-manila: #BFAA6E;    /* hairline on manila */
+  --disabled-border: #D5D9DD;
+  --disabled-text: #6B737B;
+
+  /* Type */
+  --font-text: Barlow, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+
+  /* Spacing, 4px base */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 36px; --s7: 56px;
+
+  --control: 44px;
+  --control-big: 56px;
+  --radius-control: 3px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--white);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ink); text-underline-offset: 3px; }
+a:hover { color: var(--slate); }
+
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--work-blue);
+  outline-offset: 2px;
+}
+
+::placeholder { color: #5A626B; opacity: 1; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
+.num { font-variant-numeric: tabular-nums; }
+
+/* Wordmark and headings */
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.05;
+  margin: 0;
+}
+
+/* Rules: a 2px ink rule opens a section, a hairline separates rows,
+   a dashed rule means a draft or a tear line and nothing else. */
+.rule-open { border-top: 2px solid var(--ink); }
+.tear { border: 0; border-top: 2px dashed var(--manila-text); margin: 0; }
+
+/* Buttons and inputs: 3px radius, 44px high */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+  font: inherit; font-weight: 600;
+  min-height: var(--control); padding: 0 18px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--ink);
+  background: var(--ink); color: var(--white);
+  cursor: pointer; text-decoration: none;
+}
+.btn:hover { background: #2B3138; color: var(--white); }
+.btn-outline { background: transparent; color: var(--ink); }
+.btn-outline:hover { background: rgba(22, 26, 31, 0.06); color: var(--ink); }
+.btn-send { background: var(--work-blue); border-color: var(--work-blue); }
+.btn-send:hover { background: #163D8A; }
+.btn-big { min-height: var(--control-big); font-size: 18px; width: 100%; }
+.btn-text {
+  font: inherit; font-weight: 500; background: none; border: 0; color: var(--ink);
+  min-height: var(--control); padding: 0 var(--s2); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.btn[disabled], .btn-text[disabled] {
+  background: transparent; color: var(--disabled-text);
+  border: 1px solid var(--disabled-border); cursor: not-allowed;
+}
+
+.input, .textarea {
+  font: inherit; color: var(--ink); background: var(--white);
+  border: 1px solid var(--slate); border-radius: var(--radius-control);
+  min-height: var(--control); padding: 0 var(--s3); width: 100%;
+}
+.textarea { padding: 10px var(--s3); resize: vertical; line-height: 1.5; }
+
+/* Ledger: line items, a 2px ink rule, then a condensed total */
+.ledger { width: 100%; border-collapse: collapse; }
+.ledger th, .ledger td { padding: var(--s2) 0; border-bottom: 1px solid var(--hair); vertical-align: top; }
+.ledger th { text-align: left; font-weight: 400; padding-right: var(--s3); }
+.ledger td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ledger tr.last th, .ledger tr.last td { border-bottom: 2px solid var(--ink); }
+.ledger tr.total th { font-weight: 600; border: 0; padding-top: var(--s2); vertical-align: baseline; }
+.ledger tr.total td {
+  border: 0; padding-top: var(--s2); vertical-align: baseline;
+  font-family: var(--font-display); font-weight: 600; line-height: 1;
+}
+
+/* Status colours, used only for their one meaning */
+.refused { color: var(--red); }
+.in-stock, .paid-mark { color: var(--green); }
+
+/* A notice for a rule refusing something, or a failed request */
+.notice-refused {
+  background: var(--red-tint); border-left: 2px solid var(--red);
+  padding: var(--s2) var(--s3); color: var(--ink);
+}
+.notice-refused strong { color: var(--red); }
+
+/* ---------------------------------------------------------------------------
+   Customer page: manila ground, one column, one obvious action. */
+.customer {
+  background: var(--manila);
+  font-size: 17px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.customer a { color: var(--ink); }
+.customer .wrap { max-width: 480px; margin: 0 auto; padding: 0 20px 32px; }
+.customer header.masthead {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3);
+  padding: 18px 0 10px; border-bottom: 2px solid var(--ink);
+}
+.customer header.masthead .wordmark { font-size: 23px; }
+.customer .meta { font-size: 14px; color: var(--manila-text); }
+.customer h1.display { font-size: 40px; margin-top: 20px; }
+.customer .lede { margin: 2px 0 0; color: var(--manila-text); }
+.customer .tear { margin: 20px -20px 0; }
+.customer .ledger th, .customer .ledger td { border-bottom-color: var(--hair-manila); }
+.customer .ledger tr.last th, .customer .ledger tr.last td { border-bottom-color: var(--ink); }
+.customer .ledger tr.total th { font-size: 18px; }
+.customer .ledger tr.total td { font-size: 48px; }
+.customer .input { border-color: var(--manila-text); height: 48px; }
+.customer section { margin-top: 20px; }
+.customer h2 { font-size: 16px; font-weight: 600; margin: 0 0 var(--s1); }
+
+.shop-message .from { font-size: 14px; color: var(--manila-text); margin-bottom: var(--s1); }
+.shop-message p { margin: 0; white-space: pre-line; text-wrap: pretty; }
+
+.steps { list-style: none; margin: var(--s4) 0 0; padding: 0; }
+.steps li {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s2) 0; border-bottom: 1px solid var(--hair-manila);
+}
+.steps li:last-child { border-bottom: 0; }
+.steps li .label { flex: 1; }
+.steps li .when { color: var(--manila-text); font-variant-numeric: tabular-nums; }
+.steps li[aria-current="step"] { font-weight: 600; }
+.steps .box { flex: none; width: 16px; height: 16px; border: 2px solid var(--ink); }
+.steps .todo { color: var(--manila-text); }
+.steps .todo .box { border-color: var(--hair-manila); }
+
+.thread { list-style: none; margin: 0; padding: 0; }
+.thread li { padding: var(--s3) 0; border-bottom: 1px solid var(--hair-manila); }
+.thread li:last-child { border-bottom: 0; }
+.thread .who { font-size: 14px; color: var(--manila-text); }
+.thread .body { margin: 2px 0 0; white-space: pre-line; }
+
+.amount-due { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s3); margin-top: 14px; }
+.amount-due .label { font-size: 18px; font-weight: 600; }
+.amount-due .value { font-family: var(--font-display); font-weight: 600; font-size: 48px; line-height: 1; }
+
+.secure-note {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 14px; color: var(--manila-text); margin-top: 10px;
+}
+
+.reply-form { margin-top: 20px; padding-top: var(--s3); border-top: 1px solid var(--hair-manila); }
+.reply-form label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.reply-form .row { display: flex; gap: var(--s2); }
+.reply-form .row .btn { height: 48px; }
+
+.demo-footer {
+  margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--hair-manila);
+  font-size: 14px; color: var(--manila-text);
+}
+
+.status-line { margin: var(--s2) 0 0; font-weight: 600; display: flex; align-items: center; gap: var(--s2); }
+
+.customer .notice-refused { margin-top: var(--s4); font-size: 15px; }
+.customer .note { margin-top: var(--s4); font-size: 15px; color: var(--manila-text); }
+
+.loading { color: var(--manila-text); margin-top: var(--s6); }

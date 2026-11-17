@@ -76,12 +76,13 @@ def test_customer_pays_through_stripe_checkout(client, conn, done, stripe_fake):
     assert params["line_items"][0]["price_data"]["unit_amount"] == HERO_QUOTE
     assert params["success_url"] == f"http://shop.test/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
     # The key carries the link token, so a rebuilt database can't reuse an earlier key.
+    assert params["cancel_url"] == f"http://shop.test/c/{token}?checkout=cancelled"
     assert options["idempotency_key"] == f"mitchell-{token}-payment-{started['payment_id']}"
 
     # Coming back before paying changes nothing.
     back = client.get(f"/api/customer/{token}/checkout/return", params={"session_id": "cs_test_1"},
                       follow_redirects=False)
-    assert back.status_code == 303 and back.headers["location"] == f"http://shop.test/api/customer/{token}"
+    assert back.status_code == 303 and back.headers["location"] == f"http://shop.test/c/{token}"
     assert wo.status(conn, done) == "done"
 
     stripe_fake.pay("cs_test_1")

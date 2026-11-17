@@ -26,7 +26,7 @@ Only once the Customer approves can the cassette be ordered. The Agent picks a s
 - `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement). Every tool call is written to an audit log. The Agent gets no tool to send a message or approve a quote.
 - `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped by configuration. The Anthropic runtime runs Claude Sonnet 5.5 against the three MCP servers.
 - `api/` is the HTTP API (FastAPI): staff endpoints for the Mechanic's workspace, behind a passcode, including the chat with the Agent (each turn streams its progress and tool calls live), and Customer endpoints reached through the Customer's private link. `make api` runs it, with interactive docs at `/docs`.
-- `web/` will be the frontend: the Mechanic's workspace and the Customer's message thread.
+- `web/` is the frontend, plain HTML, CSS and JavaScript served by the API with no build step. The Customer page (`/c/{token}`, from the private link) is built; the Mechanic's workspace follows.
 - `evals/` measures whether the Agent gets it right. `make agent-check` is the first check, the full hero story against the real model; the scenario suite follows in M5.
 
 ## Getting started
@@ -47,6 +47,8 @@ make servers                                  # all three over HTTP on ports 810
 ```
 
 ## Try it
+
+**See the Customer's page.** Run `make api`, then `make sample` (or `make sample ARGS=--done` for a finished repair) and open the Customer page link it prints. It walks the Customer through the quote, approval, progress, payment in Stripe test mode, and the receipt.
 
 **Try the API by hand.** `make sample` adds Emma's quoted work order, with the quote already sent, and prints her Customer token. `make sample ARGS=--done` takes it all the way to a finished repair, ready to pay through Stripe Checkout in test mode (card `4242 4242 4242 4242`); this needs a Stripe test key in `.env`. Run `make api`, open http://127.0.0.1:8000/docs, and paste the token into the Customer endpoints to view the quote or approve it. For the staff endpoints, click Authorize and paste `STAFF_PASSCODE` from your `.env`.
 

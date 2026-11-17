@@ -5,9 +5,11 @@ Run: make api   (docs at http://127.0.0.1:8000/docs)
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from agents import config
 from api import conversations, customer, staff
@@ -38,6 +40,16 @@ app = FastAPI(
 app.include_router(staff.router)
 app.include_router(conversations.router)
 app.include_router(customer.router)
+
+# The web pages: plain HTML, CSS and JavaScript in web/, no build step.
+WEB = Path(__file__).resolve().parent.parent / "web"
+app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
+
+
+@app.get("/c/{token}", include_in_schema=False)
+def customer_page(token: str) -> FileResponse:
+    """The Customer's page. It reads its data from /api/customer/{token}, so a bad link shows its own message."""
+    return FileResponse(WEB / "customer.html", headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
 
 @app.exception_handler(NotFound)
