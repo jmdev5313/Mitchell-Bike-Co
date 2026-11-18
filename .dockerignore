@@ -1,0 +1,19 @@
+# Never in the image: secrets, local databases and caches, unrelated drafts.
+.env
+.env.*
+.git
+.github
+.claude
+.venv
+.pytest_cache
+**/__pycache__
+*.db
+*.db-journal
+evals/results
+bike_images
+docs/dust
+docs/dust-integration-plan.md
+docs/screenshots
+# data/ holds local databases and raw photos; only the seed files are needed.
+data/*
+!data/seed/

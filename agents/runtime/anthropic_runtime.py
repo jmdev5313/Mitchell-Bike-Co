@@ -9,6 +9,7 @@ import base64
 import json
 import mimetypes
 import os
+import sys
 from collections.abc import Callable, Sequence
 from contextlib import AsyncExitStack
 from pathlib import Path
@@ -32,7 +33,9 @@ ServerConnector = Callable[[str, AsyncExitStack], Any]
 
 async def connect_stdio(conversation_id: str, stack: AsyncExitStack, runtime: str = "anthropic") -> dict[str, Client]:
     """Launch each shop server as a subprocess for this conversation, as Claude Code does.
-    `runtime` labels the audit log's entries (a recorded run's calls say "recorded")."""
+    `runtime` labels the audit log's entries (a recorded run's calls say "recorded").
+    The servers run on this process's own Python (the project's environment), not through
+    `uv run`, which would add a wrapper process (about 26 MB) per server."""
     env = {
         "DB_PATH": str(db.db_path()),
         "AGENT_RUNTIME": runtime,
@@ -42,7 +45,7 @@ async def connect_stdio(conversation_id: str, stack: AsyncExitStack, runtime: st
     clients = {}
     for name in SERVERS:
         params = StdioServerParameters(
-            command="uv", args=["run", "python", "-m", f"mcp_servers.{name}"], env=env, cwd=Path.cwd()
+            command=sys.executable, args=["-m", f"mcp_servers.{name}"], env=env, cwd=Path.cwd()
         )
         clients[name] = await stack.enter_async_context(Client(params))
     return clients

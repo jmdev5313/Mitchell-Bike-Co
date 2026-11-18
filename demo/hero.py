@@ -44,7 +44,7 @@ async def main() -> None:
     async with AsyncExitStack() as stack:
         clients = {
             name: await stack.enter_async_context(Client(StdioServerParameters(
-                command="uv", args=["run", "python", "-m", f"mcp_servers.{name}"],
+                command=sys.executable, args=["-m", f"mcp_servers.{name}"],  # as the runtime launches them
                 env=env, cwd=Path.cwd(),
             )))
             for name in SERVERS
