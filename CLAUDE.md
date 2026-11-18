@@ -15,7 +15,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - `make agent` chats with the Agent as the Mechanic (needs `ANTHROPIC_API_KEY` in `.env`; spends tokens)
 - `make demo` runs the hero story through the servers (its own `data/demo.db`)
 - `make servers` runs the three MCP servers over HTTP; `uv run python -m mcp_servers.<name>` runs one over stdio
-- Deploying: `fly deploy` from this folder builds the `Dockerfile` on Fly's servers and runs it as `fly.toml` says (one machine, the `/data` volume). Secrets are set with `fly secrets set`, never in `fly.toml` or the image; `.dockerignore` keeps `.env` out.
+- Deploying: a merge to `main` deploys itself once the tests pass (`.github/workflows/test.yml`, with the `FLY_API_TOKEN` repository secret). By hand, `fly deploy` from this folder builds the `Dockerfile` on Fly's servers and runs it as `fly.toml` says (one machine, the `/data` volume). Secrets are set with `fly secrets set`, never in `fly.toml` or the image; `.dockerignore` keeps `.env` out.
 - Always run Python through `uv run`. The system `python3` is older than the 3.12 the project needs.
 
 ## Rules for this codebase

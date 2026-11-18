@@ -126,6 +126,8 @@ To deploy your own copy (the app name, region and keys are yours):
 3. `fly secrets set ANTHROPIC_API_KEY=… STAFF_PASSCODE=… STRIPE_SECRET_KEY=sk_test_… TURNSTILE_SITE_KEY=… TURNSTILE_SECRET_KEY=… CLIENT_HASH_SALT=…` (an API key from its own Anthropic workspace with a spend limit, a new passcode, a Stripe **test** key, a Cloudflare Turnstile widget for the app's hostname, and any long random string).
 4. `fly deploy`.
 
+After that, every merge to `main` deploys itself: the GitHub workflow runs the tests and, if they pass, runs `flyctl deploy` with a Fly deploy token stored as the `FLY_API_TOKEN` repository secret (`fly launch` offers to set it; `fly tokens create deploy` makes one).
+
 ## Roadmap
 
 Work is split into milestones, each defined by what it delivers rather than how long it takes.
