@@ -26,7 +26,7 @@ def client(conn, tmp_path, monkeypatch):
 
 def test_front_door_is_served(client):
     page = client.get("/")
-    assert page.status_code == 200 and "Be the Mechanic" in page.text and "Be the Customer" in page.text
+    assert page.status_code == 200 and "Choose a repair story" in page.text and "Demo tools" in page.text
     assert client.get("/static/js/home.js").status_code == 200
     stage = client.get("/demo")
     assert stage.status_code == 200 and "stage.js" in stage.text

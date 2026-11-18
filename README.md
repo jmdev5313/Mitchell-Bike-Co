@@ -16,7 +16,7 @@ make reset                # create the database and load the seed data
 make api                  # then open http://127.0.0.1:8000
 ```
 
-In demo mode the front door opens the demo stage (**Experience working alongside an AI agent**): pick one of six repair stories, then play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. It also has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+The front door is the starting screen: choose one of six repair stories, preview it, and **Start this repair** (demo mode) to play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. Its **Demo tools** section has the workshop, the Customer's page, **Reset the demo** and **Generate a sample quote**. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
 ## What to look for
 

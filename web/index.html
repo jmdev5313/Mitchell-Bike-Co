@@ -20,62 +20,51 @@
     <a href="/docs">API docs</a>
   </nav>
 </header>
-<main class="page front">
+<main class="page front start">
   <h1 class="display">Case management, workflow and AI, told through a bike shop.</h1>
-  <p class="lede">As a solutions consultant, I help large organizations understand how their service teams work, and build hands-on demos so they can try a new approach. I built Mitchell Bike Co. to bring that work into cycling, a world I love.</p>
-  <p class="on-show"><span>On show:</span> AI agents and tool use (MCP) · human-in-the-loop design · case and workflow modeling · evals · full-stack build</p>
+  <p class="lede">Run a repair from intake to approval: work with an AI agent as the Mechanic, then switch to the Customer's side and decide whether it goes ahead.</p>
+  <p class="byline">I'm a solutions consultant: I help large organizations understand how their service teams work, and build hands-on demos so they can try a new approach. This one is set in cycling, a world I love. <a href="/about">About this demo</a></p>
 
-  <div class="stage-door" id="stage-door" hidden>
-    <a class="btn btn-big" href="/demo">Experience working alongside an AI agent →</a>
-    <p>Pick one of six repair stories and play both sides: the Mechanic working with the Agent, and the Customer deciding. <a href="/about">Why a bike shop?</a></p>
-  </div>
-
-  <div class="doors">
-    <div class="door">
-      <a class="btn btn-big" id="be-mechanic" href="/workshop">Be the Mechanic</a>
-      <p>Describe a bike to the Agent and watch it work, tool call by tool call. Review its draft and send the quote.</p>
-      <p class="small muted" id="passcode-note"></p>
-    </div>
-    <div class="door door-customer">
-      <a class="btn btn-big btn-outline" id="be-customer" href="#customer">Be the Customer</a>
-      <p>Open Emma's private link: read the quote in plain words, approve it, ask a question, and pay in Stripe test mode.</p>
-      <p class="small muted" id="customer-note"></p>
-    </div>
-  </div>
-
-  <section class="section">
-    <h2>What to look for</h2>
-    <ol class="look">
-      <li><strong>The activity log.</strong> Every tool call streams in live, with the MCP server it went to: catalog, work orders or procurement.</li>
-      <li><strong>Refusals in red.</strong> The shop's code, not the model, decides what's allowed. A part that doesn't fit the Customer's upgraded wheels is refused, and so is ordering before the Customer approves.</li>
-      <li><strong>The order plan.</strong> The Agent picks the supplier with the quote, because that choice sets the ready date. The shop places it the moment the Customer approves.</li>
-      <li><strong>History and badges.</strong> Each work order records who did what: the Agent, the Mechanic, the Customer, and the shop. What changed while you were away is marked new.</li>
-    </ol>
+  <section class="choose" aria-labelledby="choose-title">
+    <h2 id="choose-title" class="display">Choose a repair story</h2>
+    <p class="muted">Select a bike to preview the rider's request. Bike photos are AI-generated illustrations.</p>
+    <ul class="bike-grid" id="bike-grid"></ul>
   </section>
+
+  <dialog class="preview" id="preview" aria-labelledby="preview-title"></dialog>
 
   <section class="section" id="measured">
     <h2>Measured, not assumed</h2>
     <p id="eval-line" class="muted">Loading the latest check…</p>
+    <p class="on-show"><span>On show:</span> AI agents and tool use (MCP) · human-in-the-loop design · case and workflow modeling · evals · full-stack build</p>
   </section>
 
-  <section class="section" id="reset-section" hidden>
-    <h2>Start over</h2>
+  <details class="section demo-tools-box" id="tools">
+    <summary>Demo tools</summary>
     <div class="demo-tools">
       <div>
+        <a class="btn btn-outline" id="be-mechanic" href="/workshop">Open the workshop</a>
+        <p class="small muted" id="passcode-note">The Mechanic's workspace on its own: describe any bike to the Agent.</p>
+      </div>
+      <div>
+        <a class="btn btn-outline" id="be-customer" href="#customer">Open the Customer's page</a>
+        <p class="small muted" id="customer-note"></p>
+      </div>
+      <div>
         <button type="button" class="btn btn-outline" id="reset">Reset the demo</button>
-        <p class="small muted">Clears every work order, message, conversation and log entry, and puts the catalog, Emma and her bike back as they started. Nothing is left waiting: begin by asking the Agent.</p>
+        <p class="small muted">Clears every work order, message and log entry, and puts the seed data back as it started.</p>
       </div>
       <div>
         <button type="button" class="btn btn-outline" id="sample">Generate a sample quote</button>
-        <p class="small muted">Skips the Agent: adds Emma's work order with the quote already sent, so you can try her side straight away.</p>
+        <p class="small muted">Skips the Agent: adds Emma's work order with the quote already sent.</p>
       </div>
     </div>
     <p class="small" id="reset-status" role="status"></p>
-  </section>
+  </details>
 
   <footer class="front-footer">
     Mitchell Bike Co. is fictional. All data is synthetic, the parts and brands are invented (the interface standards are real),
-    and payments run in Stripe test mode. Built with Claude Sonnet 5.5, three MCP servers, FastAPI and plain HTML.
+    bike photos are AI-generated illustrations, and payments run in Stripe test mode. Built with Claude Sonnet 5.5, three MCP servers, FastAPI and plain HTML.
     <a href="/workshop#/audit">Audit log</a> · <a href="/docs">API docs</a>
   </footer>
 </main>

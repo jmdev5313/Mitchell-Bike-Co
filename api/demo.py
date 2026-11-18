@@ -188,7 +188,7 @@ def stories() -> list[dict[str, Any]]:
     measured = _measured()
     return [
         {"key": s.key, "label": s.label, "title": s.title, "group": s.group, "customer": s.customer, "bike": s.bike,
-         "complaint": s.complaint_on(), "watch_for": s.watch_for, "watch_detail": s.watch_detail,
+         "complaint": s.complaint_on(), "watch_for": s.watch_for_on(),
          "photo": f"/static/img/bikes/{s.photo}", "profile": [list(row) for row in s.profile],
          "message": s.mechanic_message(), "measured": measured.get(s.key)}
         for s in STORIES
