@@ -27,17 +27,25 @@ class Story:
     message: str = ""     # what the Mechanic tells the Agent; may use {race_day}
 
     def mechanic_message(self, today: date | None = None) -> str:
-        today = today or date.today()
-        return self.message.format(race_day=race_day(today))
+        return _dated(self.message, today)
 
     def complaint_on(self, today: date | None = None) -> str:
-        return self.complaint.format(race_day=race_day(today or date.today()))
+        return _dated(self.complaint, today)
+
+    def watch_for_on(self, today: date | None = None) -> str:
+        return _dated(self.watch_for, today)
 
 
 def race_day(today: date) -> str:
     """Tom's race, three days out: sooner than his out-of-stock cassette can arrive."""
     day = today + timedelta(days=3)
     return f"{day:%A}, {day:%B} {day.day}"
+
+
+def _dated(text: str, today: date | None) -> str:
+    """Fill in {race_day} ("Friday, November 20") and {race_weekday} ("Friday")."""
+    day = (today or date.today()) + timedelta(days=3)
+    return text.format(race_day=race_day(today or date.today()), race_weekday=f"{day:%A}")
 
 
 STORIES = [
@@ -57,8 +65,8 @@ STORIES = [
     Story(
         key="race-day", label="Road", title="Tom's road bike", group="procurement",
         customer="Tom Okafor", email="tom.okafor@example.com", bike="Halden Tempo 2024",
-        complaint="Can it be ready before my race on {race_day}?",
-        watch_for="Will the Agent promise the race, or only a date it can keep?",
+        complaint="Can it be ready before my race on {race_weekday}?",
+        watch_for="Can the shop get compatible parts in time for {race_weekday}?",
         watch_detail="The cassette Tom's bike takes is out of stock, and the only supplier needs a week.",
         photo="road.jpg",
         profile=[("Drivetrain", "12-speed, SRAM XDR freehub", False),

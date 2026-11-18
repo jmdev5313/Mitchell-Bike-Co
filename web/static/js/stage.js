@@ -20,7 +20,6 @@ const scrim = document.getElementById("pov-scrim");
 const phone = document.getElementById("phone");
 const screen = document.getElementById("phone-screen");
 const phoneApp = document.getElementById("phone-app");  // the page under the phone's status bar
-const picker = document.getElementById("picker");
 const allBikes = document.getElementById("all-bikes");
 
 const PHONE_W = 390;
@@ -70,9 +69,17 @@ async function boot() {
   povTab.addEventListener("click", () => setOpen(sheet.hidden));
   scrim.addEventListener("click", () => setOpen(false));
   addEventListener("keydown", (event) => { if (event.key === "Escape" && !sheet.hidden) setOpen(false); });
-  allBikes.addEventListener("click", () => showPicker());
-  if (!current) showPicker();  // first visit: pick a bike before anything else
-  else allBikes.hidden = false;
+  allBikes.addEventListener("click", () => { location.href = "/"; });
+  const chosen = new URLSearchParams(location.search).get("story");
+  const pick = stories.find((s) => s.key === chosen);
+  if (pick) {
+    history.replaceState(null, "", "/demo");  // a reload continues the story instead of restarting it
+    await startStory(pick);
+  } else if (!current) {
+    location.replace("/#choose-title");  // the stories are chosen on the starting screen
+  } else {
+    allBikes.hidden = false;
+  }
 }
 
 async function tick() {
@@ -226,73 +233,7 @@ restart.addEventListener("click", async () => {
   }
 });
 
-// --- Picking a story ---------------------------------------------------------------
-
-function badge(measured) {
-  return measured
-    ? h("span", { class: "measured" }, `Measured ${measured.passed}/${measured.runs} passed`)
-    : h("span", { class: "measured pending" }, "Not measured yet");
-}
-
-function showPicker() {
-  setOpen(false);
-  picker.hidden = false;
-  document.body.classList.add("is-picking");  // the steps, the guide and Customer POV belong to a story being played
-  picker.replaceChildren(
-    h("div", { class: "picker-head" },
-      h("h1", { class: "display", id: "picker-title" }, "Experience a repair alongside an AI agent."),
-      h("p", {}, "Pick a repair story and play both sides. As the Mechanic, watch the Agent check the bike's history, find "
-        + "parts that fit and draft a quote for you to review and send. As the Customer, decide whether the repair goes "
-        + "ahead, then pay. The case history shows who did what, and every story is also an automated test of the AI, "
-        + "checking real outcomes like whether the quoted parts actually fit."),
-      h("p", { class: "small muted" }, "Bike photos are AI-generated illustrations.")),
-    h("ul", { class: "bike-grid" }, stories.map((s) => h("li", {},
-      h("button", { type: "button", class: "bike-card", onclick: () => showStory(s) },
-        h("span", { class: "bike-photo" }, h("img", { src: s.photo, alt: "" })),
-        h("span", { class: "bike-body" },
-          h("span", { class: "bike-top" }, h("span", { class: "bike-kind" }, s.label), h("span", { class: "tag" }, groupLabel(s.group))),
-          h("span", { class: "bike-who" }, `${s.bike} · ${s.customer}`),
-          h("span", { class: "bike-quote" }, `“${s.complaint}”`),
-          badge(s.measured)))))));
-  picker.querySelector(".bike-card")?.focus();
-}
-
-function groupLabel(group) {
-  return { story: "The hero story", compatibility: "Compatibility", diagnosis: "Diagnosis",
-    guardrails: "Guardrails", procurement: "Procurement" }[group] || group;
-}
-
-function showStory(s) {
-  const first = s.customer.split(" ")[0];
-  const start = h("button", { type: "button", class: "btn btn-big start-story", onclick: () => {
-    start.disabled = true;
-    status.textContent = "Setting up the shop…";
-    startStory(s).catch((e) => {
-      start.disabled = false;
-      status.textContent = `Couldn't start: ${e.message}`;
-    });
-  } }, "Start this story");
-  const status = h("span", { class: "small", role: "status" });
-  picker.replaceChildren(h("div", { class: "story-card" },
-    h("div", { class: "story-photo" },
-      h("img", { src: s.photo, alt: s.title }),
-      h("span", { class: "small muted" }, "Illustrative photo (AI-generated)")),
-    h("div", { class: "story-text" },
-      h("button", { type: "button", class: "linkish", onclick: () => showPicker() }, "← All bikes"),
-      h("span", { class: "tag" }, groupLabel(s.group)),
-      h("h1", { class: "display", id: "picker-title" }, s.title),
-      h("p", { class: "muted", style: "margin: 0" }, `${s.bike} · ${s.customer}`),
-      h("div", { class: "story-block" }, h("span", { class: "lbl" }, "Why it's in"), h("p", { class: "bike-quote" }, `“${s.complaint}”`)),
-      h("div", { class: "story-block" }, h("span", { class: "lbl" }, "The bike"),
-        h("table", { class: "story-profile" }, h("tbody", {}, s.profile.map(([label, value, differs]) => h("tr", {},
-          h("th", { scope: "row" }, label),
-          h("td", {}, value, differs ? h("strong", { class: "differs" }, " · worth a closer look") : null)))))),
-      h("div", { class: "story-block watch" }, h("span", { class: "lbl" }, "What to watch for"),
-        h("p", { class: "watch-q" }, s.watch_for), h("p", { class: "muted small" }, s.watch_detail)),
-      h("div", { class: "story-start" }, start, badge(s.measured),
-        h("span", { class: "small muted" }, "Each Agent turn takes about 30 seconds and costs a few cents."), status))));
-  start.focus();
-}
+// --- Starting a story (chosen on the starting screen) ---------------------------------
 
 async function startStory(s) {
   const started = await api(`/api/demo/stories/${s.key}/start`, { method: "POST" });
@@ -301,8 +242,6 @@ async function startStory(s) {
     sessionStorage.setItem("mbc-story", s.key);
     sessionStorage.setItem("mbc-story-message", started.message);  // the workshop's Agent tab picks it up
   } catch { /* private mode */ }
-  picker.hidden = true;
-  document.body.classList.remove("is-picking");
   allBikes.hidden = false;
   setOpen(false);
   frameMechanic.src = `/workshop?fresh=${Date.now()}#/agent`;  // a new conversation with the story's message ready

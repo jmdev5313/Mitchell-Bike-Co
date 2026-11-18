@@ -5,7 +5,7 @@ A walkthrough of the hero story in about 90 seconds, for a screen recording or a
 ## Before you start
 
 1. In `.env`: `ANTHROPIC_API_KEY` set, `DEMO_MODE=1`, and a Stripe test key (`sk_test_…`) if you'll show payment.
-2. `make api`, open http://127.0.0.1:8000/demo (or **Experience working alongside an AI agent** on the front door). Pick **Gravel** (Emma, the hero story) and press **Start this story**: the shop resets and the workshop opens with her message ready.
+2. `make api`, open http://127.0.0.1:8000, and click Emma's card (**Start here**), then **Start this repair**: the shop resets and the workshop opens with her message ready.
 3. A laptop screen is enough: the workshop gets the whole width, and Emma's phone opens over it only when you need it.
 4. Optional: run one Agent turn before recording, then **Start over**, so the first turn doesn't include starting the MCP servers.
 
@@ -43,4 +43,4 @@ Don't edit the prompt or coax the Agent to get a refusal on camera; the decision
 
 ## Other stories
 
-**← All bikes** returns to the picker. Each story has a twist the card names under "What to watch for": Tom's race date, Marcus's brakes, Dana's speed-limit request, Frank's 12-speed wish, Ruth's 635 mm tires. Every one is also an eval, and its card shows the last pass rate.
+**← All bikes** returns to the starting screen. Each story has a twist the card names under "What to watch for": Tom's race date, Marcus's brakes, Dana's speed-limit request, Frank's 12-speed wish, Ruth's 635 mm tires. Every one is also an eval, and its card shows the last pass rate.
