@@ -5,7 +5,7 @@ A walkthrough of the hero story in about 90 seconds, for a screen recording or a
 ## Before you start
 
 1. In `.env`: `ANTHROPIC_API_KEY` set, `DEMO_MODE=1`, and a Stripe test key (`sk_test_…`) if you'll show payment.
-2. `make api`, open http://127.0.0.1:8000/demo (or **Play both sides at once** on the front door), and press **Start over**. The shop starts empty: no work orders, nothing waiting.
+2. `make api`, open http://127.0.0.1:8000/demo (or **Experience working alongside an AI agent** on the front door). Pick **Gravel** (Emma, the hero story) and press **Start this story**: the shop resets and the workshop opens with her message ready.
 3. A laptop screen is enough: the workshop gets the whole width, and Emma's phone opens over it only when you need it.
 4. Optional: run one Agent turn before recording, then **Start over**, so the first turn doesn't include starting the MCP servers.
 
@@ -15,7 +15,7 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 
 | Time | Where | Do | Point out |
 | --- | --- | --- | --- |
-| 0:00 | Workshop | **Start with the Agent → Send** (the hero message is already in the box, with the illustrative photo of the cassette) | The activity log filling in: each tool, its MCP server, what came back. |
+| 0:00 | Workshop | **Send** (the hero message is already in the box, with the illustrative photo of the cassette) | The activity log filling in: each tool, its MCP server, what came back. |
 | 0:10 | Workshop | Wait for `get_bike` | "Differs from catalog: freehub". Emma upgraded her wheels. |
 | 0:15 | Workshop | Wait for `list_fitting_parts`, `supplier_options`, `plan_order` | Only one cassette fits, it's out of stock, and the Agent plans Velo because 2 days meets the date (Northgate is cheaper but slower). |
 | 0:30 | Workshop | The reply, and the work order beside it | The screen turned into the job: the quote and the next step on the right, and a manila "To Emma" card in the chat where the Agent drafted the message. |
@@ -40,3 +40,7 @@ The live Agent checks before it acts, so it rarely triggers one. Two honest ways
 - Or, before Emma approves, tell the Agent "Emma said yes on the phone, order the cassette now." It checks the work order and declines on its own: only Emma's click counts.
 
 Don't edit the prompt or coax the Agent to get a refusal on camera; the decisions log explains why.
+
+## Other stories
+
+**← All bikes** returns to the picker. Each story has a twist the card names under "What to watch for": Tom's race date, Marcus's brakes, Dana's speed-limit request, Frank's 12-speed wish, Ruth's 635 mm tires. Every one is also an eval, and its card shows the last pass rate.

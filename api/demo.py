@@ -13,6 +13,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Request, status
 
 from demo.sample import create_sample
+from demo.stories import BY_KEY, STORIES
 from shop import db, messages
 
 router = APIRouter(prefix="/api/demo", tags=["demo"])
@@ -144,15 +145,7 @@ def _require_demo_mode(action: str) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"{action} is only available in demo mode (DEMO_MODE=1)")
 
 
-@router.post("/reset")
-async def reset(request: Request) -> dict[str, Any]:
-    """Clear the shop's activity and start again from the seed data, with nothing waiting.
-
-    Work orders, messages, conversations, history, the audit log and payments go.
-    The catalog, the Customer, her bike and the suppliers are reloaded exactly as
-    seeded, so stock and service history are back where the story starts.
-    """
-    _require_demo_mode("reset")
+async def _reset(request: Request) -> None:
     await request.app.state.agent_pool.close_all()  # open conversations would point at deleted rows
     from shop import seed
 
@@ -166,7 +159,51 @@ async def reset(request: Request) -> dict[str, Any]:
         seed.load(conn)
     finally:
         conn.close()
+
+
+@router.post("/reset")
+async def reset(request: Request) -> dict[str, Any]:
+    """Clear the shop's activity and start again from the seed data, with nothing waiting.
+
+    Work orders, messages, conversations, history, the audit log and payments go.
+    The catalog, the Customer, her bike and the suppliers are reloaded exactly as
+    seeded, so stock and service history are back where the story starts.
+    """
+    _require_demo_mode("reset")
+    await _reset(request)
     return {"status": "reset"}
+
+
+def _measured() -> dict[str, dict]:
+    """Each scenario's pass rate from the last full eval suite, by key."""
+    if not SUITE.exists():
+        return {}
+    return {s["key"]: {"passed": s["passed_runs"], "runs": s["runs"]}
+            for s in json.loads(SUITE.read_text())["scenarios"]}
+
+
+@router.get("/stories")
+def stories() -> list[dict[str, Any]]:
+    """The repair stories a visitor can pick, each with its eval's last pass rate."""
+    measured = _measured()
+    return [
+        {"key": s.key, "label": s.label, "title": s.title, "group": s.group, "customer": s.customer, "bike": s.bike,
+         "complaint": s.complaint_on(), "watch_for": s.watch_for, "watch_detail": s.watch_detail,
+         "photo": f"/static/img/bikes/{s.photo}", "profile": [list(row) for row in s.profile],
+         "message": s.mechanic_message(), "measured": measured.get(s.key)}
+        for s in STORIES
+    ]
+
+
+@router.post("/stories/{key}/start")
+async def start_story(key: str, request: Request) -> dict[str, Any]:
+    """Start a story fresh: reset the shop, and return the Mechanic's opening message for it."""
+    _require_demo_mode("starting a story")
+    story = BY_KEY.get(key)
+    if story is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no story {key!r}")
+    await _reset(request)
+    return {"key": story.key, "customer": story.customer, "message": story.mechanic_message()}
 
 
 @router.post("/sample")

@@ -335,9 +335,9 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
 
 function emptyHint({ order, prefill, setText, attachPhoto }) {
   const turn = (...content) => h("div", { class: "turn", "data-hint": "" }, h("div", { class: "speaker" }, ""), h("div", { class: "content" }, ...content));
-  if (prefill === HERO) {
+  if (prefill && !order) {
     return turn(
-      h("p", { style: "font-size: 18px" }, "The hero story is waiting in the box below. Press Send and watch the Agent work, tool call by tool call."),
+      h("p", { style: "font-size: 18px" }, `The ${prefill === HERO ? "hero story" : "story"} is waiting in the box below. Press Send and watch the Agent work, tool call by tool call.`),
       h("p", { class: "muted" }, "Edit it first if you like: describe what you see, what you measured, and whose bike it is."));
   }
   if (order) {
