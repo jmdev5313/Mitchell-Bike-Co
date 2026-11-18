@@ -1,5 +1,7 @@
 # Mitchell Bike Co.
 
+**Case management, workflow and AI, told through a bike shop.**
+
 A fictional bike shop where an AI Agent works alongside the Mechanic, built to demonstrate agentic workflows over the Model Context Protocol (MCP). The Agent diagnoses, checks parts against the bike the Customer actually has, quotes, and plans the order. People stay in charge: the Mechanic sends every message, only the Customer approves, and the shop's own code enforces both.
 
 ![One job screen: the Agent's tool calls in the activity log and its reply on the left, the work order with the next step and the quote on the right. From a live run.](docs/screenshots/agent-quote.jpg)
@@ -31,9 +33,23 @@ The front door is the starting screen: choose one of six repair stories, preview
 | ![A work order's History: the Agent's tool calls, with the shop's two refusals in red (from the scripted `make demo` run).](docs/screenshots/history.jpg) | ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) |
 | ![The front door.](docs/screenshots/front-door.jpg) | |
 
+## My role
+
+I designed Mitchell Bike Co. around a question I encounter as a solutions consultant: where can an AI Agent help a service team, and who gets the final say? I chose a bike shop because anyone can understand what's at stake when a Mechanic promises a rider their bike will be ready by Friday. I defined the repair workflow and shaped what visitors would see from both sides of the counter. Claude wrote most of the code and drafted the pull requests. I reviewed the working demo against my requirements, gave feedback, and directed changes where it fell short.
+
+One decision I changed in review was who approves a purchase. The first design asked a manager to approve spending to restock the shelf and the Customer to approve their repair quote. Those were two different purchases, and combining them made it hard to follow whose decision mattered. I narrowed the story to one cassette for one repair. The Customer approves the exact quote from their private link. Only then does the shop's code permit an order, limited to the parts and quantities the Customer approved. [Approval decision](docs/decisions.md#the-customer-is-the-human-in-the-loop)
+
 ## Measured, not assumed
 
 Every story is also an eval. `make evals` plays fifteen scenarios against the real model, three times each, and judges every run by what ended up in the shop's database: the right parts for the bike in front of it, the locked price, a ready date the suppliers can keep, and nothing ordered without the Customer's approval. How the Agent gets there (asking a question first, say) is recorded but never fails a run.
+
+### What the evals found
+
+**Could the shop promise a repair in time for race day?** In an early run, the Agent found an in-stock cassette and concluded the rider could make the race. The cassette fit the wheel, but its largest cog was too big for the bike's rear derailleur. The shop's compatibility rules had missed that constraint. Once the shop accounted for derailleur capacity, the next run produced a different answer: the Agent explained why the in-stock option wouldn't work and gave the Mechanic the earliest date the shop could promise.
+
+**Could the shop bill the right labor?** The first full run passed 29 of 30. The one failure exposed another gap in the shop's own data: there was no labor item for fitting a brake rotor, so the Agent stopped to ask rather than bill the wrong service. The decisions log has the details.
+
+### Results
 
 | Scenario | Group | Passed |
 | --- | --- | --- |
@@ -55,15 +71,13 @@ Every story is also an eval. `make evals` plays fifteen scenarios against the re
 
 45 of 45 runs passed on claude-sonnet-5-5, 3 runs per scenario, 2026-11-18. Estimated cost of the whole suite: $1.48.
 
-The first full run passed 29 of 30. The one failure exposed a gap in the shop's own data (no labor item for fitting a brake rotor, so the Agent stopped to ask rather than bill the wrong service); the decisions log has the details.
-
 ## The story
 
 The Customer, Emma, brings in a gravel bike: "my gears skip when I pedal hard." The Mechanic puts it on the stand and tells the Agent what they see and measure ("skips under load in the smaller cogs, chain checker reads 0.75%"). The Agent reads the bike's service history (the cassette came secondhand with the wheels and has never been replaced) and confirms a worn chain and cassette, saying how confident it is and what would settle it.
 
 Then the twist: the catalog says this bike model takes one cassette, but Emma upgraded her wheels, so it needs a different one. The Agent checks fit against the bike she actually has. The right cassette is out of stock, so it compares suppliers, plans the order from Velo (2 days, which meets the date it will promise rather than the cheaper 5-day option), locks the quote, and drafts Emma a plain-language message.
 
-The Mechanic reviews and sends it. Emma approves that exact amount from her private link, and the shop places the planned order. A next-step bar walks the Mechanic through parts received, booking on the promised date, the repair, and the Agent's "ready to pick up" message. Emma pays in Stripe test mode.
+The Mechanic reviews and sends it. Emma approves that exact amount from her private link, and the shop places the planned order. A next-step bar walks the Mechanic through marking the parts received (the shop then books and starts the repair on its own) and finishing it, then the Agent's "ready to pick up" message. Emma pays in Stripe test mode.
 
 ## Personas
 
@@ -107,4 +121,4 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
 | M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
 | M5 | Eval suite: scenarios across compatibility, diagnosis, guardrails and procurement, three runs each, judged by the shop's state | Done |
-| M8 | Pick a bike: six repair stories, each an eval, with a picker and story cards on the demo stage, and an About page | Done |
+| M8 | Pick a bike: six repair stories, each an eval, a "choose a repair story" starting screen with previews, and an About page | Done |
