@@ -129,6 +129,23 @@ def test_the_story_follows_the_newest_work_order(client, conn, monkeypatch):
     assert (story["step"], story["whose"]) == (5, "mechanic")  # her question hands the turn back, same step
 
 
+def test_the_story_notices_an_answer_without_a_work_order(client, conn, monkeypatch):
+    from agents import conversations
+
+    monkeypatch.setenv("DEMO_MODE", "1")
+    client.post("/api/demo/reset")
+    convo = conversations.create(conn, "anthropic", "claude-sonnet-5-5")
+    conversations.append(conn, convo.id, "user", [{"type": "text", "text": "Frank wants 12-speed."}])
+    assert client.get("/api/demo").json()["story"]["answered"] is False
+    conversations.append(conn, convo.id, "assistant", [
+        {"type": "tool_use", "id": "t1", "name": "get_bike", "input": {"customer_bike_id": 1}}])
+    assert client.get("/api/demo").json()["story"]["answered"] is False  # mid-turn: a tool call is waiting
+    conversations.append(conn, convo.id, "user", [{"type": "tool_result", "tool_use_id": "t1", "content": "{}"}])
+    conversations.append(conn, convo.id, "assistant", [{"type": "text", "text": "Nothing gives this bike 12-speed."}])
+    story = client.get("/api/demo").json()["story"]
+    assert (story["step"], story["work_order_id"], story["answered"]) == (1, None, True)
+
+
 def test_the_suite_summary_wins_over_the_hero_check(client, tmp_path):
     from evals import suite
 

@@ -123,7 +123,9 @@ function render(story) {
   povBadge.hidden = !theirs;
   povSub.textContent = theirs ? `Your turn as ${first}` : `${first}'s phone`;
   // Guide and steps first, so the screen reader hears the step, then the change.
-  if (changed || story.next_step !== last.story?.next_step) guide.replaceChildren(...guideText(story, first));
+  if (changed || story.next_step !== last.story?.next_step || story.answered !== last.story?.answered) {
+    guide.replaceChildren(...guideText(story, first));
+  }
 
   // The Customer's phone: her link appears once the shop has sent her something
   if (story.customer_token !== last.token) {
@@ -164,6 +166,13 @@ function guideText(story, first) {
   const say = (...parts) => [h("span", { class: `lead whose-${story.whose}` }, tag), h("span", {}, ...parts)];
   switch (story.step) {
     case 1:
+      if (!story.work_order_id && story.answered) {  // the Agent answered without opening a work order
+        if (recording) {
+          return [h("span", { class: "lead whose-nobody" }, "Done"), h("span", {},
+            "The Agent answered without opening a work order, so there's nothing to quote: that's the end of this recorded story. Start over, or pick another bike.")];
+        }
+        return say("The Agent answered without opening a work order. Read its reply: answer it in the workshop if it asked you something, or that's the story. Start over, or pick another bike.");
+      }
       return story.work_order_id
         ? say("The Agent is working. Watch its tool calls; its draft to ", first, " appears in the chat.")
         : say(current ? `Press Send in the workshop: ${first}'s story is in the box. A turn takes 20 to 40 seconds.`
@@ -194,7 +203,9 @@ function cue(story) {
   const row = id ? [`.data tr:has(a[href="#/work-orders/${id}"])`] : [];  // on the list, the job's row
   const draft = [".draft-card.is-draft .review", ".draft-band .btn-send"];
   let mechanic = [];
-  if (story.whose === "mechanic" && recording && recording.next_message) {
+  if (story.answered && !id) {
+    mechanic = [];  // the Agent answered without a work order: nothing to point at
+  } else if (story.whose === "mechanic" && recording && recording.next_message) {
     mechanic = [".job-chat .composer button[type=submit]", '.job[data-view="work"] .job-switch button:first-child'];  // Play
   } else if (story.whose === "mechanic") {
     if (story.step === 1) mechanic = id ? [] : [".start-agent", ".job-chat .composer button[type=submit]"];
