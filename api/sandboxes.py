@@ -15,7 +15,8 @@ Which requests get a sandbox (only /api/ touches the database; pages and static 
 - /api/customer/<key>.<token>/...: the link's sandbox, or 404 if there isn't one.
 - GET /api/health, /api/demo and /api/demo/stories: the visitor's sandbox if they have
   one, else none. Looking at the front door doesn't make a sandbox.
-- everything else: the visitor's sandbox, made fresh if they have none or theirs expired.
+- everything else: the visitor's sandbox, made fresh if they have none or theirs expired
+  (up to NEW_SANDBOXES_PER_HOUR per network; see api/guards.py).
 """
 
 import hashlib
@@ -166,12 +167,19 @@ class SandboxMiddleware:
         if path.startswith("/api/customer/"):
             key = _link_key(path)
             if key is None:
-                await _not_found(send)
+                await _refuse(send, 404, "this link is not valid")
                 return
         else:
             key = _cookie_key(scope.get("headers", []))
             if key is None and not (scope["method"] == "GET" and path in NO_SANDBOX_NEEDED):
+                from api import guards  # guards reads this module's settings
+
+                net = guards.network(scope)
+                if refusal := guards.sandbox_refusal(net):
+                    await _refuse(send, 429, refusal)
+                    return
                 secret, key = create()
+                guards.record_sandbox(key, net)
                 new_cookie = _set_cookie(secret)
 
         if key is None:
@@ -193,8 +201,8 @@ class SandboxMiddleware:
             _current.reset(current)
 
 
-async def _not_found(send: Any) -> None:
-    body = json.dumps({"detail": "this link is not valid"}).encode()
-    await send({"type": "http.response.start", "status": 404,
+async def _refuse(send: Any, status: int, detail: str) -> None:
+    body = json.dumps({"detail": detail}).encode()
+    await send({"type": "http.response.start", "status": status,
                 "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
     await send({"type": "http.response.body", "body": body})

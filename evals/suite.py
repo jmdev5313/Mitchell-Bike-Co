@@ -25,7 +25,7 @@ from pathlib import Path
 from agents import config
 from agents.runtime import AgentRuntime, open_agent
 from evals.common import Report, Scenario
-from evals.pricing import cost_usd
+from agents.pricing import cost_usd
 from shop import db, seed
 
 RUN_DB = Path(os.environ.get("EVAL_DB_PATH", "data/eval.db"))

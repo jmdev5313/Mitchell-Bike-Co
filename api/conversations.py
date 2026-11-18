@@ -22,6 +22,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agents import conversations
+from api import guards, sandboxes
 from api.agent_pool import AgentPool, Busy
 from api.deps import get_db, require_staff
 from shop import db
@@ -31,6 +32,7 @@ router = APIRouter(prefix="/api/conversations", tags=["agent"], dependencies=[De
 PHOTO_TYPES = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "image/webp": ".webp"}
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_PHOTOS = 4
+MAX_TEXT = 4000  # characters in one Mechanic message
 
 # The hero story's illustrative photo of the worn cassette. It was made with an image model, so
 # wherever it appears in a conversation it's labelled as generated. Matched by its exact bytes.
@@ -115,7 +117,7 @@ def get_conversation(conversation_id: str, conn: sqlite3.Connection = Depends(ge
 @router.post("/{conversation_id}/messages")
 async def send_message(
     conversation_id: str,
-    text: str = Form(min_length=1),
+    text: str = Form(min_length=1, max_length=MAX_TEXT),
     photos: list[UploadFile] = File(default=[]),
     agents: AgentPool = Depends(pool),
 ) -> StreamingResponse:
@@ -127,6 +129,9 @@ async def send_message(
         conn.close()
     if agents.is_busy(conversation_id):
         raise HTTPException(status.HTTP_409_CONFLICT, "a turn is already running in this conversation")
+    if refusal := guards.agent_refusal(sandboxes.current_key()):  # the hosted demo's spending limits
+        code = status.HTTP_503_SERVICE_UNAVAILABLE if not guards.live() else status.HTTP_429_TOO_MANY_REQUESTS
+        raise HTTPException(code, refusal)
     if len(photos) > MAX_PHOTOS:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"at most {MAX_PHOTOS} photos per message")
 
@@ -159,7 +164,15 @@ async def _stream_turn(
     async def on_event(event: dict[str, Any]) -> None:
         await events.put(event)
 
+    def usage_so_far() -> tuple[str, dict[str, int]]:
+        conn = db.connect()
+        try:
+            return conversations.get(conn, conversation_id).model, conversations.usage_totals(conn, conversation_id)
+        finally:
+            conn.close()
+
     async def run() -> None:
+        model, before = usage_so_far()
         try:
             result = await agents.send(conversation_id, text, photos, on_event)
             conn = db.connect()
@@ -176,6 +189,10 @@ async def _stream_turn(
         except Exception as e:  # noqa: BLE001 - reported to the client, turn already stored
             await events.put({"type": "error", "detail": f"the turn failed: {type(e).__name__}: {e}"})
         finally:
+            # Charge the turn to the demo's budget from what was stored, so a turn that failed partway still counts.
+            _, after = usage_so_far()
+            spent = {k: after.get(k, 0) - before.get(k, 0) for k in after}
+            guards.record_turn(sandboxes.current_key(), conversation_id, model, spent)
             workdir.cleanup()
             await events.put(None)
 

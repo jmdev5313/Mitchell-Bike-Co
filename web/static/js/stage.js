@@ -74,7 +74,11 @@ async function boot() {
   const pick = stories.find((s) => s.key === chosen);
   if (pick) {
     history.replaceState(null, "", "/demo");  // a reload continues the story instead of restarting it
-    await startStory(pick);
+    try {
+      await startStory(pick);
+    } catch (e) {
+      guide.textContent = `Couldn't start this story: ${e.message}`;  // e.g. the hosted demo's limit on new shops
+    }
   } else if (!current) {
     location.replace("/#choose-title");  // the stories are chosen on the starting screen
   } else {

@@ -28,7 +28,7 @@ from pathlib import Path
 from agents import config, conversations
 from agents.runtime import AgentRuntime, open_agent
 from evals.common import Check, Report, date_mentions, record_turn  # noqa: F401  (re-exported)
-from evals.pricing import cost_usd
+from agents.pricing import cost_usd
 from shop import db, flow, messages, procurement, schedule, seed
 from shop import work_orders as wo
 

@@ -5,7 +5,7 @@ from datetime import date
 import pytest
 
 from evals import hero
-from evals.pricing import cost_usd
+from agents.pricing import cost_usd
 from shop import schedule
 from tests.test_agent_runtime import FakeModel, agent, message, text, tool_use
 
