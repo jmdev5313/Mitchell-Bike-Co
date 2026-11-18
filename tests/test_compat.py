@@ -32,8 +32,10 @@ def test_exception_fits_with_a_note(conn, bike_of):
 
 
 def test_xd_cassette_on_xdr_needs_spacer(conn, bike_of):
+    # The freehub takes the XD cassette with a spacer, but the road derailleur can't shift its 44t cog.
     result = check_fit(conn, "AD-C12-44W", bike_of(TEMPO))
-    assert result.fits and "1.85 mm spacer" in result.notes[0]
+    assert any("1.85 mm spacer" in n for n in result.notes)
+    assert not result.fits and len(result.problems) == 1 and "rear_derailleur" in result.problems[0].replace(" ", "_")
 
 
 def test_exceptions_only_go_one_way(conn, bike_of):

@@ -5,7 +5,7 @@ Grace Lee's Halden Arc still has its original wheels, so it takes the catalog mo
 this wrong. Everything she needs is in stock, so there's nothing to plan or order.
 """
 
-from evals.scenarios.compatibility._quote import quote_turn
+from evals.scenarios._quote import quote_turn
 from evals.common import Scenario
 
 CHAIN = "AD-CH11"

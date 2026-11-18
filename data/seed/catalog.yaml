@@ -40,9 +40,9 @@ parts:
     brand: Ardent Drive
     category: cassette
     price_cents: 15999
-    stock_qty: 2
+    stock_qty: 0           # the road story: out of stock, 7 days from the supplier
     reorder_point: 1
-    requires: {freehub: SRAM XDR, drivetrain_speed: 12-speed}
+    requires: {freehub: SRAM XDR, drivetrain_speed: 12-speed, rear_derailleur: Road 12-speed (up to 36t)}
   - sku: AD-C12-44W
     name: Ardent X12 10-44 wide-range cassette
     brand: Ardent Drive
@@ -50,7 +50,7 @@ parts:
     price_cents: 16999
     stock_qty: 1
     reorder_point: 1
-    requires: {freehub: SRAM XD, drivetrain_speed: 12-speed}
+    requires: {freehub: SRAM XD, drivetrain_speed: 12-speed, rear_derailleur: Mountain 12-speed (up to 52t)}
 
   # Chains
   - sku: AD-CH10
@@ -113,6 +113,14 @@ parts:
     stock_qty: 4
     reorder_point: 2
     requires: {wheel_size: 650b}
+  - sku: FS-TR635-38
+    name: Fellside Classic 28 x 1 1/2 tire
+    brand: Fellside
+    category: tire
+    price_cents: 3499
+    stock_qty: 3
+    reorder_point: 2
+    requires: {wheel_size: 28 x 1 1/2 (635)}
 
 services:
   - name: Drivetrain replacement (chain and cassette)
@@ -130,6 +138,9 @@ services:
   - name: Brake rotor replacement
     minutes: 20
     price_cents: 2500
+  - name: Tire replacement
+    minutes: 20
+    price_cents: 2000
 
 bike_models:
   - key: halden-arc-2023
@@ -166,6 +177,7 @@ bike_models:
       rotor_mount: Centerlock
       seatpost_diameter: 27.2 mm
       wheel_size: 700c
+      rear_derailleur: Road 12-speed (up to 36t)
   - key: halden-scout-2021
     brand: Halden
     model: Scout
@@ -181,5 +193,40 @@ bike_models:
       front_axle: 100 mm QR
       brake_mount: Post mount
       rotor_mount: 6-bolt
+      seatpost_diameter: 27.2 mm
+      wheel_size: 700c
+  - key: halden-ridge-2022
+    brand: Halden
+    model: Ridge
+    year: 2022
+    category: mountain
+    price_cents: 389900
+    stock_qty: 1
+    standards:
+      freehub: Shimano Microspline
+      drivetrain_speed: 12-speed
+      bb_shell: BSA 73 mm
+      rear_axle: 12x148 Boost thru-axle
+      front_axle: 15x110 Boost thru-axle
+      brake_mount: Post mount
+      rotor_mount: Centerlock
+      seatpost_diameter: 31.6 mm
+      wheel_size: 29 in
+      rear_derailleur: Mountain 12-speed (up to 52t)
+  - key: halden-volt-2024
+    brand: Halden
+    model: Volt
+    year: 2024
+    category: e-bike
+    price_cents: 279900
+    stock_qty: 2
+    standards:
+      freehub: Shimano HG 8-10 speed
+      drivetrain_speed: 10-speed
+      bb_shell: BSA 68 mm
+      rear_axle: 12x142 thru-axle
+      front_axle: 12x100 thru-axle
+      brake_mount: Flat mount
+      rotor_mount: Centerlock
       seatpost_diameter: 27.2 mm
       wheel_size: 700c

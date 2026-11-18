@@ -4,7 +4,7 @@ Lena Fischer's adventure bike has 6-bolt rotor mounts. The catalog has a Centerl
 and a 6-bolt one; only the 6-bolt one fits. Both are in stock.
 """
 
-from evals.scenarios.compatibility._quote import quote_turn
+from evals.scenarios._quote import quote_turn
 from evals.common import Scenario
 
 SIX_BOLT = "FS-RT160-6B"
