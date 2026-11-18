@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from api.deps import get_db, require_staff
-from shop import customer_links, events, garage, messages, payments, procurement
+from shop import customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
 
 router = APIRouter(prefix="/api", tags=["staff"], dependencies=[Depends(require_staff)])
@@ -184,14 +184,15 @@ def send_draft(message_id: int, conn: sqlite3.Connection = Depends(get_db)) -> d
 
 
 @router.post("/purchase-orders/{po_id}/receive")
-def receive_purchase_order(po_id: int, conn: sqlite3.Connection = Depends(get_db)) -> dict[str, str]:
+def receive_purchase_order(po_id: int, conn: sqlite3.Connection = Depends(get_db)) -> dict[str, Any]:
     """The parts arrived: put them on the shelf."""
     procurement.receive_purchase_order(conn, po_id)
     po = conn.execute("SELECT work_order_id FROM purchase_orders WHERE id = ?", (po_id,)).fetchone()
     lines = next(o for o in procurement.list_purchase_orders(conn, po["work_order_id"]) if o["id"] == po_id)
     events.record(conn, po["work_order_id"], "mechanic", "parts_received",
                   f"Marked {', '.join(line['sku'] for line in lines['lines'])} received from {lines['supplier']}")
-    return {"status": "received"}
+    started = flow.start_when_ready(conn, po["work_order_id"])  # the last part in: the shop books and starts it
+    return {"status": "received", "repair_started": started}
 
 
 @router.post("/work-orders/{work_order_id}/schedule")

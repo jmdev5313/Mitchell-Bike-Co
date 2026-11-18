@@ -24,7 +24,7 @@ Each Agent turn takes 15 to 30 seconds and costs a few cents. Rehearse once; the
 | 0:50 | Customer POV | Optional: press Tab in the message box, then **Send** | The suggested question becomes real; the workshop shows it as a reply to answer. |
 | 0:55 | Customer POV | **Approve $169.98** | Only the Customer approves. Her page shows "Thanks, we're on it", then folds away: the turn is back in the workshop. |
 | 1:00 | Workshop | Wait a few seconds, don't click | The badge and the next step change on their own: the shop placed the planned order. |
-| 1:00 | Workshop | Next step: **Mark received → Book repair → Start repair → Repair done** | Booking defaults to the date Emma was promised. "Repair done" asks the Agent for the "ready" message. |
+| 1:00 | Workshop | Next step: **Mark received**, then **Repair done** | When the last part is in, the shop books the repair for today and starts it on its own (it shows in History as the shop's step). "Repair done" asks the Agent for the "ready" message. |
 | 1:15 | Workshop | **Send to Emma**, then the **History** tab | Who did what: the Agent, you, Emma, and the shop. Try the **Agent** and **Customer** filters. |
 | 1:25 | Workshop | **Audit log** (next to Work orders, by the heading) | Every tool call, written by the MCP servers themselves. |
 

@@ -159,7 +159,7 @@ function guideText(story, first) {
     case 5:
       return story.whose === "mechanic"
         ? say(first, " wrote to the shop: answer her. She can pay any time.")
-        : say(`Open Customer POV and pay ${total}. Test card 4242 4242 4242 4242.`);
+        : say(`Open Customer POV and pay ${total} with Stripe's test card: no real money moves.`);
     default:
       return story.status === "declined"
         ? say(first, " declined the quote. Start over to run it again.")

@@ -129,3 +129,37 @@ def test_badges_count_what_others_did_since_the_mechanic_looked(client, conn, qu
     assert after["needs_you"] == 1  # a Customer reply waits on the mechanic
     detail = client.get(f"/api/work-orders/{quoted}", headers=STAFF).json()
     assert [e["summary"] for e in detail["unseen"]] == ["Asked: “Thanks”"]
+
+
+def test_approving_a_job_with_everything_in_stock_starts_it(conn):
+    """Nothing to order: the shop books the repair for today and starts it at approval."""
+    from datetime import date
+
+    from shop import events, messages
+    from shop import work_orders as wo
+
+    bike = conn.execute("SELECT cb.id FROM customer_bikes cb JOIN customers c ON c.id = cb.customer_id "
+                        "WHERE c.email = 'grace.lee@example.com'").fetchone()[0]
+    order = wo.open_work_order(conn, bike, "Skipping")
+    wo.record_diagnosis(conn, order, "Worn")
+    wo.add_part(conn, order, "AD-C11-28R")
+    wo.add_part(conn, order, "AD-CH11")
+    wo.lock_quote(conn, order)
+    quote = messages.draft_message(conn, order, "Hi Grace", include_quote=True)
+    messages.send_draft(conn, quote.id)
+    result = flow.customer_decides(conn, quote.id, approved=True)
+    assert result["started"] is True and result["placed"] == []
+    assert wo.status(conn, order) == "in_progress"
+    booked = conn.execute("SELECT scheduled_for FROM work_orders WHERE id = ?", (order,)).fetchone()[0]
+    assert booked == date.today().isoformat()
+    assert events.history(conn, order)[-1]["actor"] == "shop"
+
+
+def test_a_job_still_waiting_for_parts_doesnt_start(conn):
+    from demo.sample import create_sample
+    from shop import work_orders as wo
+
+    order, _, quote_id = create_sample(conn)
+    result = flow.customer_decides(conn, quote_id, approved=True)
+    assert result["placed"] and result["started"] is False
+    assert wo.status(conn, order) == "awaiting_parts"
