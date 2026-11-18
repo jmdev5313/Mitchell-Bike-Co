@@ -60,6 +60,39 @@ function loadTurnstile() {
   return turnstileReady;
 }
 
+// The bot check runs in the background as soon as the front door loads, so it has usually passed
+// before anyone opens a story. A widget off-screen does it unseen; if Cloudflare wants a click
+// instead, the story preview shows the check (see openPreview).
+const bot = { token: null, state: "off", listeners: new Set(), widget: null };
+
+function botChanged(token, state) {
+  bot.token = token;
+  bot.state = state;
+  for (const listener of bot.listeners) listener();
+}
+
+function startBotCheck() {
+  if (bot.state !== "off") return;
+  bot.state = "running";
+  const box = h("div", { class: "bot-check-early", "aria-hidden": "true" });
+  document.body.append(box);
+  loadTurnstile().then((turnstile) => {
+    bot.widget = turnstile.render(box, {
+      sitekey: info.turnstile_site_key, appearance: "interaction-only",
+      callback: (t) => botChanged(t, "ready"),
+      "expired-callback": () => botChanged(null, "running"),  // a new token follows on its own
+      "before-interactive-callback": () => botChanged(null, "interactive"),
+      "error-callback": () => botChanged(null, "interactive"),  // let the preview try with a visible check
+    });
+  }).catch(() => botChanged(null, "interactive"));
+}
+
+/** A token used (or refused) can't be used again: ask for a fresh one. */
+function botUsed() {
+  botChanged(null, "running");
+  if (bot.widget !== null && window.turnstile) window.turnstile.reset(bot.widget);
+}
+
 function restingNotice(story) {
   return h("div", { class: "resting-box", role: "status" },
     h("strong", {}, info.agent?.reason || "The live Agent is resting."),
@@ -78,7 +111,6 @@ function openPreview(story, from) {
   const live = !demoMode || !info.agent || info.agent.live;
   const recorded = !live && Boolean(story.recorded);
   const status = h("div", { role: "status" });
-  let token = null;
   const start = h("button", { type: "button", class: "btn btn-big", onclick: async () => {
     if (!demoMode) {
       status.replaceChildren(h("p", { class: "small" }, "Starting a story needs demo mode: set DEMO_MODE=1 in .env and restart make api. "
@@ -88,7 +120,7 @@ function openPreview(story, from) {
     start.disabled = true;
     status.replaceChildren();
     try {
-      await startStory(story.key, { recorded, turnstileToken: token });
+      await startStory(story.key, { recorded, turnstileToken: recorded ? null : bot.token });
       location.href = "/demo";
     } catch (e) {
       let current = null;
@@ -97,26 +129,50 @@ function openPreview(story, from) {
         h("p", { style: "margin: 0" }, h("strong", {}, "Not started: "), e.message),
         current && e.status === 429 ? h("p", { class: "small", style: "margin: 4px 0 0" }, "Your current shop is still open: you can keep playing the story you started. ",
           h("a", { href: "/demo" }, "Back to my story →")) : null));
-      if (e.status === 403 && window.turnstile) { token = null; window.turnstile.reset(); }
+      if (e.status === 403) botUsed();
       else start.disabled = false;
     }
   } }, recorded ? "Start the recorded run" : "Start this repair");
 
-  // The bot check, for a live story when the hosted demo has Turnstile on. It usually passes unseen.
+  // The bot check, for a live story when the hosted demo has Turnstile on. The front door started it
+  // in the background; usually it has passed by now. Until it has, the button says "Checking…".
+  // If Cloudflare wants a click, the check shows here, in the preview.
+  const label = start.textContent;
   const widget = h("div");
   const check = h("div", { class: "bot-check", hidden: true },
     h("p", { class: "lbl" }, "One quick check before we set up your shop"), widget,
     h("p", { class: "small muted" }, "It keeps scripts from running up the live Agent's budget. Most visitors never see it."));
-  if (demoMode && live && info.turnstile_site_key) {
+  let visible = false;  // the preview's own, visible check has been put up
+  const sync = () => {
+    if (bot.token) {
+      start.disabled = false;
+      start.textContent = label;
+      return;
+    }
     start.disabled = true;
-    loadTurnstile().then((turnstile) => turnstile.render(widget, {
-      sitekey: info.turnstile_site_key, appearance: "interaction-only",
-      callback: (t) => { token = t; start.disabled = false; },
-      "expired-callback": () => { token = null; start.disabled = true; },
-      "before-interactive-callback": () => { check.hidden = false; },
-      "after-interactive-callback": () => { check.hidden = true; },
-      "error-callback": () => { status.replaceChildren(h("p", { class: "small" }, "The bot check couldn't run. Reload the page and try again.")); },
-    })).catch((e) => status.replaceChildren(h("p", { class: "small" }, e.message)));
+    start.textContent = "Checking…";
+    if (bot.state === "interactive" && !visible) {
+      visible = true;
+      check.hidden = false;
+      loadTurnstile().then((turnstile) => turnstile.render(widget, {
+        sitekey: info.turnstile_site_key,
+        callback: (t) => botChanged(t, "ready"),
+        "expired-callback": () => botChanged(null, "interactive"),
+        "error-callback": () => {
+          start.textContent = label;  // still disabled: there's no token to start with
+          status.replaceChildren(h("p", { class: "small" }, "The bot check couldn't run. Reload the page and try again."));
+        },
+      })).catch((e) => {
+        start.textContent = label;
+        status.replaceChildren(h("p", { class: "small" }, e.message));
+      });
+    }
+  };
+  if (demoMode && live && info.turnstile_site_key) {
+    startBotCheck();  // normally already running since the page loaded
+    bot.listeners.add(sync);
+    preview.addEventListener("close", () => bot.listeners.delete(sync), { once: true });
+    sync();
   }
   if (!live && !recorded) start.disabled = true;
 
@@ -166,6 +222,9 @@ async function load() {
   } catch {
     grid.replaceChildren(h("li", { class: "muted" }, "Couldn't load the stories."));
   }
+
+  // Start the bot check now, so it's done by the time a visitor opens a story.
+  if (demoMode && info.agent?.live && info.turnstile_site_key) startBotCheck();
 
   // The live Agent resting (budget spent, or switched off): every story still plays, recorded.
   const restingNow = demoMode && info.agent && !info.agent.live;
