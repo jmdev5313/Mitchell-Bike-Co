@@ -107,6 +107,17 @@ Why it's built this way is in the [decisions log](docs/decisions.md).
 - **The API by hand:** `make api`, then http://127.0.0.1:8000/docs.
 - **`make test`** runs the unit tests, which never call the model; **`make servers`** runs the three MCP servers over HTTP.
 
+## Hosting
+
+The public demo runs on one small [Fly.io](https://fly.io) machine (`Dockerfile`, `fly.toml`) that stops itself when nobody's visiting. Each visitor gets their own copy of the shop, the live Agent has a daily and monthly budget under a $20-a-month spend limit, and when it's resting every story plays as a recorded run of the real Agent. The reasons are in `docs/decisions.md` under "Hosting".
+
+To deploy your own copy (the app name, region and keys are yours):
+
+1. `fly auth login`, then `fly launch --no-deploy` in this folder. It reads `fly.toml`; if the name `mitchell-bike-co` is taken, pick another and change `PUBLIC_BASE_URL` to match.
+2. `fly volumes create data --size 1 --region iad` for the visitors' shops and the budget ledger.
+3. `fly secrets set ANTHROPIC_API_KEY=… STAFF_PASSCODE=… STRIPE_SECRET_KEY=sk_test_… TURNSTILE_SITE_KEY=… TURNSTILE_SECRET_KEY=… CLIENT_HASH_SALT=…` (an API key from its own Anthropic workspace with a spend limit, a new passcode, a Stripe **test** key, a Cloudflare Turnstile widget for the app's hostname, and any long random string).
+4. `fly deploy`.
+
 ## Roadmap
 
 Work is split into milestones, each defined by what it delivers rather than how long it takes.
@@ -122,3 +133,4 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
 | M5 | Eval suite: scenarios across compatibility, diagnosis, guardrails and procurement, three runs each, judged by the shop's state | Done |
 | M8 | Pick a bike: six repair stories, each an eval, a "choose a repair story" starting screen with previews, and an About page | Done |
+| Hosting | A sandbox shop per visitor, spending limits, recorded runs, a bot check, and a Fly.io deployment | In progress |

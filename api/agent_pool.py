@@ -4,8 +4,13 @@ Opening a conversation starts its MCP server processes, so a conversation stays
 open after a turn and is reused by the next one. Each open conversation lives in
 its own task, which opens the runtime, runs its turns one at a time, and closes
 it: MCP connections must be closed by the task that opened them. Conversations
-idle for longer than IDLE_SECONDS are closed the next time the pool is used, and
-all are closed when the app shuts down.
+idle for longer than AGENT_IDLE_MINUTES (default 15) are closed the next time the
+pool is used, and all are closed when the app shuts down.
+
+Each open conversation holds three MCP server processes (about 200 MB together), so
+a small server sets AGENT_MAX_OPEN: opening one more closes the conversation idle the
+longest (it reopens from the database if its Mechanic comes back), and if every open
+conversation is mid-turn the new one is refused with `Full`.
 
 Conversations belong to the database that was current when they were opened (in the
 hosted demo, the visitor's sandbox). The pool keys them by that database as well as
@@ -13,6 +18,7 @@ their id, and each worker runs with it chosen, so the Agent's MCP servers write 
 """
 
 import asyncio
+import os
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -21,7 +27,12 @@ from agents.runtime import AgentRuntime, TurnResult, open_agent
 from agents.runtime.base import EventHandler
 from shop import db
 
-IDLE_SECONDS = 15 * 60
+def _idle_seconds() -> float:
+    return float(os.environ.get("AGENT_IDLE_MINUTES", "").strip() or 15) * 60
+
+
+def _max_open() -> int:
+    return int(os.environ.get("AGENT_MAX_OPEN", "").strip() or 0)  # 0: no limit
 
 # conversation_id or None (new) -> a runtime, not yet opened
 AgentFactory = Callable[[str | None], AgentRuntime]
@@ -36,6 +47,10 @@ def default_factory(conversation_id: str | None) -> AgentRuntime:
 
 class Busy(Exception):
     """A turn is already running in this conversation."""
+
+
+class Full(Exception):
+    """Every open conversation is mid-turn, and the server has room for no more."""
 
 
 class _Worker:
@@ -95,18 +110,22 @@ def _key(conversation_id: str) -> Key:
 class AgentPool:
     """Open conversations. Each method acts in the current database (see `shop.db.using`)."""
 
-    def __init__(self, factory: AgentFactory = default_factory, idle_seconds: float = IDLE_SECONDS) -> None:
+    def __init__(self, factory: AgentFactory = default_factory, idle_seconds: float | None = None,
+                 max_open: int | None = None) -> None:
         self.factory = factory
-        self.idle_seconds = idle_seconds
+        self.idle_seconds = _idle_seconds() if idle_seconds is None else idle_seconds
+        self.max_open = _max_open() if max_open is None else max_open
         self._workers: dict[Key, _Worker] = {}
         self._opening = asyncio.Lock()
 
     async def new(self) -> str:
         """Start a conversation and keep it open. Returns its id."""
         await self._close_idle()
-        worker = _Worker(self.factory, None, db.db_path())
-        conversation_id = await worker.ready
-        self._workers[_key(conversation_id)] = worker
+        async with self._opening:
+            await self._make_room()
+            worker = _Worker(self.factory, None, db.db_path())
+            conversation_id = await worker.ready
+            self._workers[_key(conversation_id)] = worker
         return conversation_id
 
     async def send(
@@ -139,10 +158,19 @@ class AgentPool:
         async with self._opening:
             worker = self._workers.get(key)
             if worker is None:
+                await self._make_room()
                 worker = _Worker(self.factory, conversation_id, db.db_path())
                 await worker.ready
                 self._workers[key] = worker
         return worker
+
+    async def _make_room(self) -> None:
+        """Below the limit on open conversations, close the one idle the longest; refuse if all are mid-turn."""
+        while self.max_open and len(self._workers) >= self.max_open:
+            idle = [(worker.last_used, key) for key, worker in self._workers.items() if not worker.busy]
+            if not idle:
+                raise Full("The workshop is busy: every open conversation is mid-turn. Try again in a minute.")
+            await self._workers.pop(min(idle)[1]).close()
 
     async def _close_idle(self) -> None:
         now = time.monotonic()

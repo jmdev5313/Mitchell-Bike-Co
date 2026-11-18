@@ -23,7 +23,7 @@ from pydantic import BaseModel
 
 from agents import conversations
 from api import guards, recorded, sandboxes
-from api.agent_pool import AgentPool, Busy
+from api.agent_pool import AgentPool, Busy, Full
 from api.deps import get_db, require_staff
 from shop import db
 
@@ -94,7 +94,10 @@ async def new_conversation(
         "SELECT 1 FROM work_orders WHERE id = ?", (work_order_id,)
     ).fetchone() is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"no work order {work_order_id}")
-    conversation_id = await agents.new()
+    try:
+        conversation_id = await agents.new()
+    except Full as e:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(e))
     if work_order_id is not None:
         conversations.link_work_order(conn, conversation_id, work_order_id)
     return {"conversation_id": conversation_id}
@@ -192,7 +195,7 @@ async def _stream_turn(
                 "type": "reply", "text": result.reply, "stop_reason": result.stop_reason,
                 "work_order_id": work_order_id, "usage": result.usage,
             })
-        except Busy as e:
+        except (Busy, Full) as e:
             await events.put({"type": "error", "detail": str(e)})
         except Exception as e:  # noqa: BLE001 - reported to the client, turn already stored
             await events.put({"type": "error", "detail": f"the turn failed: {type(e).__name__}: {e}"})

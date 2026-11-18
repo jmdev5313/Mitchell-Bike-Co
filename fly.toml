@@ -1,0 +1,40 @@
+# Fly.io: one small machine that stops itself when nobody's visiting. See docs/decisions.md,
+# "Hosting: deploying to Fly.io". Secrets (API keys, the staff passcode) are set with
+# `fly secrets set`, never here.
+app = "mitchell-bike-co"
+primary_region = "iad"
+
+[build]
+
+[env]
+  SANDBOXES = "1"                      # a shop for each visitor (api/sandboxes.py)
+  DEMO_MODE = "1"                      # the front door's shortcuts: synthetic data only
+  SANDBOX_DIR = "/data/sandboxes"      # on the volume, with the guards' ledger
+  DB_PATH = "/data/shop.db"            # unused with sandboxes; kept off the image
+  PUBLIC_BASE_URL = "https://mitchell-bike-co.fly.dev"
+  CLIENT_IP_HEADER = "Fly-Client-IP"   # tells networks apart for the new-shop limit
+  AGENT_MAX_OPEN = "3"                 # about 200 MB each; a 1 GB machine holds 3
+  AGENT_IDLE_MINUTES = "5"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"
+
+[[mounts]]
+  source = "data"
+  destination = "/data"
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
