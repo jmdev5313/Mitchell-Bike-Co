@@ -97,7 +97,7 @@ function openPreview(story, from) {
         h("p", { style: "margin: 0" }, h("strong", {}, "Not started: "), e.message),
         current && e.status === 429 ? h("p", { class: "small", style: "margin: 4px 0 0" }, "Your current shop is still open: you can keep playing the story you started. ",
           h("a", { href: "/demo" }, "Back to my story →")) : null));
-      if (e.status === 403 && window.turnstile) { token = null; window.turnstile.reset(); }
+      if (e.status === 403 && window.turnstile) { token = null; waiting(); window.turnstile.reset(); }
       else start.disabled = false;
     }
   } }, recorded ? "Start the recorded run" : "Start this repair");
@@ -107,16 +107,26 @@ function openPreview(story, from) {
   const check = h("div", { class: "bot-check", hidden: true },
     h("p", { class: "lbl" }, "One quick check before we set up your shop"), widget,
     h("p", { class: "small muted" }, "It keeps scripts from running up the live Agent's budget. Most visitors never see it."));
+  // While it runs, the button says so, rather than sitting greyed out with no reason.
+  const label = start.textContent;
+  const waiting = () => { start.disabled = true; start.textContent = "Checking…"; };
+  const ready = () => { start.disabled = false; start.textContent = label; };
   if (demoMode && live && info.turnstile_site_key) {
-    start.disabled = true;
+    waiting();
     loadTurnstile().then((turnstile) => turnstile.render(widget, {
       sitekey: info.turnstile_site_key, appearance: "interaction-only",
-      callback: (t) => { token = t; start.disabled = false; },
-      "expired-callback": () => { token = null; start.disabled = true; },
+      callback: (t) => { token = t; ready(); },
+      "expired-callback": () => { token = null; waiting(); },
       "before-interactive-callback": () => { check.hidden = false; },
       "after-interactive-callback": () => { check.hidden = true; },
-      "error-callback": () => { status.replaceChildren(h("p", { class: "small" }, "The bot check couldn't run. Reload the page and try again.")); },
-    })).catch((e) => status.replaceChildren(h("p", { class: "small" }, e.message)));
+      "error-callback": () => {
+        start.textContent = label;  // still disabled: there's no token to start with
+        status.replaceChildren(h("p", { class: "small" }, "The bot check couldn't run. Reload the page and try again."));
+      },
+    })).catch((e) => {
+      start.textContent = label;
+      status.replaceChildren(h("p", { class: "small" }, e.message));
+    });
   }
   if (!live && !recorded) start.disabled = true;
 
