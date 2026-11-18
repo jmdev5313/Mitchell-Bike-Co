@@ -719,3 +719,12 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .about-map td:last-child { font-weight: 600; }
 body.is-picking .stage-steps, body.is-picking .stage-bottom, body.is-picking #restart { visibility: hidden; }
 body.is-picking .stage-bottom { display: none; }
+
+/* Stripe test mode, said plainly on the Customer's pay screen */
+.test-mode {
+  margin-top: 16px; padding: 12px 14px; border: 2px dashed var(--manila-text); background: rgba(255, 255, 255, 0.5);
+  font-size: 15px; line-height: 1.45;
+}
+.test-mode strong { display: block; font-size: 16px; }
+.test-mode p { margin: 4px 0 6px; }
+.test-mode .num { font-weight: 600; white-space: nowrap; }

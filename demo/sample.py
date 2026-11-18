@@ -55,9 +55,7 @@ def create_sample(conn, done: bool = False, source: str = "make sample") -> tupl
     if done:
         placed = flow.customer_decides(conn, draft.id, approved=True)["placed"]  # the shop places the plan
         procurement.receive_purchase_order(conn, placed[0]["id"])
-        promised = conn.execute("SELECT promised_ready_on FROM work_orders WHERE id = ?", (order,)).fetchone()[0]
-        wo.schedule_repair(conn, order, promised)
-        wo.start_repair(conn, order)
+        flow.start_when_ready(conn, order)  # every part is in: the shop books it for today and starts it
         wo.finish_repair(conn, order)
     return order, token, draft.id
 

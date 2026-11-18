@@ -154,7 +154,7 @@ def _confirm(conn: sqlite3.Connection, stripe_client: Any, work_order_id: int, s
     if session.payment_status == "paid":
         done = payments.complete_payment(conn, payment.id, session.amount_total)
         events.record(conn, work_order_id, "customer", "paid",
-                      f"Paid ${done.amount_cents // 100:,}.{done.amount_cents % 100:02d} through Stripe Checkout (test mode)")
+                      f"Paid ${done.amount_cents // 100:,}.{done.amount_cents % 100:02d} in Stripe test mode (no money moved)")
         return done.status
     return payment.status
 
@@ -190,11 +190,14 @@ def _create_session(stripe_client: Any, token: str, work_order_id: int, view: di
                     "currency": "usd",
                     "unit_amount": payment.amount_cents,
                     "product_data": {
-                        "name": f"Bike repair: {view['bike']['nickname'] or view['bike']['model']}",
-                        "description": f"Mitchell Bike Co. work order {work_order_id}",
+                        "name": f"Bike repair, demo (test mode, no charge): {view['bike']['nickname'] or view['bike']['model']}",
+                        "description": f"Mitchell Bike Co. is a fictional demo shop. Work order {work_order_id}.",
                     },
                 },
             }],
+            # Said again on Stripe's own page, next to its Pay button (Stripe also shows a TEST MODE badge).
+            "custom_text": {"submit": {"message": "Demo only. Stripe test mode: no real payment is taken. "
+                                                  "Use test card 4242 4242 4242 4242, any future date, any CVC."}},
             "success_url": f"{base}/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}",
             "cancel_url": f"{base}/c/{token}?checkout=cancelled",
         },

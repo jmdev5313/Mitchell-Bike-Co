@@ -74,6 +74,9 @@ def test_customer_pays_through_stripe_checkout(client, conn, done, stripe_fake):
     params, options = stripe_fake.created[0]
     assert params["mode"] == "payment" and params["client_reference_id"] == str(done)
     assert params["line_items"][0]["price_data"]["unit_amount"] == HERO_QUOTE
+    # Stripe's own page says it's a demo, too: in the item's name and next to its Pay button.
+    assert "test mode, no charge" in params["line_items"][0]["price_data"]["product_data"]["name"]
+    assert "no real payment is taken" in params["custom_text"]["submit"]["message"]
     assert params["success_url"] == f"http://shop.test/api/customer/{token}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
     # The key carries the link token, so a rebuilt database can't reuse an earlier key.
     assert params["cancel_url"] == f"http://shop.test/c/{token}?checkout=cancelled"

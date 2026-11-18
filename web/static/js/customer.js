@@ -308,10 +308,11 @@ function readyScreen(view) {
     h("div", { class: "amount-due" },
       h("span", { class: "label" }, "Amount due"),
       h("span", { class: "value num" }, dollars(view.quote.total_cents))),
-    h("div", { style: "margin-top: 16px" },
+    testModeNotice(),
+    h("div", { style: "margin-top: 12px" },
       h("button", { type: "button", class: "btn btn-big", disabled: busy, onclick: pay },
-        busy ? "Opening secure checkout…" : `Pay ${dollars(view.quote.total_cents)}`),
-      h("div", { class: "secure-note" }, icon(LOCK, 14, 1.8), "Secure checkout by Stripe, test mode"),
+        busy ? "Opening the test checkout…" : `Pay ${dollars(view.quote.total_cents)} (test)`),
+      h("div", { class: "secure-note" }, icon(LOCK, 14, 1.8), "Stripe checkout in test mode: no card is charged"),
       checkoutLink ? h("p", { class: "note", role: "status" }, "Your browser kept the checkout from opening. ",
         h("a", { href: checkoutLink, target: "_blank", rel: "noopener noreferrer" }, "Open the secure checkout in a new tab")) : null),
     errorNotice(),
@@ -319,17 +320,30 @@ function readyScreen(view) {
   ];
 }
 
+/** Nobody should think this is a real payment: said before the button, on Stripe's page, and after. */
+function testModeNotice() {
+  const copied = h("span", { class: "small", role: "status" });
+  return h("div", { class: "test-mode", role: "note" },
+    h("strong", {}, "This is a demo. No real money moves."),
+    h("p", {}, "Stripe runs in test mode, so no card is charged. Pay with the test card ",
+      h("span", { class: "num" }, "4242 4242 4242 4242"), ", any future date and any CVC."),
+    h("button", { type: "button", class: "btn-text", onclick: async () => {
+      try { await navigator.clipboard.writeText("4242424242424242"); copied.textContent = " Copied"; }
+      catch { copied.textContent = " Select the number to copy it"; }
+    } }, "Copy the test card number"), copied);
+}
+
 function paidScreen(view) {
   const paidOn = shortDate(view.timeline.paid_at);
   return [
     h("h1", { class: "display", style: "margin-top: 24px" }, "Paid, thank you!"),
-    h("p", { class: "status-line paid-mark" }, icon(CHECK), `Paid ${paidOn}`),
+    h("p", { class: "status-line paid-mark" }, icon(CHECK), `Paid in test mode ${paidOn}`),
     h("p", { style: "margin: 12px 0 0" },
-      `${dollars(view.quote.total_cents)} received. Your ${bikeName(view)} is ready to pick up.`),
+      `${dollars(view.quote.total_cents)} paid with Stripe's test card, so no money moved. Your ${bikeName(view)} is ready to pick up.`),
     h("hr", { class: "tear", "aria-hidden": "true", style: "margin-top: 24px" }),
     h("section", {},
       h("h2", {}, "Receipt"),
-      quoteLedger(view, { totalLabel: `Paid ${paidOn}`, totalSize: 32 })),
+      quoteLedger(view, { totalLabel: `Paid ${paidOn} (test mode)`, totalSize: 32 })),
     thread(view),
   ];
 }
