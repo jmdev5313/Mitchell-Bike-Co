@@ -1,0 +1,330 @@
+{
+ "story": "hero",
+ "model": "claude-sonnet-5-5",
+ "recorded_on": "2026-11-18",
+ "turns": [
+  {
+   "message": "Emma Clark's gravel bike is on the stand. Gears skip under load in the smaller cogs, and my chain checker reads 0.75%. Work out what it needs and draft her a quote.",
+   "photo": true,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_01EoLPHbx2rR9z6BTsXQmZbG",
+       "input": {
+        "query": "Clark"
+       },
+       "name": "find_customer",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.18
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_011coZe3PHqSB21pJmNqT1xu",
+       "input": {
+        "customer_bike_id": 1
+       },
+       "name": "get_bike",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_013wtkiSDfRNVpm9EJVELLqD",
+       "input": {},
+       "name": "list_services",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.9
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQSggcKEAgTGAI4AUIIdGhpbmtpbmcSDJ4eDtmUwNWd4/MLDxoMVge/yzlVisF98ylHIjCTZPk+6I5yjDyL/383EzFgJOO6dhk6BWCmNMD7yuy4b1+EJy8Y2BZumtgC27Td1uAqnwYJZu3p5nXad/LHCu3XzCX1SofNEiby3/tF2+LQ3hLFZ9Qj3+oqb205MWdY3xbBTzRQrZ+l2kkY9QQZKqck1ok+1evMWePy1s29QmINVCODp6lMU1UbasOusfZ4e1kOEhDQ1z3769srC8q0ytIA8y0OqXyApgrHrcUdR4TLvLmJIXTY1F9KYlFS5U7CeeOWeqGthqWUvBEtOoHApIVg1uASka5r+QaY9HyY5dfdGG5FjgJLwi2NLuE1yDpSVBFGGdyVttBH31iRqprLsHhDOaSlIQ5pHKryFPboWw/AZGoBNy1dYXku8+/Htgr3PVBTrMZzrl4C6ZmSpa7qZt51XgMYjlVxrfUx6O67pKaqRRe3+A7PHmCMy+zlpiJn6KLZEIdTi6aQUVNUFLW9TSenm2QPjcqB8OZX/rlDlSq9/HrxCr2Bcqep5Gmo3+ScDgs8p29JZ4oIol7sP4TICrPCbJYU1rwvJOCGtpZ2JWveSOuKizQ2mAUhMEERGtYly1Mcm+YbWnRXtg5vc+Vtc+w+1VnWAadBLrKlqIgv6NBBD1Gzbt6ek+1FKXGiGPsXq2uW7u1yEpJjJuJFcaRP3JD/8LSoSnN898SQHBrOyl8q+tWixNtmTsMkKSF8hRvbJ5vYn2vKEiNDC/njWhyEQUh5zBxlBJ/F9a396n5nWDjKxQLHIJSQkqwEl+VEUEajNcpJK5MVXDESS1nDJo0hVWBC23FjS9hYH00hmRAbzudokFMC86Ve0j5jAA4zvw/OFa8Vqk9huARLpuGU5bM6iUzNXXK6NqvKgFbAPtkpaPDS0j/MuGia+tcaN2KIKKxsZuP9/4DhiI0hfi8OCoHE6x6o9wqiMQl/iNd66sOVAEenqadkCWFyQRulv1ZvxxgWqFfkumE0MkMxsi9FEJpiRI1mKoBmQh3kNGFuDSeH1OhX/FXqleY0rWKpiyGmmzF4SMFTDzBY6j76+UqrCinXBGej+pEf/fyNJI9nG1od9nAIa2QJOZGsE1RjB5VihVxPf1kxsRsx5FoOklO6KyDQMlkEpcZzoqxn0+0cFTBOIe6+PK2SGAE=",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_01RfiMDBEdSVnoLcDkATS185",
+       "input": {
+        "customer_bike_id": 1,
+        "category": "cassette"
+       },
+       "name": "list_fitting_parts",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_019RroQZkha7g5WUkK1jK8Cb",
+       "input": {
+        "customer_bike_id": 1,
+        "category": "chain"
+       },
+       "name": "list_fitting_parts",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 2.26
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQS/QcKEAgTGAI4AUIIdGhpbmtpbmcSDFV9EvZhKipbLgehnRoM+AoW5AinPJE9aJsBIjDizDCMVQWjuTcXw07glr6m6q85/b+0bpe4O4UXv6Ah5tlYOGjKMfyYY1mgyPIsMY0qmgd2p8cGmFi9CqyYEvOkYo+YhX4prrCdXBf/PrrVRudiaEn+TNhgeXbkFwZMGjthq3mRc0hBqN0d1sJS4VY4SH6SWmX61trLkRRFbg5rrzdthRwQSBlMeuOXjPWaa97Lnjb4l1Dqdb9ao54ScxTPeTjA9kSMJ7ZxiFVd7n2qPm4xwmF1WXyBdRlPrpWjYwBDBfGKZiaT9+zH+AGYPM+aqduoBV72+l0tKbfuph7mytLRN6ojCcXU7/3xOFAp1VtwmTYTqnFieKOPn9DK1OI77VnOhvetpFjMASU9h9tdkGsUvSSr4BlrrGegE5ms5ZLJHmmasqsXP82K0pPTBbhcUJXCGwJ2Q6PvSgBPete2itbZt5VjYbBeNCpV3LiMlbuxGMSTRhNwn9O8ed+Hku2Cfa9CTd3m93qOkCxv9/ceriahUD/hHKHJmL6Bjp5FgpIJD/RkLzw7VvtN6BNenVeawooX2o7XhI+mUpQrHG3V79XTc0HZP0wn6CbSBXFxUxupjdjc1A5LrVM8Whg2PzkFfTQHWzy2NcYbh6devuh5arbrtAUbmL4HKsUPeBSry4bjRombt7+ogG5XbqqVmTvzdUGGfJRDoSyFQ9pTgg23fVR7o1K5oZLCyFICWLz3LLlfCOE+xBdzklMYEBKuvP/Wr5JFYd7SA0lfPf6Li3cvVx41yQ0Vx5L6JM5La9dvfmrC5cOCr6zP62OgnNp6OJ1p1q6QCkL9S/hNBr2cbEqXM6dshe4GfJdYBwSYVvV8Gd4F5AfMsxgt8QVn4SDkuj9PsQQJNKB8Xt8aclODG9zmnBap5Uz2UTa/cOw6fqjyIvZZwMDkFT3P37Ulm8VBlODfUuknF2086UIiasfxy/Ila91o+k2QexRXdZq5D1SOCKbAGaQwEGpCMy2dReNYwqBzeZaeXwEscpzXxejdPY2VUYjXPEgV6rk/F/+/nkU3EYDa3mwUjOkwIaY2nRvb7vQo0Y5E0Y1phLwGyT6M/51UZxYV2g7ThfX1j17dFdrgT3TNztVfTsGEWoj4SWhbGrFLpzzLFpOJ3TrtckGZmsSTp1CpOSwHVNkw2JHBRkfl1dgRSIYz4qwHdxjgT59SUr+nM8N8ZQyJOFeWUQ4H06ZEZmmJtbvUi15o6gRZZFpShwg2iR6Qg7fscKjFS4PvOJLw8SpQk7XIYGRvvp78SPiJAOW5QJm4qWqTCJxxcm4156Qa8DCt9FLnE1iHyQr7GAE=",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_01DSgvUKLK6BTU69om16mNtb",
+       "input": {
+        "sku": "AD-C11-34W",
+        "qty": 1
+       },
+       "name": "supplier_options",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.97
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01MJEcCsZ6WipXpa8XjYMzCE",
+       "input": {
+        "customer_bike_id": 1,
+        "complaint": "Gears skip under load in the smaller cogs."
+       },
+       "name": "open_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.17
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01S6qcF5PsoaswYMBfas8Qns",
+       "input": {
+        "work_order_id": 1,
+        "diagnosis": "Worn chain and cassette. Chain checker reads 0.75% (replacement limit). Skipping under load on the smaller cogs, and the photo shows worn, hooked cog teeth with heavy grime. Chain was last replaced 2024-07 at 5000 km. The cassette came secondhand with the carbon wheels in 2025-03 (unknown mileage), so it has likely worn with the chain. A new chain alone would skip on worn cogs, so replace both. Fairly confident; a worn cassette is the usual cause of skipping under load. Bike has Shimano HG 8-10 freehub with 11-speed drivetrain, so only a cassette that fits this freehub was chosen."
+       },
+       "name": "record_diagnosis",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01LM6kqTzk4DYxdsLwL9LbU2",
+       "input": {
+        "work_order_id": 1,
+        "sku": "AD-C11-34W"
+       },
+       "name": "add_part",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01PaHJq6tTyXqCAvVEN8CPp2",
+       "input": {
+        "work_order_id": 1,
+        "sku": "AD-CH11"
+       },
+       "name": "add_part",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_012785XHSMeQDNCP3eaLLN6v",
+       "input": {
+        "work_order_id": 1,
+        "service_name": "Drivetrain replacement (chain and cassette)"
+       },
+       "name": "add_service",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_011C8KSAYhUoCnFcTx3xdzJd",
+       "input": {
+        "work_order_id": 1,
+        "lines": [
+         {
+          "sku": "AD-C11-34W",
+          "supplier_id": 1,
+          "qty": 1
+         }
+        ]
+       },
+       "name": "plan_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01Cqpwk9xEDNygtRmZmntkKY",
+       "input": {
+        "supplier_ids": [
+         1
+        ]
+       },
+       "name": "estimate_ready_date",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 4.35
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQS3QYKEAgTGAI4AUIIdGhpbmtpbmcSDGnRFvM2s/MpFhHjGBoMvvH1akGIzf5JLWIiIjDM2maxu1vHioUdgxrcrIbiXDy1cQy690zT904NSCdx4Nsq4t+e2++87U35YPW7MBcq+gWB2iSUbO6HgMY1ZtmF05nl8gHKeVKn8WyKZBZe4yKqYcBrAU2GkCwH5sXg/31ESC2eDzXxg3DelzOkZTPPE3bACCGu+qCl6n1j25+WJ+D709i9vTyK1V5NhqzOXtDwxKfYRkMBZCNs/yP4w1tRF1fuhIO2W3PInOIJspbX1gj1RcTyS7tTDhhPj0KQ1q8Ib33hOcc4lUpJrdG3EDCRDCxRTLhrZBzkpFXx81g9wyEepk4UwHYZkTVtBipYF+gmWIiWTV9Hp37uKLJu1rXwo0pF6kXPC5jo26Zn43ew5LayYmQLiGjFTgflbp/PcXThVv+/C+ZRWrPXu4ZOWorC1OsXT2TOsGkXcgY53u2AOvjnwpxsZ8I76HvtavuxkLQaShSF5mWKH408B84GiGee1yEkHbRCzDF6khnqRuY6gsF6yC8NgBk4Cq+E0OBiA+Ru410OMQ5mdOioxccvEe/TxpCqx1Fu5LVtcBajd8aq08mKIggEHptAkwhoa6LXyjJOKouP7Vwey0LH2gauxB6Q1LszCpF+DWlSg86vb5g4vFD0ffs4CTIlZtoIPuEjnwQGn7IhakBIQiFkTo4qd9rZzXX4mNAVw5aclMxxdnqNiX4JRyWWINtmxeMfzkzAUCaAVDjynAT2ST2yZeNKadgwLL3x5AK7Qu6lsjYy+1HiWkmBDRcd04i2PE86PyRdCskaqxTWD9ZGioYZlCUhRww5efiQIX/z058XgbBz3EM27P1VdHOwKvkVHw0VQXec+1XCgQdFiZDBVtGPUasCpiHIvLx8bP9E16ywA+VJhyREhLE1ZM9YM5pNltWoLbXnJKNkSF9Z6wz+frs2qiJ97QJxPBAh/RzegazFYD4+TjvroCaj/KuhirrE4iYh3nGq9xp+H7le7nzaw6JKgiIgkDDexGw39ntd+8mBGsWNH9VUPqjIE7jq8yf+6oY2rPm3n2gYATrWFyoY5aiy3l+D97vh1ILFXtUq7Gsz1oupQyT2fkzOGC/aZ5Nt4BfSFokYAQ==",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_018d9g9wCfCxD47uRs7rfyTA",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "lock_quote",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.21
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_017QeTmAZp22fUCXG4J5HESp",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Emma, we've looked over Arc. The chain is worn out and the gear cluster on the back wheel (the cassette) is worn too. That's why the gears skip when you pedal hard in the smaller gears. A new chain on its own wouldn't fix it, because it would still slip on the worn gears. So we'd fit a new chain and a new cassette. We'd use the same 11-34 range as you have now, and it works with your carbon wheels. The total is $169.98, which covers both parts and the labor. The new cassette has to be ordered in, so Arc will be ready on Saturday, November 21. You can approve or decline the quote below.",
+        "include_quote": true
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 2.97
+    },
+    {
+     "content": [
+      {
+       "text": "The draft quote for Emma is ready for you to review and send. It's work order 1, total $169.98.\n\n- **Diagnosis:** The chain and cassette are both worn. Your checker reads 0.75%, which is the replacement limit. The cassette came secondhand with her carbon wheels, and the photo shows worn teeth. A new chain alone would still skip on worn cogs, so I quoted both. I'm fairly confident, but I haven't seen the cog teeth in person. If they look fine to you, it's worth a second look before we send.\n- **Fit:** Her freehub is Shimano HG 8-10 speed, which isn't the catalog default. The only cassette that fits her bike is the Ardent W11 11-34, which has the same range as her current one. The 11-speed road cassettes don't fit that freehub.\n- **Quote lines:** The cassette is $74.99, the Ardent 11-speed chain is $34.99, and the \"Drivetrain replacement (chain and cassette)\" labor is $60.00.\n- **Ordering:** The cassette is out of stock. I planned the order with Velo Supply Co. (2-day lead time, $42.50), so the ready date promised to Emma is Saturday, Nov 21. Northgate is $3.50 cheaper but takes 5 days. The chain is in stock.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 4.03
+    }
+   ]
+  },
+  {
+   "message": "The repair on work order #1 is done. Draft Emma a short message that the bike is ready to pick up and can be paid for from the link.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_01L4GwBCE4tAcZphi8pAiHeq",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "get_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_013RLTxrG6K6tS9Bs9LcSrWh",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "list_customer_messages",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.17
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01KLAqQLi2zUNk8nDDU6nYX1",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Emma, good news: Arc is ready to pick up. The new chain and gear cluster are fitted, so the skipping should be gone. You can pay from your link whenever suits you ($169.98). Thanks for choosing Mitchell Bike Co.!"
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.63
+    },
+    {
+     "content": [
+      {
+       "text": "The pickup message for Emma is drafted and ready for you to review and send. Work order #1 shows as done, and she approved the quote. The message tells her Arc is ready, that the new chain and cassette should stop the skipping, and that she can pay the $169.98 from her link.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 1.21
+    }
+   ]
+  }
+ ]
+}
