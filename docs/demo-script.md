@@ -4,8 +4,8 @@ A walkthrough of the hero story in about 90 seconds, for a screen recording or a
 
 ## Before you start
 
-1. In `.env`: `ANTHROPIC_API_KEY` set, `DEMO_MODE=1`, and a Stripe test key (`sk_test_…`) if you'll show payment.
-2. `make api`, open http://127.0.0.1:8000, and click Emma's card (**Start here**), then **Start this repair**: the shop resets and the workshop opens with her message ready.
+1. Open the live site, [mitchell-bike-co.fly.dev](https://mitchell-bike-co.fly.dev) (give it a few seconds to wake if it's been idle). To run it locally instead: in `.env`, `ANTHROPIC_API_KEY` set, `DEMO_MODE=1`, and a Stripe test key (`sk_test_…`) if you'll show payment; then `make api` and http://127.0.0.1:8000.
+2. Click Emma's card (**Start here**), then **Start this repair** once the quick bot check has passed (on the live site): the shop resets and the workshop opens with her message ready.
 3. A laptop screen is enough: the workshop gets the whole width, and Emma's phone opens over it only when you need it.
 4. Optional: run one Agent turn before recording, then **Start over**, so the first turn doesn't include starting the MCP servers.
 

@@ -2,13 +2,21 @@
 
 **Case management, workflow and AI, told through a bike shop.**
 
+**[Try it live → mitchell-bike-co.fly.dev](https://mitchell-bike-co.fly.dev)** No setup: pick a repair story and play both sides, the Mechanic working with the Agent and the Customer deciding on their phone.
+
 A fictional bike shop where an AI Agent works alongside the Mechanic, built to demonstrate agentic workflows over the Model Context Protocol (MCP). The Agent diagnoses, checks parts against the bike the Customer actually has, quotes, and plans the order. People stay in charge: the Mechanic sends every message, only the Customer approves, and the shop's own code enforces both.
 
 ![One job screen: the Agent's tool calls in the activity log and its reply on the left, the work order with the next step and the quote on the right. From a live run.](docs/screenshots/agent-quote.jpg)
 
 > Mitchell Bike Co. is not a real business. All data is synthetic, the parts and brands are invented (the interface standards are real), and payments run in Stripe test mode.
 
-## Try it in two minutes
+## Try it live
+
+Open **[mitchell-bike-co.fly.dev](https://mitchell-bike-co.fly.dev)**. Every visitor gets their own copy of the shop, so nothing you do affects anyone else. The live Agent runs on a daily budget; when that's used up, every story still plays as a **recorded run** of the real Agent, its tool calls running for real against the shop's rules. The site takes a few seconds to wake if nobody has visited for a while, and a quick bot check runs before a story starts. Payments use Stripe's test card `4242 4242 4242 4242`.
+
+The front door is the starting screen: choose one of six repair stories, preview it, and **Start this repair** (demo mode) to play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. Its **Demo tools** section has the workshop, the Customer's page, **Reset the demo** and **Generate a sample quote**. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+
+### Run it on your own machine
 
 Requires Python 3.12 or newer, [uv](https://docs.astral.sh/uv/), and an Anthropic API key for the Agent.
 
@@ -17,8 +25,6 @@ cp .env.example .env      # then add ANTHROPIC_API_KEY, and set DEMO_MODE=1 for 
 make reset                # create the database and load the seed data
 make api                  # then open http://127.0.0.1:8000
 ```
-
-The front door is the starting screen: choose one of six repair stories, preview it, and **Start this repair** (demo mode) to play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. Its **Demo tools** section has the workshop, the Customer's page, **Reset the demo** and **Generate a sample quote**. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
 ## What to look for
 
@@ -104,12 +110,12 @@ Why it's built this way is in the [decisions log](docs/decisions.md).
 - **`make photo SRC=…`** makes the hero story's illustrative photo (AI-generated, and labelled so wherever it shows) from a raw image in `data/photos/raw/`.
 - **`make sample`** adds Emma's quoted work order and prints her link (`ARGS=--done` for a finished repair, ready to pay with test card `4242 4242 4242 4242`).
 - **Claude Code as the Agent:** the repo's `.mcp.json` connects Claude Code to the three servers.
-- **The API by hand:** `make api`, then http://127.0.0.1:8000/docs.
+- **The API by hand:** the live site's [API docs](https://mitchell-bike-co.fly.dev/docs), or `make api` and http://127.0.0.1:8000/docs on your machine.
 - **`make test`** runs the unit tests, which never call the model; **`make servers`** runs the three MCP servers over HTTP.
 
 ## Hosting
 
-The public demo runs on one small [Fly.io](https://fly.io) machine (`Dockerfile`, `fly.toml`) that stops itself when nobody's visiting. Each visitor gets their own copy of the shop, the live Agent has a daily and monthly budget under a $20-a-month spend limit, and when it's resting every story plays as a recorded run of the real Agent. The reasons are in `docs/decisions.md` under "Hosting".
+The [public demo](https://mitchell-bike-co.fly.dev) runs on one small [Fly.io](https://fly.io) machine (`Dockerfile`, `fly.toml`) that stops itself when nobody's visiting. Each visitor gets their own copy of the shop, the live Agent has a daily and monthly budget under a $20-a-month spend limit, and when it's resting every story plays as a recorded run of the real Agent. The reasons are in `docs/decisions.md` under "Hosting".
 
 To deploy your own copy (the app name, region and keys are yours):
 
@@ -133,4 +139,4 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
 | M5 | Eval suite: scenarios across compatibility, diagnosis, guardrails and procurement, three runs each, judged by the shop's state | Done |
 | M8 | Pick a bike: six repair stories, each an eval, a "choose a repair story" starting screen with previews, and an About page | Done |
-| Hosting | A sandbox shop per visitor, spending limits, recorded runs, a bot check, and a Fly.io deployment | In progress |
+| Hosting | A sandbox shop per visitor, spending limits, recorded runs, a bot check, and a Fly.io deployment, [live](https://mitchell-bike-co.fly.dev) | Done |
