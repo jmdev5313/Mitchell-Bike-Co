@@ -21,7 +21,9 @@ def test_customer_page_and_assets_are_served(conn, tmp_path, monkeypatch):
     assert '<script type="module" src="/static/js/customer.js">' in page.text
     assert "Stripe test mode" in page.text  # the demo footer
     for asset in ("/static/css/shop.css", "/static/js/customer.js", "/static/js/dom.js"):
-        assert c.get(asset).status_code == 200, asset
+        response = c.get(asset)
+        assert response.status_code == 200, asset
+        assert response.headers["cache-control"] == "no-cache", asset  # an updated script is picked up on the next load
 
 
 def test_customer_view_has_the_timeline(conn, tmp_path, monkeypatch, approved):

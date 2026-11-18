@@ -50,7 +50,19 @@ app.include_router(demo.router)
 
 # The web pages: plain HTML, CSS and JavaScript in web/, no build step.
 WEB = Path(__file__).resolve().parent.parent / "web"
-app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
+
+
+class Revalidated(StaticFiles):
+    """Static files the browser must check with the server before reusing. Without this a browser
+    may keep running an old script after an update; with it, an unchanged file costs a quick 304."""
+
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+app.mount("/static", Revalidated(directory=WEB / "static"), name="static")
 
 
 @app.get("/", include_in_schema=False)
