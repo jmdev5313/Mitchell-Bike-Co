@@ -91,14 +91,15 @@ def test_after_approval_the_mechanic_runs_the_repair(client, conn, approved):
     early = client.post(f"/api/work-orders/{approved}/schedule", headers=STAFF, json={"scheduled_for": "2026-11-19"})
     assert early.status_code == 409 and "parts are not in yet" in early.json()["detail"]
 
-    assert client.post(f"/api/purchase-orders/{po.id}/receive", headers=STAFF).json() == {"status": "received"}
-    steps = [
-        client.post(f"/api/work-orders/{approved}/schedule", headers=STAFF, json={"scheduled_for": "2026-11-19"}),
-        client.post(f"/api/work-orders/{approved}/start", headers=STAFF),
-        client.post(f"/api/work-orders/{approved}/finish", headers=STAFF),
-    ]
-    assert [s.json()["status"] for s in steps] == ["scheduled", "in_progress", "done"]
-    assert steps[-1].json()["purchase_orders"][0]["status"] == "received"
+    # The last part in: the shop books the repair for today and starts it.
+    assert client.post(f"/api/purchase-orders/{po.id}/receive", headers=STAFF).json() == {
+        "status": "received", "repair_started": True}
+    order = client.get(f"/api/work-orders/{approved}", headers=STAFF).json()
+    assert order["status"] == "in_progress" and order["next_step"]["action"]["kind"] == "finish"
+    assert [e["kind"] for e in order["history"]][-2:] == ["parts_received", "repair_started"]
+    assert order["history"][-1]["actor"] == "shop"
+    done = client.post(f"/api/work-orders/{approved}/finish", headers=STAFF).json()
+    assert done["status"] == "done" and done["purchase_orders"][0]["status"] == "received"
 
 
 def test_health_and_docs(client):
