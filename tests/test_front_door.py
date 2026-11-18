@@ -140,3 +140,34 @@ def test_the_suite_summary_wins_over_the_hero_check(client, tmp_path):
     assert client.get("/api/demo").json()["latest_eval"] == {
         "suite": True, "passed_runs": 5, "total_runs": 6, "scenarios": 2, "runs_per_scenario": 3,
         "scenarios_all_passed": 1, "cost_usd": 0.31, "model": "claude-sonnet-5-5", "ran_at": "20261118T000000Z"}
+
+
+def test_stories_are_listed_with_their_eval_results(client, tmp_path):
+    from evals import suite
+
+    suite.write_latest({"ran_at": "20261118T000000Z", "model": "m", "runs_per_scenario": 3, "passed_runs": 3,
+                        "total_runs": 3, "cost_usd": 0.1,
+                        "scenarios": [{"key": "hero", "group": "story", "title": "Hero", "passed_runs": 3, "runs": 3}]},
+                       tmp_path / "latest.json")
+    stories = client.get("/api/demo/stories").json()
+    assert [s["key"] for s in stories][:2] == ["hero", "race-day"] and len(stories) == 6
+    hero = stories[0]
+    assert hero["measured"] == {"passed": 3, "runs": 3} and stories[1]["measured"] is None
+    assert hero["photo"] == "/static/img/bikes/gravel.jpg"
+    assert client.get(hero["photo"]).status_code == 200
+
+
+def test_starting_a_story_resets_the_shop_and_is_demo_only(client, conn, monkeypatch):
+    assert client.post("/api/demo/stories/hero/start").status_code == 403
+    monkeypatch.setenv("DEMO_MODE", "1")
+    create_sample(conn)
+    started = client.post("/api/demo/stories/race-day/start").json()
+    assert started["key"] == "race-day" and "Tom Okafor" in started["message"]
+    assert conn.execute("SELECT COUNT(*) FROM work_orders").fetchone()[0] == 0
+    assert client.post("/api/demo/stories/nope/start").status_code == 404
+
+
+def test_the_about_page_is_served(client):
+    page = client.get("/about")
+    assert page.status_code == 200 and "Why a bike shop?" in page.text and "Human in the loop" in page.text
+    assert "told through a bike shop" in client.get("/").text

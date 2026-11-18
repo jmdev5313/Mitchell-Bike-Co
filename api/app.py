@@ -59,6 +59,12 @@ def workshop_page() -> FileResponse:
     return FileResponse(WEB / "workshop.html", headers={"Cache-Control": "no-store"})
 
 
+@app.get("/about", include_in_schema=False)
+def about_page() -> FileResponse:
+    """Why a bike shop: the enterprise ideas behind the demo."""
+    return FileResponse(WEB / "about.html", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/demo", include_in_schema=False)
 def demo_stage() -> FileResponse:
     """The demo stage: the workshop and the Customer's phone side by side, with a step guide (demo mode)."""

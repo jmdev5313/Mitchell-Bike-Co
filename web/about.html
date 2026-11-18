@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>About this demo · Mitchell Bike Co.</title>
+<meta name="description" content="Why a bike shop: the enterprise ideas behind Mitchell Bike Co., and how each one shows up in the demo.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/shop.css">
+</head>
+<body class="workshop">
+<header class="topbar">
+  <a class="brand" href="/"><span class="wordmark">Mitchell Bike Co.</span><span class="sub">A portfolio demo</span></a>
+  <nav aria-label="Main">
+    <a href="/about" aria-current="page">About this demo</a>
+    <a href="/workshop">Workshop</a>
+    <a href="/docs">API docs</a>
+  </nav>
+</header>
+<main class="page front about">
+  <h1 class="display">Why a bike shop?</h1>
+  <p class="lede">A bike shop has everything a real service operation has: cases, parts, suppliers, promises to customers, and a person who has to say yes. It's also small enough to understand in a minute. Every idea here comes from enterprise service work; only the setting changed.</p>
+
+  <section class="section">
+    <h2>The same ideas, two settings</h2>
+    <div class="table-box">
+      <table class="data about-map">
+        <caption class="visually-hidden">How each part of the bike shop maps to enterprise service work</caption>
+        <thead><tr><th scope="col">In the bike shop</th><th scope="col">In the enterprise</th></tr></thead>
+        <tbody>
+          <tr><td>A bike comes in with a complaint</td><td>A case is opened</td></tr>
+          <tr><td>The work order, its next step and its history</td><td>Case management and workflow</td></tr>
+          <tr><td>The Agent checks fit, stock and suppliers</td><td>AI working across systems of record</td></tr>
+          <tr><td>The Agent drafts, the Mechanic sends</td><td>Human in the loop</td></tr>
+          <tr><td>The Customer's private link to approve and pay</td><td>A customer self-service portal</td></tr>
+          <tr><td>The work order's History and the audit log</td><td>Traceability and compliance</td></tr>
+          <tr><td>Three MCP servers: catalog, work orders, procurement</td><td>Integrating the systems behind the work</td></tr>
+          <tr><td>The eval suite, run against the real model</td><td>Measuring AI quality before you trust it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>What the Agent can't do</h2>
+    <p style="max-width: 760px; line-height: 1.6; margin: 0">The shop's own code, not the model, decides what's allowed. The Agent can draft a message but never send it; only the Mechanic sends. It can quote, but only the Customer approves, from their own link. Nothing is ordered before that approval, and nothing is quoted that doesn't fit the bike in front of it. Every story on the demo stage is also an automated test of exactly these things.</p>
+  </section>
+
+  <p style="margin-top: 32px"><a class="btn btn-big" href="/demo" style="width: auto; padding: 0 28px">Experience working alongside an AI agent →</a></p>
+
+  <footer class="front-footer">
+    Mitchell Bike Co. is fictional. All data is synthetic, the parts and brands are invented (the interface standards are real),
+    bike photos are AI-generated illustrations, and payments run in Stripe test mode.
+    <a href="/">Front door</a> · <a href="/docs">API docs</a>
+  </footer>
+</main>
+</body>
+</html>
