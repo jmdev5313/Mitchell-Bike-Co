@@ -27,7 +27,7 @@ The front door is the starting screen: choose one of six repair stories, preview
 | --- | --- |
 | ![The demo stage: the workshop at full width, Emma's phone opened from the Customer POV tab, and the bottom bar saying whose turn it is.](docs/screenshots/demo-stage.jpg) | ![The Customer's page: the quote in plain words and one obvious action.](docs/screenshots/customer-quote.jpg) |
 | ![A work order's History: the Agent's tool calls, with the shop's two refusals in red (from the scripted `make demo` run).](docs/screenshots/history.jpg) | ![The audit log: every tool call, written by the MCP servers themselves.](docs/screenshots/audit-log.jpg) |
-| ![The front door.](docs/screenshots/front-door.jpg) | |
+| ![The front door: choose one of six repair stories, each also an eval.](docs/screenshots/front-door.jpg) | |
 
 ## My role
 
