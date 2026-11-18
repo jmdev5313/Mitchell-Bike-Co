@@ -772,3 +772,5 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .reply-closed strong { display: block; font-size: 15px; }
 .reply-closed p { margin: 4px 0 0; font-size: 15px; color: var(--manila-text); }
 .lead.whose-recorded { background: var(--bench); color: var(--ink); border: 1px solid var(--slate); }
+/* The front door's background bot check: running, but off-screen (its visible fallback is in the preview) */
+.bot-check-early { position: absolute; left: -10000px; top: 0; width: 300px; height: 65px; overflow: hidden; }

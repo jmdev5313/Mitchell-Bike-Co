@@ -16,16 +16,6 @@ Open **[mitchell-bike-co.fly.dev](https://mitchell-bike-co.fly.dev)**. Every vis
 
 The front door is the starting screen: choose one of six repair stories, preview it, and **Start this repair** (demo mode) to play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. Its **Demo tools** section has the workshop, the Customer's page, **Reset the demo** and **Generate a sample quote**. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
-### Run it on your own machine
-
-Requires Python 3.12 or newer, [uv](https://docs.astral.sh/uv/), and an Anthropic API key for the Agent.
-
-```
-cp .env.example .env      # then add ANTHROPIC_API_KEY, and set DEMO_MODE=1 for the front door's shortcuts
-make reset                # create the database and load the seed data
-make api                  # then open http://127.0.0.1:8000
-```
-
 ## What to look for
 
 - **The activity log.** Every tool call streams in live, with the MCP server it went to (catalog, work orders or procurement) and a plain summary of what came back. The summaries are written by code from the real results, never by the model.
@@ -101,6 +91,18 @@ The Mechanic reviews and sends it. Emma approves that exact amount from her priv
 - `evals/` measures the Agent: fifteen scenarios in `evals/scenarios/`, each judged by the shop's state (see "Measured, not assumed" above). `make agent-check` still plays just the hero story.
 
 Why it's built this way is in the [decisions log](docs/decisions.md).
+
+## Run it on your own machine
+
+Requires Python 3.12 or newer, [uv](https://docs.astral.sh/uv/), and an Anthropic API key for the Agent.
+
+```
+cp .env.example .env      # then add ANTHROPIC_API_KEY, and set DEMO_MODE=1 for the front door's shortcuts
+make reset                # create the database and load the seed data
+make api                  # then open http://127.0.0.1:8000
+```
+
+The front door, the workshop and the Customer's page work the same as on the live site, on one shared database. Each Agent turn uses your own API key.
 
 ## Other ways in
 
