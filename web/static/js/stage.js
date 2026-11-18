@@ -4,6 +4,7 @@
 // Demo mode only: it signs in to the workshop and opens the Customer's link for you.
 
 import { h, api, dollars } from "./dom.js";
+import { startStory as start } from "./story.js";
 
 const stage = document.getElementById("stage");
 const guide = document.getElementById("guide");
@@ -30,6 +31,7 @@ let last = { step: null, whose: null, token: undefined };
 let collapseTimer = null;
 let stories = [];
 let current = null;  // the story being played, from sessionStorage
+let recording = null;  // a recorded run being played (GET /api/demo's `recorded`), or null
 
 function storedStory() {
   try { return sessionStorage.getItem("mbc-story"); } catch { return null; }
@@ -59,9 +61,13 @@ async function boot() {
     try { sessionStorage.setItem("mbc-staff-passcode", info.staff_passcode); } catch { /* private mode */ }
   }
   const story = info.story;
+  recording = info.recorded || null;
   try { stories = await api("/api/demo/stories"); } catch { stories = []; }
   current = stories.find((s) => s.key === storedStory()) || null;
-  frameMechanic.src = story.work_order_id ? `/workshop#/work-orders/${story.work_order_id}` : "/workshop#/work-orders";
+  let fresh = false;  // the front door just started a story: open a new conversation with its message
+  try { fresh = sessionStorage.getItem("mbc-story-fresh") === "1"; sessionStorage.removeItem("mbc-story-fresh"); } catch { /* private mode */ }
+  frameMechanic.src = fresh ? `/workshop?fresh=${Date.now()}#/agent`
+    : story.work_order_id ? `/workshop#/work-orders/${story.work_order_id}` : "/workshop#/work-orders";
   frameMechanic.addEventListener("load", () => cue(last.story));
   render(story);
   setInterval(tick, 2000);
@@ -79,7 +85,7 @@ async function boot() {
     } catch (e) {
       guide.textContent = `Couldn't start this story: ${e.message}`;  // e.g. the hosted demo's limit on new shops
     }
-  } else if (!current) {
+  } else if (!current && !fresh) {
     location.replace("/#choose-title");  // the stories are chosen on the starting screen
   } else {
     allBikes.hidden = false;
@@ -88,13 +94,18 @@ async function boot() {
 
 async function tick() {
   if (document.hidden) return;
-  try { render((await api("/api/demo")).story); } catch { /* the next tick will try again */ }
+  try {
+    const info = await api("/api/demo");
+    recording = info.recorded || null;
+    render(info.story);
+  } catch { /* the next tick will try again */ }
 }
 
 function render(story) {
   const first = (story.customer || current?.customer || "Emma Clark").split(" ")[0];
   const names = stepNames(first);
-  const changed = story.step !== last.step || story.whose !== last.whose;
+  const playNext = Boolean(recording && recording.next_message && story.whose === "mechanic");
+  const changed = story.step !== last.step || story.whose !== last.whose || playNext !== last.playNext;
 
   // The steps across the top
   stepsList.replaceChildren(...names.map((name, i) => {
@@ -137,13 +148,18 @@ function render(story) {
     collapseTimer = setTimeout(() => setOpen(false), 1800);
   }
 
-  last = { step: story.step, whose: story.whose, token: story.customer_token, story };
+  last = { step: story.step, whose: story.whose, token: story.customer_token, story, playNext };
   cue(story);
 }
 
 /** Whose turn, and one short line. The rings show which button; the steps up top show where you are. */
 function guideText(story, first) {
   const total = story.total_cents !== null ? dollars(story.total_cents) : "the quote";
+  if (recording && recording.next_message && story.whose === "mechanic") {
+    return [h("span", { class: "lead whose-recorded" }, "Recorded run"), h("span", {}, story.step === 1
+      ? "Press Play in the workshop to watch the Agent's recorded turn. It plays at the speed it ran, about 30 seconds."
+      : `Press Play: the Agent drafts ${first}'s message, as recorded.`)];
+  }
   const tag = story.whose === "customer" ? `Your turn · ${first}` : story.whose === "mechanic" ? "Your turn · Mechanic" : "Done";
   const say = (...parts) => [h("span", { class: `lead whose-${story.whose}` }, tag), h("span", {}, ...parts)];
   switch (story.step) {
@@ -157,7 +173,7 @@ function guideText(story, first) {
     case 3:
       return story.whose === "mechanic"
         ? say(first, " wrote to the shop: answer her, then it's her turn to approve.")
-        : say(`Open Customer POV and approve ${total}. Optional: press Tab to ask a question first.`);
+        : say(`Open Customer POV and approve ${total}.${recording ? "" : " Optional: press Tab to ask a question first."}`);
     case 4:
       return say(`${story.next_step}.`);
     case 5:
@@ -178,7 +194,9 @@ function cue(story) {
   const row = id ? [`.data tr:has(a[href="#/work-orders/${id}"])`] : [];  // on the list, the job's row
   const draft = [".draft-card.is-draft .review", ".draft-band .btn-send"];
   let mechanic = [];
-  if (story.whose === "mechanic") {
+  if (story.whose === "mechanic" && recording && recording.next_message) {
+    mechanic = [".job-chat .composer button[type=submit]", '.job[data-view="work"] .job-switch button:first-child'];  // Play
+  } else if (story.whose === "mechanic") {
     if (story.step === 1) mechanic = id ? [] : [".start-agent", ".job-chat .composer button[type=submit]"];
     else mechanic = [...(story.action === "send_draft" ? draft : [".nextbar .do .btn"]), ...row,
       '.job[data-view="chat"] .job-switch button:last-child'];  // the next button is on the work order half
@@ -240,12 +258,9 @@ restart.addEventListener("click", async () => {
 // --- Starting a story (chosen on the starting screen) ---------------------------------
 
 async function startStory(s) {
-  const started = await api(`/api/demo/stories/${s.key}/start`, { method: "POST" });
+  await start(s.key, { recorded: Boolean(recording) });  // starting over keeps a recorded run recorded
+  try { sessionStorage.removeItem("mbc-story-fresh"); } catch { /* private mode */ }
   current = s;
-  try {
-    sessionStorage.setItem("mbc-story", s.key);
-    sessionStorage.setItem("mbc-story-message", started.message);  // the workshop's Agent tab picks it up
-  } catch { /* private mode */ }
   allBikes.hidden = false;
   setOpen(false);
   frameMechanic.src = `/workshop?fresh=${Date.now()}#/agent`;  // a new conversation with the story's message ready

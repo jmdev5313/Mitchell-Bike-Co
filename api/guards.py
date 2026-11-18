@@ -11,6 +11,7 @@ refuses calls mid-story:
   - AGENT_DAILY_BUDGET_CENTS (default 100) and AGENT_MONTHLY_BUDGET_CENTS (default 1800),
     per UTC day and month, across all visitors;
   - AGENT_TURNS_PER_SANDBOX (default 20) per visitor's shop;
+  - with Turnstile keys set, only for a shop that passed the bot check (api/turnstile.py);
   - NEW_SANDBOXES_PER_HOUR (default 5) per network. Networks are told apart by a salted
     hash of the client address (from CLIENT_IP_HEADER, such as Fly-Client-IP, when behind
     a proxy that sets it); the address itself isn't stored.
@@ -28,7 +29,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from agents.pricing import cost_micros
-from api import sandboxes
+from api import sandboxes, turnstile
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS agent_turns (
@@ -47,6 +48,10 @@ CREATE TABLE IF NOT EXISTS sandbox_starts (
   at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS sandbox_starts_network ON sandbox_starts (network, at);
+CREATE TABLE IF NOT EXISTS sandbox_checks (
+  sandbox TEXT PRIMARY KEY,           -- passed the Turnstile bot check (api/turnstile.py)
+  at TEXT NOT NULL
+);
 """
 
 KEEP_TURNS = timedelta(days=40)
@@ -80,8 +85,9 @@ def spent_micros(conn: sqlite3.Connection, since: datetime) -> int:
                         (since.isoformat(),)).fetchone()[0]
 
 
-def agent_refusal(sandbox: str | None) -> str | None:
-    """Why the live Agent can't take a turn right now, or None if it can."""
+def agent_refusal(sandbox: str | None, *, check: bool = True) -> str | None:
+    """Why the live Agent can't take a turn right now, or None if it can.
+    `check=False` leaves out the bot check (the front door asks before anyone has a shop)."""
     if not live():
         return "The live Agent is switched off for now."
     if not sandboxes.enabled():
@@ -89,6 +95,8 @@ def agent_refusal(sandbox: str | None) -> str | None:
     now = _now()
     day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     with closing(connect()) as conn:
+        if check and turnstile.enabled() and not checked(conn, sandbox):
+            return "Start a story from the front door to use the live Agent."
         if spent_micros(conn, day.replace(day=1)) >= _setting("AGENT_MONTHLY_BUDGET_CENTS", 1800) * 10_000:
             return "The live Agent has used this month's budget for the demo. It's back next month."
         if spent_micros(conn, day) >= _setting("AGENT_DAILY_BUDGET_CENTS", 100) * 10_000:
@@ -145,7 +153,21 @@ def record_sandbox(key: str, net: str) -> None:
         conn.execute("DELETE FROM sandbox_starts WHERE at < ?", ((now - timedelta(days=1)).isoformat(),))
 
 
+def checked(conn: sqlite3.Connection, sandbox: str | None) -> bool:
+    return conn.execute("SELECT 1 FROM sandbox_checks WHERE sandbox = ?", (sandbox or "",)).fetchone() is not None
+
+
+def is_checked(sandbox: str | None) -> bool:
+    with closing(connect()) as conn:
+        return checked(conn, sandbox)
+
+
+def record_check(sandbox: str) -> None:
+    with closing(connect()) as conn, conn:
+        conn.execute("INSERT OR REPLACE INTO sandbox_checks (sandbox, at) VALUES (?, ?)", (sandbox, _now().isoformat()))
+
+
 def status(sandbox: str | None) -> dict[str, Any]:
     """Whether the live Agent can take a turn for this visitor, for the front door."""
-    reason = agent_refusal(sandbox)
+    reason = agent_refusal(sandbox, check=False)
     return {"live": reason is None, "reason": reason}

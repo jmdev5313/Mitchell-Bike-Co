@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
-from api import sandboxes
+from api import recorded, sandboxes
 from api.deps import get_db, get_stripe, public_base_url
 from shop import customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
@@ -81,6 +81,7 @@ def customer_view(conn: sqlite3.Connection, work_order_id: int) -> dict[str, Any
         },
         "paid": paid,
         "can_pay": can_pay,
+        "can_ask": recorded.active(conn) is None,  # answering needs the live Agent, not a recording
         "messages": thread,
     }
 
@@ -131,6 +132,8 @@ def decide(token: str, message_id: int, decision: Decision, conn: sqlite3.Connec
 def reply(token: str, body: Reply, conn: sqlite3.Connection = Depends(get_db)) -> dict[str, Any]:
     """Send the shop a message."""
     work_order_id = _work_order(conn, token)
+    if recorded.active(conn):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Questions need the live Agent, which a recorded run doesn't have.")
     messages.receive_message(conn, work_order_id, body.body)
     text = body.body.strip()
     events.record(conn, work_order_id, "customer", "replied", f"Asked: \u201c{text[:140]}{'…' if len(text) > 140 else ''}\u201d")

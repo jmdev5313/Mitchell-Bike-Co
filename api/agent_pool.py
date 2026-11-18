@@ -28,7 +28,10 @@ AgentFactory = Callable[[str | None], AgentRuntime]
 
 
 def default_factory(conversation_id: str | None) -> AgentRuntime:
-    return open_agent("anthropic", conversation_id)
+    """The live Agent, or a recorded run's replay when the shop is playing one (api/recorded.py)."""
+    from api import recorded
+
+    return recorded.open_runtime(conversation_id) or open_agent("anthropic", conversation_id)
 
 
 class Busy(Exception):

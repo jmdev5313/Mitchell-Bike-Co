@@ -14,7 +14,7 @@ today and starts it, so the mechanic's next step is finishing the repair.
 import sqlite3
 from datetime import date
 
-from shop import events, procurement
+from shop import clock, events, procurement
 from shop import work_orders as wo
 from shop.errors import NotFound
 
@@ -61,7 +61,7 @@ def start_when_ready(conn: sqlite3.Connection, work_order_id: int, today: date |
     """
     if wo.status(conn, work_order_id) not in ("approved", "awaiting_parts") or wo.parts_short(conn, work_order_id):
         return False
-    wo.schedule_repair(conn, work_order_id, (today or date.today()).isoformat())
+    wo.schedule_repair(conn, work_order_id, (today or clock.today(conn)).isoformat())
     wo.start_repair(conn, work_order_id)
     events.record(conn, work_order_id, "shop", "repair_started",
                   "Booked the repair for today and started it: every part is in")

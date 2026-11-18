@@ -10,6 +10,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - `make api` serves everything: the front door at `/`, the workshop at `/workshop`, Customer pages at `/c/{token}`, API docs at `/docs`. `DEMO_MODE=1` turns on the front door's shortcuts and reset (`api/demo.py`); never with real data
 - `make api` runs the API on port 8000 (docs at `/docs`); staff endpoints need `STAFF_PASSCODE` from `.env` as a bearer token
 - `make agent-check` runs the hero story against the real model and checks the database outcome (its own `data/check.db`; spends a few cents)
+- `make record` records a real run of the Agent on each story for the hosted demo to replay (`ARGS="--only <key>"`; spends tokens, well under a dollar for all)
 - `make evals` runs the eval suite (`evals/scenarios/<group>/`, each a `Scenario` with a `play`) against the real model, 3 runs per scenario, on its own `data/eval.db`; `ARGS="--only <key|group> --runs 1"`. Judge by the shop's state, never by a model grading wording
 - `make agent` chats with the Agent as the Mechanic (needs `ANTHROPIC_API_KEY` in `.env`; spends tokens)
 - `make demo` runs the hero story through the servers (its own `data/demo.db`)
@@ -36,6 +37,7 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 - **Rules raise `NotFound` or `RuleViolation`** from `shop/errors.py`; MCP servers turn these into tool errors, and the API into 404 and 409 with the rule's message.
 - **The hosted demo gives each visitor their own database** (`SANDBOXES=1`, `api/sandboxes.py`). Request code gets its connection from `db.connect()` with no path, so the visitor's sandbox applies; anything it starts (tasks, the Agent's MCP servers) inherits it through `shop.db.using()`. A Customer link token leaves the API through `sandboxes.public_token()` and is read back with `sandboxes.bare_token()`.
 - **The hosted demo's spending limits live in `api/guards.py`.** Every live Agent turn is checked with `guards.agent_refusal()` before the model is called and charged with `guards.record_turn()` after; a new way to start a turn must do both.
+- **Recorded runs replay a real run of the Agent** (`agents/runtime/replay.py`, `api/recorded.py`, recordings from `make record` in `demo/recordings/`). The recorded runtime's tool calls run for real; a recorded shop pins its calendar with `shop.clock`. Code that needs "today" for a shop decision uses `clock.today(conn)`, never `date.today()`. A recorded run is never charged or limited by `api/guards.py`.
 - **Open Agent conversations live in `api/agent_pool.py`**, one task per conversation: MCP connections must be opened and closed by the same task, so never call a runtime's `open`/`close` from a request handler directly.
 - **The API is thin too.** `api/` wraps `shop/` functions; staff routers depend on `require_staff`, and Customer routes resolve the link token first and check that every id they touch belongs to that work order.
 - **Compatibility is checked against the Customer's actual bike** (`bike_standards`), not the catalog model. Exceptions go in `standard_compat` with a note.

@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from api import sandboxes
 from api.deps import get_db, require_staff
-from shop import customer_links, events, flow, garage, messages, payments, procurement
+from shop import clock, customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
 
 router = APIRouter(prefix="/api", tags=["staff"], dependencies=[Depends(require_staff)])
@@ -82,7 +82,7 @@ def next_step(conn: sqlite3.Connection, work_order_id: int, status: str) -> dict
                     "action": {"kind": "ask_agent", "label": "Ask the Agent to order",
                                "prompt": f"{name} approved work order #{work_order_id}, but the parts aren't ordered yet "
                                          f"({why.lower()}). Order what's needed from a supplier that still meets the promised date."}}
-        when = finished_at["promised_ready_on"] or date.today().isoformat()
+        when = finished_at["promised_ready_on"] or clock.today(conn).isoformat()
         return {"text": f"Book the repair for {_long_date(when)}", "waiting_on": "mechanic",
                 "action": {"kind": "book", "date": when, "label": f"Book for {_long_date(when)}"}}
     if status == "scheduled":

@@ -5,14 +5,16 @@ passcode and a sample Customer link so they can try both sides without setup,
 and lets them reset the shop to a clean state. Never turn it on for real data.
 """
 
+import asyncio
 import json
 import os
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
+from pydantic import BaseModel
 
-from api import guards, sandboxes
+from api import guards, recorded, sandboxes, turnstile
 from demo.sample import create_sample
 from demo.stories import BY_KEY, STORIES
 from shop import db, messages
@@ -136,15 +138,18 @@ def demo_status() -> dict[str, Any]:
     info: dict[str, Any] = {"demo_mode": demo_mode(), "latest_eval": latest_eval()}
     if demo_mode():
         info["agent"] = guards.status(sandboxes.current_key())
+        info["turnstile_site_key"] = turnstile.site_key() if sandboxes.enabled() and turnstile.enabled() else None
     if demo_mode() and sandboxes.enabled() and sandboxes.current_key() is None:
         # A visitor without a sandbox yet: nothing to show, and looking doesn't make one.
-        info.update(staff_passcode=os.environ.get("STAFF_PASSCODE") or None, customer_token=None, story=dict(NO_STORY))
+        info.update(staff_passcode=os.environ.get("STAFF_PASSCODE") or None, customer_token=None,
+                    story=dict(NO_STORY), recorded=None)
     elif demo_mode():
         conn = db.connect()
         try:
             info["staff_passcode"] = os.environ.get("STAFF_PASSCODE") or None
             info["customer_token"] = _sample_link(conn)
             info["story"] = story(conn)
+            info["recorded"] = recorded.status(conn)  # a recorded run being played, or None
         finally:
             conn.close()
     return info
@@ -200,20 +205,52 @@ def stories() -> list[dict[str, Any]]:
         {"key": s.key, "label": s.label, "title": s.title, "group": s.group, "customer": s.customer, "bike": s.bike,
          "complaint": s.complaint_on(), "watch_for": s.watch_for_on(),
          "photo": f"/static/img/bikes/{s.photo}", "profile": [list(row) for row in s.profile],
-         "message": s.mechanic_message(), "measured": measured.get(s.key)}
+         "message": s.mechanic_message(), "measured": measured.get(s.key),
+         "recorded": _recorded_on(s.key)}
         for s in STORIES
     ]
 
 
+def _recorded_on(key: str) -> dict[str, str] | None:
+    found = recorded.recording(key)
+    return {"recorded_on": found.recorded_on.isoformat(), "model": found.model} if found else None
+
+
+class StartStory(BaseModel):
+    recorded: bool = False               # play the story's recorded run instead of the live Agent
+    turnstile_token: str | None = None   # the bot check's token, for a live story (api/turnstile.py)
+
+
 @router.post("/stories/{key}/start")
-async def start_story(key: str, request: Request) -> dict[str, Any]:
-    """Start a story fresh: reset the shop, and return the Mechanic's opening message for it."""
+async def start_story(key: str, request: Request, body: StartStory | None = None) -> dict[str, Any]:
+    """Start a story fresh: reset the shop, and return the Mechanic's opening message for it.
+
+    `recorded` plays the story's recorded run (api/recorded.py). A live story in the hosted
+    demo with Turnstile on needs the bot check's token, unless this shop already passed it."""
     _require_demo_mode("starting a story")
+    body = body or StartStory()
     story = BY_KEY.get(key)
     if story is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"no story {key!r}")
+    if body.recorded and recorded.recording(key) is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"there's no recorded run of the {key} story yet")
+    shop = sandboxes.current_key()
+    if not body.recorded and sandboxes.enabled() and turnstile.enabled() and not guards.is_checked(shop):
+        if not await asyncio.to_thread(turnstile.verify, body.turnstile_token):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "The bot check didn't pass. Reload the page and try again.")
+        guards.record_check(shop or "")
     await _reset(request)
-    return {"key": story.key, "customer": story.customer, "message": story.mechanic_message()}
+    if not body.recorded:
+        return {"key": story.key, "customer": story.customer, "message": story.mechanic_message(),
+                "recorded": False, "photo": story.key == "hero"}
+    conn = db.connect()
+    try:
+        found = recorded.start(conn, key)
+    finally:
+        conn.close()
+    first = found.turns[0]
+    return {"key": story.key, "customer": story.customer, "message": first.message, "recorded": True,
+            "photo": first.photo, "recorded_on": found.recorded_on.isoformat()}
 
 
 @router.post("/sample")
