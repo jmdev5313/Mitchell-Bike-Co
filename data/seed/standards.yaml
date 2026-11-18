@@ -10,34 +10,48 @@ standards:
     - Shimano Microspline
     - Campagnolo N3W
   drivetrain_speed:
+    - 3-speed hub
+    - 8-speed
     - 10-speed
     - 11-speed
     - 12-speed
   bb_shell:
     - BSA 68 mm
+    - BSA 73 mm
     - BB86
     - PF30
     - T47
   rear_axle:
     - 12x142 thru-axle
+    - 12x148 Boost thru-axle
     - 135 mm QR
     - 130 mm QR
   front_axle:
     - 12x100 thru-axle
+    - 15x110 Boost thru-axle
     - 100 mm QR
   brake_mount:
     - Flat mount
     - Post mount
     - Rim caliper
+    - Cantilever
+    - Rod brakes
   rotor_mount:
     - Centerlock
     - 6-bolt
   seatpost_diameter:
+    - 26.8 mm
     - 27.2 mm
     - 31.6 mm
+  rear_derailleur:                 # the biggest cog a 12-speed derailleur can shift
+    - Road 12-speed (up to 36t)
+    - Mountain 12-speed (up to 52t)
   wheel_size:
     - 700c
     - 650b
+    - 29 in
+    - 26 in
+    - 28 x 1 1/2 (635)        # old roadster size; not 700c, though both get called "28 inch"
 
 # Exceptions: a part that requires `required` also fits a bike with `satisfied_by`.
 compat:

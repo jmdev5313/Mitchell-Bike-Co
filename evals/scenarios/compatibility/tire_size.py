@@ -1,6 +1,6 @@
 """Wheel size decides the tire: Lena Fischer's bike runs 650b wheels, not the more common 700c."""
 
-from evals.scenarios.compatibility._quote import quote_turn
+from evals.scenarios._quote import quote_turn
 from evals.common import Scenario
 
 TIRE_650B = "FS-TR650-47"

@@ -29,6 +29,8 @@ customers:
     bikes:
       - nickname: Race bike
         model: halden-tempo-2024
+        history:
+          - {date: 2025-04-12, km: 2100, summary: "Basic tune-up before the race season"}
 
   - name: Sam Ortiz
     email: sam.ortiz@example.com
@@ -54,3 +56,47 @@ customers:
           rotor_mount: 6-bolt
           seatpost_diameter: 31.6 mm
           wheel_size: 650b
+          rear_derailleur: Mountain 12-speed (up to 52t)
+
+  - name: Marcus Reid               # mountain bike: brakes fade on long descents
+    email: marcus.reid@example.com
+    bikes:
+      - nickname: Trail bike
+        model: halden-ridge-2022
+        history:
+          - {date: 2024-05-18, km: 1800, summary: "Suspension service"}
+          - {date: 2025-06-07, km: 3900, summary: "Brake pads replaced, front and rear. Brakes not bled since purchase"}
+
+  - name: Dana Whitfield            # e-bike commuter
+    email: dana.whitfield@example.com
+    bikes:
+      - nickname: Commuter e-bike
+        model: halden-volt-2024
+        notes: Rides 25 km a day; the motor's speed limit is set by law.
+        history:
+          - {date: 2025-02-03, km: 600, summary: "First-month check"}
+
+  - name: Frank Moreno              # restomod: an old frame, a modern wish
+    email: frank.moreno@example.com
+    bikes:
+      - nickname: Restomod
+        notes: 1988 steel mountain bike, restored. Rear wheel rebuilt in the 1990s with an 8-speed freehub.
+        standards:
+          freehub: Shimano HG 8-10 speed
+          drivetrain_speed: 8-speed
+          bb_shell: BSA 68 mm
+          rear_axle: 135 mm QR
+          front_axle: 100 mm QR
+          brake_mount: Cantilever
+          seatpost_diameter: 26.8 mm
+          wheel_size: 26 in
+
+  - name: Ruth Abernathy            # vintage roadster
+    email: ruth.abernathy@example.com
+    bikes:
+      - nickname: Roadster
+        notes: 1950s three-speed roadster with rod brakes, kept original.
+        standards:
+          drivetrain_speed: 3-speed hub
+          brake_mount: Rod brakes
+          wheel_size: 28 x 1 1/2 (635)

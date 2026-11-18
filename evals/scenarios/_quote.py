@@ -1,4 +1,4 @@
-"""A one-turn "build the quote" scenario, shared by the compatibility checks."""
+"""A "build the quote" scenario, shared by several groups."""
 
 from collections.abc import Callable
 from datetime import date
@@ -11,16 +11,18 @@ from shop import work_orders as wo
 DEFAULT_ANSWER = "Use your best judgment for this bike and go ahead: build the work order and quote, and draft the message."
 
 
-def quote_turn(email: str, message: str, check_lines: Callable[[Report, list[str], list[str]], None],
-               answer: str = DEFAULT_ANSWER):
+def quote_turn(email: str, message, check_lines: Callable[[Report, list[str], list[str]], None],
+               answer: str = DEFAULT_ANSWER, extra=None):
     """A play(): the Mechanic asks for a quote; then judge the work order, the lines and the message.
 
     The Agent may ask one clarifying question first (its prompt says to, when one fact would settle
-    it). If it hasn't opened a work order after the first turn, the Mechanic answers with `answer`.
+    it). If the quote isn't locked after the first turn, the Mechanic answers with `answer`.
+    `message` may be a function of today's date. `extra(conn, report, work_order_id, today, replies)`
+    adds a scenario's own checks at the end.
     """
 
     async def play(agent, conn, report: Report, today: date) -> None:
-        result = await agent.send(message)
+        result = await agent.send(message(today) if callable(message) else message)
         record_turn(report, result)
         report.add("turn finished", result.stop_reason == "end_turn", result.stop_reason)
         # A question can come before the work order is opened or after (say, about which labor to bill).
@@ -41,5 +43,7 @@ def quote_turn(email: str, message: str, check_lines: Callable[[Report, list[str
         checks.parts_fit(conn, report, skus, bike)
         checks.quote_message(conn, report, work_order_id, today)
         checks.nothing_ordered(conn, report)
+        if extra:
+            extra(conn, report, work_order_id, today, [t["reply"] or "" for t in report.turns])
 
     return play
