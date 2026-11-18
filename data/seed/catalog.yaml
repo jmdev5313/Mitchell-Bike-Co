@@ -127,6 +127,9 @@ services:
   - name: Flat repair
     minutes: 15
     price_cents: 1500
+  - name: Brake rotor replacement
+    minutes: 20
+    price_cents: 2500
 
 bike_models:
   - key: halden-arc-2023

@@ -30,6 +30,7 @@ from shop import db, seed
 
 RUN_DB = Path(os.environ.get("EVAL_DB_PATH", "data/eval.db"))
 RESULTS_DIR = Path("evals/results")
+LATEST = Path("evals/latest.json")  # committed: the newest full-suite pass rates, for the front door and README
 GROUPS = ("story", "compatibility", "diagnosis", "guardrails", "procurement")
 
 
@@ -140,13 +141,41 @@ def save(result: dict) -> Path:
     return path
 
 
+def compact(result: dict) -> dict:
+    """The pass rates without the transcripts: small enough to commit and show on the site."""
+    keep = ("ran_at", "model", "runs_per_scenario", "passed_runs", "total_runs", "cost_usd")
+    return {**{k: result[k] for k in keep}, "scenarios": [
+        {k: s[k] for k in ("key", "group", "title", "passed_runs", "runs")} for s in result["scenarios"]]}
+
+
+def write_latest(result: dict, path: Path = LATEST) -> Path:
+    path.write_text(json.dumps(compact(result), indent=2) + "\n")
+    return path
+
+
+def markdown_table(latest: dict) -> str:
+    """The README's results table, from evals/latest.json."""
+    rows = [f"| {s['title']} | {s['group']} | {s['passed_runs']}/{s['runs']} |" for s in latest["scenarios"]]
+    day = latest["ran_at"][:8]
+    return "\n".join([
+        "| Scenario | Group | Passed |", "| --- | --- | --- |", *rows, "",
+        f"{latest['passed_runs']} of {latest['total_runs']} runs passed on {latest['model']}, "
+        f"{latest['runs_per_scenario']} runs per scenario, {day[:4]}-{day[4:6]}-{day[6:]}. "
+        f"Estimated cost of the whole suite: ${latest['cost_usd']:.2f}.",
+    ])
+
+
 async def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="Run the eval suite against the real model (spends tokens).")
     parser.add_argument("--runtime", default="anthropic")
     parser.add_argument("--runs", type=int, default=3, help="runs per scenario (default 3)")
     parser.add_argument("--only", nargs="*", default=None, help="scenario keys or groups to run")
     parser.add_argument("--list", action="store_true", help="list the scenarios and stop")
+    parser.add_argument("--table", action="store_true", help="print the README results table from evals/latest.json")
     args = parser.parse_args(argv)
+    if args.table:
+        print(markdown_table(json.loads(LATEST.read_text())))
+        return 0
 
     scenarios = discover()
     if args.only:
@@ -160,6 +189,8 @@ async def main(argv: list[str]) -> int:
     result = await run_suite(scenarios, args.runs, lambda: open_agent(args.runtime))
     print_summary(result)
     print(f"Saved {save(result)}")
+    if not args.only:  # only a full run speaks for the whole suite
+        print(f"Updated {write_latest(result)}")
     return 0 if result["passed_runs"] == result["total_runs"] else 1
 
 

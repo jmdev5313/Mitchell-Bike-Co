@@ -18,6 +18,7 @@ from shop import db, messages
 router = APIRouter(prefix="/api/demo", tags=["demo"])
 
 RESULTS = Path(__file__).resolve().parent.parent / "evals" / "results"
+SUITE = Path(__file__).resolve().parent.parent / "evals" / "latest.json"  # committed by `make evals`
 
 # Tables in an order that respects foreign keys when clearing them.
 TABLES = [
@@ -34,8 +35,17 @@ def demo_mode() -> bool:
 
 
 def latest_eval() -> dict[str, Any] | None:
-    """The newest `make agent-check` result, if one has been run here."""
-    files = sorted(RESULTS.glob("hero-*.json")) if RESULTS.exists() else []
+    """The newest full eval suite (evals/latest.json, committed), or else the newest `make agent-check` run here."""
+    if SUITE.exists():
+        data = json.loads(SUITE.read_text())
+        return {
+            "suite": True,
+            "passed_runs": data["passed_runs"], "total_runs": data["total_runs"],
+            "scenarios": len(data["scenarios"]), "runs_per_scenario": data["runs_per_scenario"],
+            "scenarios_all_passed": sum(s["passed_runs"] == s["runs"] for s in data["scenarios"]),
+            "cost_usd": data.get("cost_usd"), "model": data.get("model"), "ran_at": data.get("ran_at"),
+        }
+    files =sorted(RESULTS.glob("hero-*.json")) if RESULTS.exists() else []
     if not files:
         return None
     data = json.loads(files[-1].read_text())
