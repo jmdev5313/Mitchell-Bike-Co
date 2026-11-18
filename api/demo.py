@@ -12,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
 
-from api import sandboxes
+from api import guards, sandboxes
 from demo.sample import create_sample
 from demo.stories import BY_KEY, STORIES
 from shop import db, messages
@@ -134,6 +134,8 @@ def _told_ready(conn, work_order_id: int, thread) -> bool:
 def demo_status() -> dict[str, Any]:
     """What the front door shows. The passcode and sample link are only given out in demo mode."""
     info: dict[str, Any] = {"demo_mode": demo_mode(), "latest_eval": latest_eval()}
+    if demo_mode():
+        info["agent"] = guards.status(sandboxes.current_key())
     if demo_mode() and sandboxes.enabled() and sandboxes.current_key() is None:
         # A visitor without a sandbox yet: nothing to show, and looking doesn't make one.
         info.update(staff_passcode=os.environ.get("STAFF_PASSCODE") or None, customer_token=None, story=dict(NO_STORY))

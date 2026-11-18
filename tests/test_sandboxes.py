@@ -73,7 +73,7 @@ def visitors(client, n: int) -> dict[str, str]:
 
 
 def sandbox_files(tmp_path) -> set[str]:
-    return {p.name for p in (tmp_path / "sandboxes").glob("*.db")}
+    return {p.name for p in (tmp_path / "sandboxes").glob("*.db")} - {"control.db"}  # the guards' ledger
 
 
 def test_looking_at_the_front_door_makes_no_sandbox(client, tmp_path):

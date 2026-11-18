@@ -137,7 +137,8 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
     } catch (e) {
       window.mbcStreaming = false;
       if (e instanceof Unauthorized) return onUnauthorized();
-      transcript.append(h("p", { class: "notice-refused", role: "alert" }, h("strong", {}, "The turn failed: "), e.message));
+      const label = e.notSent ? "Not sent: " : "The turn failed: ";
+      transcript.append(h("p", { class: "notice-refused", role: "alert" }, h("strong", {}, label), e.message));
       send.disabled = false;
       textarea.disabled = false;
       textarea.value = text;
@@ -203,7 +204,8 @@ async function streamTurn(conversationId, form, transcript) {
   const logSlot = h("div");
   const working = h("div", { class: "working" }, h("span", { class: "pulse", "aria-hidden": "true" }), "The Agent is working…");
   const content = h("div", { class: "content" }, logSlot, working);
-  transcript.append(h("div", { class: "turn" }, h("div", { class: "speaker" }, "Agent"), content));
+  const turn = h("div", { class: "turn" }, h("div", { class: "speaker" }, "Agent"), content);
+  transcript.append(turn);
   const redraw = () => logSlot.replaceChildren(activityLog(tools, progress, { live: true }) || "");
   content.scrollIntoView({ block: "end", behavior: "smooth" });
 
@@ -214,7 +216,10 @@ async function streamTurn(conversationId, form, transcript) {
   if (!response.ok) {
     let detail = `Request failed (${response.status})`;
     try { detail = (await response.json()).detail || detail; } catch { /* not JSON */ }
-    throw new Error(detail);
+    turn.remove();  // the Agent never started
+    const error = new Error(detail);
+    error.notSent = response.status === 429 || response.status === 503;  // the demo's limits, or the Agent switched off
+    throw error;
   }
 
   const reader = response.body.getReader();
