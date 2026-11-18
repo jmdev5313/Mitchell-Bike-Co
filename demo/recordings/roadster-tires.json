@@ -1,0 +1,267 @@
+{
+ "story": "roadster-tires",
+ "model": "claude-sonnet-5-5",
+ "recorded_on": "2026-11-18",
+ "turns": [
+  {
+   "message": "Ruth Abernathy's roadster is in. Both tires are cracked and need replacing. Find her bike, build the work order and quote for two new tires, and draft her a message with the quote.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_012KcybLVEMX6eVwTx7vCP3Y",
+       "input": {
+        "query": "Abernathy"
+       },
+       "name": "find_customer",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.13
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01Jp7mxYpXuQkzswJKJ1JD6i",
+       "input": {
+        "customer_bike_id": 9
+       },
+       "name": "get_bike",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01JZDDaPCwhEZDvmoguWYcLt",
+       "input": {
+        "customer_bike_id": 9,
+        "category": "tire"
+       },
+       "name": "list_fitting_parts",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01BwQhZ63mvi2Js35xToJEcq",
+       "input": {},
+       "name": "list_services",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.26
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQSxQUKEAgTGAI4AUIIdGhpbmtpbmcSDO0RzCAiVdn14iM2/hoMScmpWnZybZXa7vymIjDdqArR8WqVBKKmvfQiqb3wLEFpdY0L0yEeZHZTrQRJZ/hEIIU80BWM09Np44b1Sugq4gQ7i0SvHIS7NozVAHsBGk4vfwmeiewsSn/f2L2v9QVpZwo2NHcJsXhfgPS++/9J1LmOP+DsBriEtFXrVrwDSghp1Rk+kFQ9gOqoOKOzCONW2cL/g/4Qn1kgAuyAsVgLrIjJkWewQIZGyRdVrcaybqTTuVkYmLkVwJ4s3Navi6jfqA14UucHw5mju3vCWLYkMLJlRGbfdnsptUeUbYOTrLAL2pccofGpAuexkpdFxWYmASnW3eN/GCJGL1N+8lnmzRK61/vPQlywEzZcgUeZVhU+yJXS8QXGr346EWMp5jZsyAi7tFLpbQBXzz/l9+i1CGn47WD3azXcUBaZHeJmcUoL7yIwQW/D1kxkMcUmBy/29rPy3pkAs0is7NkMq9r7wL9uf11EmR4D9XA1Lq0aGtae0gAcVW3hOvfh9FFBF+ZXhXFlteF6tBECl+bVqwwQIIkEmS9BpccnPyduGAr8H5Xss4Ty0ow7c+w0NxvSsyjgHDoa2lOXZ0G7Xs3AQlKBo8Nk0yMGVsOoCn158fwDsIwQpd6h68jVwZt5m5zghPtjWEoYnVMhnbmLZv+PV47Ed3XSycWE6k8zz96nr32r2lMDefJqNivWO5N6TWMDPfQhBkFwDAxx+5PhFGkK7b6QHGFPJWWD64Ak3MmebF6rgs8IpbTZDQbXWA7GGoqqWJlFehFFg2iEfmQj4dlnhCOvGWrKkUd/UcFSK5oRESsVLJKxmUoRrPpBMH8C9Cr5aHfQe6s5DvyxZ1SguSnBdqGZPYTIQXltQJolMIG0MKVQ+mTiK60ZtdTef1eYK7bSnKVoPfZtGAE=",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_016F7sFcRHBmCnPi2rkcdFzj",
+       "input": {
+        "customer_bike_id": 9,
+        "complaint": "Both tires are cracked and need replacing."
+       },
+       "name": "open_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.29
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01GjvvkhvUEAQhvHJj6JatUW",
+       "input": {
+        "work_order_id": 1,
+        "diagnosis": "Both tires cracked (mechanic's observation); age-related deterioration on an original 1950s roadster, 28 x 1 1/2 (635) wheels. No service history at shop. Replace both."
+       },
+       "name": "record_diagnosis",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_013gZ7Pq57NQRx7J8LS8uppm",
+       "input": {
+        "work_order_id": 1,
+        "sku": "FS-TR635-38",
+        "qty": 2
+       },
+       "name": "add_part",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01TyAHJMEW5XQoCGpnJKhTRi",
+       "input": {
+        "work_order_id": 1,
+        "service_name": "Tire replacement"
+       },
+       "name": "add_service",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01PG48k7WfbtNbv3ZzVBAz3M",
+       "input": {
+        "work_order_id": 1,
+        "service_name": "Tire replacement"
+       },
+       "name": "add_service",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01Rzccp5B42vgSpLZfALLbiA",
+       "input": {},
+       "name": "estimate_ready_date",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 2.61
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01EcejfBzCry1sJHE8v5eXKm",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "lock_quote",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.74
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01LR5az57V4pDupfEFSbSTXb",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Ruth, we've looked over your roadster and both tires are cracked with age, so they should be replaced before they fail. We'll fit two new classic-style tires that match your original 28 x 1 1/2 wheels. The total is $109.98: $69.98 for the two tires and $40.00 for fitting them. We have the tires in stock, so your bike can be ready tomorrow, November 19. Please use the buttons below to approve or decline the quote.",
+        "include_quote": true
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.97
+    },
+    {
+     "content": [
+      {
+       "text": "The quote is locked and the message to Ruth is drafted. It needs your review and send.\n\n- **Bike:** Her 1950s three-speed roadster has 28 x 1 1/2 (635) wheels. That is an uncommon size, and only the Fellside Classic 28 x 1 1/2 tire fits it.\n- **Parts:** Two of those tires at $34.99 each. We have 3 in stock.\n- **Labor:** \"Tire replacement\" is $20 and I added it twice, once per tire. If your shop charges it once per pair, tell me and I'll fix it. The quote is already locked, so I'd have to redo the work order.\n- **Total:** $109.98.\n- **Ready date:** Nov 19, since everything is in stock.\n- **Diagnosis:** I recorded it as age-related cracking, based on your observation.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 2.52
+    }
+   ]
+  },
+  {
+   "message": "The repair on work order #1 is done. Draft Ruth a short message that the bike is ready to pick up and can be paid for from the link.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "text": "Let me check the current status first.",
+       "type": "text"
+      },
+      {
+       "id": "toolu_01N4MGYe2CuehFzYVdHsY7eT",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "get_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01W4Q7iJQzhS8nLmU7guSccn",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "list_customer_messages",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.07
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_011LmGHQS8udkoMWcD6D35NL",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Ruth, good news: your roadster has its two new tires and is ready to pick up. You can pay from your link whenever suits you. Thanks for choosing Mitchell Bike Co.!"
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.57
+    },
+    {
+     "content": [
+      {
+       "text": "The pickup message to Ruth is drafted and ready for you to review and send. It says the bike is ready and that she can pay from her link.\n\nWork order #1 shows as done, and the quote was approved for $109.98.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 0.99
+    }
+   ]
+  }
+ ]
+}

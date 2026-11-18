@@ -1,0 +1,226 @@
+{
+ "story": "brake-fade",
+ "model": "claude-sonnet-5-5",
+ "recorded_on": "2026-11-18",
+ "turns": [
+  {
+   "message": "Marcus Reid's mountain bike is in. He says the brakes fade on long descents, and the levers pull almost to the bar. The pads were replaced in June. Work out what it needs, build the work order and quote, and draft him a message with the quote.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_01TBTaFxAVJcJvrDgbpUsb3i",
+       "input": {
+        "query": "Marcus Reid"
+       },
+       "name": "find_customer",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.01
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01XZCVShdwBjzAjzBAyQFKS3",
+       "input": {
+        "customer_bike_id": 6
+       },
+       "name": "get_bike",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01H7CwFvpsQi6B9gfNVWrZVK",
+       "input": {},
+       "name": "list_services",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.01
+    },
+    {
+     "content": [
+      {
+       "signature": "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",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_01J96Ne2R4ksgeyxwPGygcgu",
+       "input": {
+        "customer_bike_id": 6,
+        "complaint": "Brakes fade on long descents and levers pull almost to the bar. Pads replaced in June."
+       },
+       "name": "open_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 4.15
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_012msswPz9wJNX3tiGauUQEv",
+       "input": {
+        "work_order_id": 1,
+        "diagnosis": "Likely old/overheated brake fluid with air in the system. Evidence: fade on long descents and long lever travel; history shows brakes have never been bled since purchase (about 3900+ km); pads were replaced in June 2025, so pad wear is an unlikely cause. Confidence: fairly high (not confirmed by rotor measurement). Rotor thickness/condition not yet measured. Plan: brake bleed."
+       },
+       "name": "record_diagnosis",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01VTAXUZVtiC9f2vSV8SYiuq",
+       "input": {
+        "work_order_id": 1,
+        "service_name": "Brake bleed"
+       },
+       "name": "add_service",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 2.39
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_019Fx87fueZX5swXAjQph1XL",
+       "input": {},
+       "name": "estimate_ready_date",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01CqiE9ac9d8Md9f3jgqvgdX",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "lock_quote",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.0
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_018TULJXvWz1AQzbQ9khGVHU",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Marcus, thanks for bringing the bike in. Fading on long descents and levers pulling close to the bar usually point to old brake fluid. Your brakes haven't been bled since you bought the bike, and the fluid wears out over time. It can also pick up air, and it gets overheated on long descents. Your pads were only replaced in June, so they're unlikely to be the cause. We'd like to bleed the brakes, which means flushing out the old fluid and air and refilling with fresh fluid. The total is $55.00, with no parts needed, and the bike can be ready tomorrow, November 19. If the brakes still aren't right after the bleed, we'll check the rotors and tell you before doing anything more. You can approve or decline the quote below.",
+        "include_quote": true
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 2.87
+    },
+    {
+     "content": [
+      {
+       "text": "The draft to Marcus is ready for you to review and send. The quote is locked at $55.00 for a brake bleed, with no parts, and the bike would be ready Nov 19.\n\n- **Diagnosis:** Most likely old fluid with air in it. Fade on long descents and long lever travel fit that, and the history says the brakes have never been bled since purchase. The pads are only from June, so I don't suspect them. I'd call this fairly high confidence, but it isn't confirmed.\n- **Rotors:** I haven't seen a rotor thickness or condition reading. If you can measure the rotors, a worn or warped one would change the plan. The quote is locked, so I couldn't add a rotor replacement now. The message tells Marcus we'll check the rotors and tell him before doing anything more if the bleed doesn't fix it.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 2.45
+    }
+   ]
+  },
+  {
+   "message": "The repair on work order #1 is done. Draft Marcus a short message that the bike is ready to pick up and can be paid for from the link.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_01Jph5MzRjg4TUrtUcWnUk2g",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "get_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_016kxMJDHAHbi4SvACWKUQAQ",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "list_customer_messages",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.21
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_011xEbiqxHTc1Qz9gks5JRyc",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Marcus, good news: your bike is ready to pick up. We bled the brakes and put in fresh fluid, as quoted. The total is $55.00, and you can pay from your link whenever suits you. Thanks!"
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.41
+    },
+    {
+     "content": [
+      {
+       "text": "The pickup message to Marcus is drafted and needs your review and send. It says the bike is ready, the total is $55.00, and he can pay from his link. Work order #1 shows as done, and the quote was approved.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 1.03
+    }
+   ]
+  }
+ ]
+}

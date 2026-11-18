@@ -1,0 +1,335 @@
+{
+ "story": "race-day",
+ "model": "claude-sonnet-5-5",
+ "recorded_on": "2026-11-18",
+ "turns": [
+  {
+   "message": "Tom Okafor's road bike is on the stand. The chain checker reads 0.75% and the cassette is worn. He races on Saturday, November 21 and asked if it can be ready before then. Work out what it needs, build the work order and quote, and draft him a message with the quote.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_01TeoovMJnF37JoRZe5x6LvC",
+       "input": {
+        "query": "Okafor"
+       },
+       "name": "find_customer",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.05
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01KWtAshc6VuigqHQsJSydML",
+       "input": {
+        "customer_bike_id": 3
+       },
+       "name": "get_bike",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01Cu9d9eCK964gTTLNfcm7sZ",
+       "input": {},
+       "name": "list_services",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.91
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01GEv4m3E94C5wnTSsCyBNg6",
+       "input": {
+        "customer_bike_id": 3,
+        "category": "cassette"
+       },
+       "name": "list_fitting_parts",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01K2yQJqme9bEtHP36k1oSpU",
+       "input": {
+        "customer_bike_id": 3,
+        "category": "chain"
+       },
+       "name": "list_fitting_parts",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.22
+    },
+    {
+     "content": [
+      {
+       "text": "Cassette is out of stock; check suppliers.",
+       "type": "text"
+      },
+      {
+       "id": "toolu_01TGfUkWmWYHTBjiiWMuAUGB",
+       "input": {
+        "sku": "AD-C12-36R",
+        "qty": 1
+       },
+       "name": "supplier_options",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.97
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQSvQUKEAgTGAI4AUIIdGhpbmtpbmcSDHp86u1CFEOY0BIbZxoMNw5Wo4QDgZpMogC4IjBxePvwRqsqkw9G7vNjrN0hH7W2p5rme/qZelW7Ly0jFUm11dXCku3iIO4M29hU8CQq2gTVtPnifSHZMPFC2/ZzMc2fckhaanuXaMNFlJtZXjcZTxx6lgb0RGFIP0XX8cFmIBNwwyRyLCWQh/MwHq69rcVQ3kUNJiZjtFQACa/XMI8kXkFzJTU7snfkTtGFqHKWB2QCTCg4lJgBZmX8wpfrYhi7IB0VYHbdri7KBAknC4WqoyQ0P8G5JiZnG8x9OheDbb9nPWJ9AOwTfV/Svep7ykVWOCUNFQ03e7xpHbbuwWbGpEXmbb8uc0/ReqW7m3EAxdHr+nNmsead6pRngDOZjFpcxMHIn5VSqXoUZyG/fHkxOn68s3oKUHxq9QiCTSiKHyZumsPazbxp6LtLH86YnHsTJcCl/eVCVc1QHkSjBvEjeJMkkEfthJyPg8QW8mmGeNuRfPkIVkH0rNqlk9xQcrbqfmItspPzngqa5PrgYiluZUv6hGMTgCYYdvYAdp+dAsok9G2DWhKFRQGSlcSzxG0uP4nllgn54dINCxZyP2sK27wvVwvgBDIq4X35rDt353VIsoqpOGU3iUK9W6HGizz5yKQIpTtTz/1hne2H9XhwsBpgWKOybHchKiDcN3maF9ktweTOw7WpVJ5KwKXzcoLpJzdc3KoXLJ/xZaggcEHPbFbeySnTTPBfG34YC/pGu+zilU7E34EoRmrBHt8VIkDVFM09jrv5kw/5Rmsf0/ky4VPG86PumCPtM9Fgnk+ZbkUgx07Td+WYfxB/atbQecnuEk2/7jSdMum/ZrGTSoTyvF1CKlO+wcfnSdTL8ILRYzmWaEuOkn3YJIjMiwKcdA62xr2HrvkwXE5RkhgB",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_01FuRvJpwJzHcVsLVGLZVube",
+       "input": {
+        "supplier_ids": [
+         3
+        ]
+       },
+       "name": "estimate_ready_date",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.91
+    },
+    {
+     "content": [
+      {
+       "signature": "CAQS7gcKEAgTGAI4AUIIdGhpbmtpbmcSDH4NNXj9zOKeL7ecOxoMOrFyt1vtdTqfkIdlIjDLbUDOQKsvVkUgtWZq7r5HeRHBSYhhnf7y/ATGuxgeq4r9r2m1nD4LifxvoEDcGxMqiwfYznogiRZ+/+niczIkjm9MsWTFRB2SXAalx2x6bCQh5F9c4N0f2sCU8e8xuvE7iYbswo68uvO5ExoYZJHc84+RyozBBH8/HAzZYanbbQ+X+Gi2m60c3JPzSoKMYvXOYwVw34526OasyLcWCT4+R0FxDAeqyNQ7GUD0+XW75Qcbjj3PF5MWWeaqj/Zej20T7RYwfO1xI+n3eNYcqQ3921d5AJW+VZoe07q5B8nYpaBA0fdUlh4NFqwr96BSUrYOptlh7+/Dvn0hB7z3L6TqZQXbM+tLjzK8vKtHhDWMRXvwR4znlmRv0MHLxV3IXx8puH9QcQmAl9IfOn/UUekYFG5Tl+VJxr5eEuKIqurzRoUn8AwkUe5pJV7ctp3h6Ikl4cFW/ddkoyTxkvhr3SNcgDtI8TIQJxoVKvWgbYCHPIKQxktuFKIfzkzO8trrizJ6qkDw/8vBZSF0SIkwdwd5wOc0IKiILdjRoLP4ilYlz8PHJYRBWENJY4/6yPaEZjM+3frU7/ZZJxhENSQg9N9dc7Mtc4153KxnvHuzAdVfcTraOwezoJH/ErPmbFciqlRewVZ82ZH5nLAu+TcBkui43VZEq2K5xN/wNG23hX9Q3wbFbmc+rP13vuUkn+FASolbV3AJ0RbFxBk6lHeiPsKf6zy/NAbPSSsE3GWlCswvOF85nFJE0P05qx9MjDtyLKTx9z5cRL5SrvT8+EGgndNzsiHC0OqRWjD51B9j0C/0uSnTL64kQAu4pzuEU0aJg7I69OwnAYrGVp84WfcUWBMQl7FzyhdMEieHXF0QBsDa0Ow3bG0ByqDq1c6gFIwstSattg+SOfJEIIlsWoqSR2ULgoT3iCgAPhHYJXqvoDN3Vr5my8GrlVJ+EzOZnD8qGU/QuUg+8p/brtn0TaMFWqIX1of+AiomdctstVi145WBe+dwbrIKRP1f9uQ0YVVjpetdU9QHMOgm+GKGANtzh79QYVuLbtm3vgee4JOr7A1PoEeEdTDvlJE2SoD6PBhG11qGB5fj+LEKYvDz+dFr1MeV7bi1Q6gRhd2Hi4xhp+kwAuXB+Ky0/8jPm9hDKQonaqZPhU2Q3V4blTQMhyEjFv5YJ8TJHISFAQ+t77HLjGX8WliJF+rMRfdT/WNhixGlqTV4YhVOl0h6cBv6wIyvbyh33O7CeEgTNosGRIfdohEOJ/q7gIuTD6yoMbvUhjaiGAE=",
+       "thinking": "",
+       "type": "thinking"
+      },
+      {
+       "id": "toolu_01U6KSZeLMt5Zjt8ZsiheRPM",
+       "input": {
+        "customer_bike_id": 3,
+        "complaint": "Chain checker reads 0.75% and cassette is worn. Customer races Saturday Nov 21 and asks if it can be ready before then."
+       },
+       "name": "open_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.91
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_0137GEjLGsgcjo6PHugBGczC",
+       "input": {
+        "work_order_id": 1,
+        "diagnosis": "Chain stretch measured at 0.75% (mechanic's chain checker) and cassette visibly worn; a chain at 0.75% has typically already worn the cassette, so both should be replaced together. Last service was a tune-up on 2025-04-12 at 2100 km; no drivetrain replacement on record. Confidence high on chain (measured), moderate-high on cassette (visual wear)."
+       },
+       "name": "record_diagnosis",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01SiF6KQ65cZtHA4PrwQL3EZ",
+       "input": {
+        "work_order_id": 1,
+        "sku": "AD-C12-36R"
+       },
+       "name": "add_part",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01GMCCEFGW3UBMmArPfM511J",
+       "input": {
+        "work_order_id": 1,
+        "sku": "AD-CH12"
+       },
+       "name": "add_part",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_019BRwQ8c9kuWUwKMVXkPwGu",
+       "input": {
+        "work_order_id": 1,
+        "service_name": "Drivetrain replacement (chain and cassette)"
+       },
+       "name": "add_service",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01SiL8zShH985GStTwCs3ea6",
+       "input": {
+        "work_order_id": 1,
+        "lines": [
+         {
+          "sku": "AD-C12-36R",
+          "supplier_id": 3,
+          "qty": 1
+         }
+        ]
+       },
+       "name": "plan_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 3.33
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01LmW6jCtzcan9hxar4yhp26",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "lock_quote",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 0.71
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_01HjAA5UZA5nm1vSBtsuegSJ",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Tom, we checked your bike and the chain has stretched to the point where it's wearing out the gear cluster on your back wheel (the cassette), which is also worn. Replacing both together is the right fix; a new chain on a worn cassette will skip and wear out quickly. We'd fit a new 12-speed chain and a new 12-speed cassette that match your bike. Total is $269.98, including parts and labor. Unfortunately the cassette isn't in stock and our supplier needs about a week, so the earliest we can have the bike ready is Thursday, November 26. That's after your race on Saturday, November 21, and I'm sorry we can't make it before then. If you'd like, approve the quote below and we'll order the part right away. Otherwise, let us know and we can talk about options for the race.",
+        "include_quote": true
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 3.1
+    },
+    {
+     "content": [
+      {
+       "text": "Tom's bike can't be ready before his Saturday, November 21 race. The earliest is Thursday, November 26. I've drafted the quote message to him for you to review and send.\n\n- **Why the date slips:** The only cassette that fits his bike (12-speed, SRAM XDR) is out of stock. Crankshaft Wholesale is the only supplier that has it, and they need 7 days.\n- **Diagnosis:** The chain reads 0.75% and the cassette is visibly worn, so both should be replaced together. I'm confident about the chain because you measured it. I'm fairly confident about the cassette, since that rests on visual wear.\n- **Work order #1 (locked quote, $269.98):**\n  - Ardent X12 10-36 cassette: $159.99\n  - Ardent 12-speed chain: $49.99, in stock\n  - Drivetrain replacement labor: $60.00\n- **Order plan:** The cassette is planned from Crankshaft and will be ordered automatically when Tom approves.\n- **Draft:** It tells Tom plainly that the race date can't be met and that he can discuss options if he'd rather not wait. I didn't promise anything earlier than November 26.\n\nI haven't offered a stopgap for the race, such as keeping his current drivetrain for Saturday. If you want to suggest one, that's your call.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 3.99
+    }
+   ]
+  },
+  {
+   "message": "The repair on work order #1 is done. Draft Tom a short message that the bike is ready to pick up and can be paid for from the link.",
+   "photo": false,
+   "responses": [
+    {
+     "content": [
+      {
+       "id": "toolu_012drg5tZ4wFwjCAtwp5GUTZ",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "get_work_order",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      },
+      {
+       "id": "toolu_01K4KWEFQiLc4P5cCKsMr3hM",
+       "input": {
+        "work_order_id": 1
+       },
+       "name": "list_customer_messages",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.03
+    },
+    {
+     "content": [
+      {
+       "id": "toolu_015ioTGetwoW6TcrWPEpDpQS",
+       "input": {
+        "work_order_id": 1,
+        "body": "Hi Tom, good news: your bike is ready to pick up. The new chain and cassette are fitted. You can pay from your payment link whenever suits you. See you soon!"
+       },
+       "name": "draft_customer_message",
+       "type": "tool_use",
+       "caller": {
+        "type": "direct"
+       }
+      }
+     ],
+     "stop_reason": "tool_use",
+     "seconds": 1.23
+    },
+    {
+     "content": [
+      {
+       "text": "The pickup message to Tom is drafted and waiting for you to review and send. It says the new chain and cassette are fitted, the bike is ready to collect, and he can pay from his link.\n\nWork order #1 shows as done, and Tom approved the $269.98 quote.",
+       "type": "text"
+      }
+     ],
+     "stop_reason": "end_turn",
+     "seconds": 1.2
+    }
+   ]
+  }
+ ]
+}
