@@ -77,7 +77,22 @@ REPAIR = ("approved", "awaiting_parts", "scheduled", "in_progress", "done")
 
 
 NO_STORY = {"step": 1, "whose": "mechanic", "work_order_id": None, "customer_token": None,
-            "customer": None, "next_step": None, "action": None, "total_cents": None, "status": None}
+            "customer": None, "next_step": None, "action": None, "total_cents": None, "status": None,
+            "answered": False}
+
+
+def _answered(conn) -> bool:
+    """Whether the Agent has finished a reply in the newest conversation (its last message is
+    text, with no tool call waiting). With no work order, that's an answer without a quote."""
+    row = conn.execute(
+        """SELECT m.role, m.content_json FROM agent_messages m
+           WHERE m.conversation_id = (SELECT id FROM agent_conversations ORDER BY created_at DESC, rowid DESC LIMIT 1)
+           ORDER BY m.id DESC LIMIT 1"""
+    ).fetchone()
+    if row is None or row["role"] != "assistant":
+        return False
+    kinds = {block.get("type") for block in json.loads(row["content_json"]) if isinstance(block, dict)}
+    return "text" in kinds and "tool_use" not in kinds
 
 
 def story(conn) -> dict[str, Any]:
@@ -96,7 +111,9 @@ def story(conn) -> dict[str, Any]:
            ORDER BY w.id DESC LIMIT 1"""
     ).fetchone()
     if row is None:
-        return dict(NO_STORY)
+        # No work order yet: the Agent is still working, or it answered without one
+        # (Frank's restomod gets an honest "no 12-speed on this bike" and no quote).
+        return dict(NO_STORY, answered=_answered(conn))
     status = row["status"]
     step_info = next_step(conn, row["id"], status)
     thread = messages.list_messages(conn, row["id"])
@@ -121,6 +138,7 @@ def story(conn) -> dict[str, Any]:
         "customer": row["name"], "total_cents": row["quoted_total_cents"],
         "customer_token": sandboxes.public_token(row["token"]) if row["token"] else None,
         "next_step": step_info["text"], "action": (step_info.get("action") or {}).get("kind"),
+        "answered": False,
     }
 
 
