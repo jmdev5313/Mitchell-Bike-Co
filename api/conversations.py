@@ -22,7 +22,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from agents import conversations
-from api import guards, sandboxes
+from api import guards, recorded, sandboxes
 from api.agent_pool import AgentPool, Busy
 from api.deps import get_db, require_staff
 from shop import db
@@ -109,6 +109,7 @@ def get_conversation(conversation_id: str, conn: sqlite3.Connection = Depends(ge
         "conversation_id": convo.id,
         "work_order_id": convo.work_order_id,
         "model": convo.model,
+        "runtime": convo.runtime,  # "recorded" for a recorded run's replay
         "entries": _with_images(conversations.transcript(conn, conversation_id)),
         "usage": conversations.usage_totals(conn, conversation_id),
     }
@@ -125,11 +126,16 @@ async def send_message(
     conn = db.connect()
     try:
         _require_conversation(conn, conversation_id)
+        replaying = recorded.active(conn)
+        turn = recorded.next_turn(conn, replaying) if replaying else None
     finally:
         conn.close()
     if agents.is_busy(conversation_id):
         raise HTTPException(status.HTTP_409_CONFLICT, "a turn is already running in this conversation")
-    if refusal := guards.agent_refusal(sandboxes.current_key()):  # the hosted demo's spending limits
+    if replaying:  # a recorded run spends nothing, but only plays the recording's next message
+        if turn is None or text.strip() != turn.message:
+            raise HTTPException(status.HTTP_409_CONFLICT, "In a recorded run, only the recording's next message can be sent.")
+    elif refusal := guards.agent_refusal(sandboxes.current_key()):  # the hosted demo's spending limits
         code = status.HTTP_503_SERVICE_UNAVAILABLE if not guards.live() else status.HTTP_429_TOO_MANY_REQUESTS
         raise HTTPException(code, refusal)
     if len(photos) > MAX_PHOTOS:
@@ -150,14 +156,16 @@ async def send_message(
         paths.append(path)
 
     return StreamingResponse(
-        _stream_turn(agents, conversation_id, text, paths, workdir),
+        _stream_turn(agents, conversation_id, text.strip() if replaying else text, paths, workdir,
+                     charge=not replaying),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
 async def _stream_turn(
-    agents: AgentPool, conversation_id: str, text: str, photos: list[Path], workdir: tempfile.TemporaryDirectory
+    agents: AgentPool, conversation_id: str, text: str, photos: list[Path], workdir: tempfile.TemporaryDirectory,
+    charge: bool = True,
 ) -> AsyncIterator[str]:
     events: asyncio.Queue = asyncio.Queue()
 
@@ -190,9 +198,10 @@ async def _stream_turn(
             await events.put({"type": "error", "detail": f"the turn failed: {type(e).__name__}: {e}"})
         finally:
             # Charge the turn to the demo's budget from what was stored, so a turn that failed partway still counts.
-            _, after = usage_so_far()
-            spent = {k: after.get(k, 0) - before.get(k, 0) for k in after}
-            guards.record_turn(sandboxes.current_key(), conversation_id, model, spent)
+            if charge:
+                _, after = usage_so_far()
+                spent = {k: after.get(k, 0) - before.get(k, 0) for k in after}
+                guards.record_turn(sandboxes.current_key(), conversation_id, model, spent)
             workdir.cleanup()
             await events.put(None)
 

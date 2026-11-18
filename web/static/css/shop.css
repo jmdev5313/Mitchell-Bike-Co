@@ -735,3 +735,40 @@ body.stage-page { background: var(--bench); height: 100dvh; display: flex; flex-
 .test-mode strong { display: block; font-size: 16px; }
 .test-mode p { margin: 4px 0 6px; }
 .test-mode .num { font-weight: 600; white-space: nowrap; }
+
+/* The hosted demo: when the live Agent rests, stories play as recorded runs (see docs/decisions.md).
+   Bench grey and plain rules: a recorded run gets no colour of its own. */
+.resting-band {
+  margin-top: var(--s3); background: var(--bench); border-top: 2px solid var(--ink); padding: var(--s3) var(--s4);
+  display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); align-items: baseline; justify-content: space-between;
+}
+.resting-band[hidden] { display: none; }
+.resting-band p { margin: 0; font-size: 15px; }
+.resting-box { background: var(--bench); border-top: 2px solid var(--ink); padding: var(--s3) var(--s3); display: flex; flex-direction: column; gap: 6px; }
+.resting-box p { margin: 0; font-size: 14px; }
+.bot-check { border-top: 1px solid var(--hair); padding-top: var(--s3); display: flex; flex-direction: column; gap: var(--s2); }
+.bot-check[hidden] { display: none; }
+.bot-check .lbl { margin: 0; font-size: 14px; font-weight: 600; }
+.bot-check p { margin: 0; }
+.explainer { max-width: 680px; width: calc(100vw - 32px); border: 2px solid var(--ink); padding: var(--s5) var(--s5) var(--s4); box-sizing: border-box; }
+.explainer::backdrop { background: rgba(22, 26, 31, 0.45); }
+.explainer h2 { font-size: 32px; margin: 0 0 var(--s2); }
+.explainer .lede-small { margin: 0 0 var(--s3); font-size: 16px; }
+.explainer-table { width: 100%; border-collapse: collapse; border-top: 2px solid var(--ink); font-size: 15px; }
+.explainer-table th { width: 150px; text-align: left; vertical-align: top; font-weight: 600; padding: 10px var(--s4) 10px 0; border-bottom: 1px solid var(--hair); }
+.explainer-table td { vertical-align: top; padding: 10px 0; border-bottom: 1px solid var(--hair); }
+.explainer-actions { display: flex; justify-content: flex-end; margin-top: var(--s3); }
+@media (max-width: 600px) { .explainer-table th { width: 110px; } }
+/* In the workshop's chat */
+.recorded-strip {
+  display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); justify-content: space-between; align-items: baseline;
+  padding: var(--s2) var(--s5); background: var(--bench); border-bottom: 1px solid var(--hair); font-size: 13px;
+}
+.replay-tag { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; padding: 1px 7px; border: 1px solid var(--slate); color: var(--slate); background: var(--white); }
+.composer.is-recorded textarea[readonly] { border-style: dashed; background: #F6F7F8; color: var(--ink); resize: none; }
+.composer .recorded-note { margin: 6px 0 0; font-size: 12px; color: var(--slate); }
+.notice-refused .btn { margin-top: var(--s2); }
+.reply-closed { margin-top: var(--s4); padding-top: var(--s3); border-top: 1px solid var(--hair-manila); }
+.reply-closed strong { display: block; font-size: 15px; }
+.reply-closed p { margin: 4px 0 0; font-size: 15px; color: var(--manila-text); }
+.lead.whose-recorded { background: var(--bench); color: var(--ink); border: 1px solid var(--slate); }

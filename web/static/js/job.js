@@ -1,7 +1,7 @@
 // One screen per job: the conversation with the Agent on the left, the work order on the right
 // (Overview, Bike, History). The panel collapses to a strip; at narrow widths the two become a switch.
 
-import { h, icon, dollars, shortDate, longDate } from "./dom.js";
+import { h, icon, api, dollars, shortDate, longDate } from "./dom.js";
 
 const PANEL = "M2 3h14v12H2zM11 3v12";
 import {
@@ -9,6 +9,7 @@ import {
   takePrefill, HERO, startWithAgent, workshopNav,
 } from "./staff.js";
 import { mechanicTurn, agentTurn, composerForm } from "./agent.js";
+import { explainRecordedRuns, longDate as recordedDate } from "./story.js";
 
 const TABS = [
   { id: "overview", label: () => "Overview" },
@@ -50,6 +51,8 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
     conversationId = used.length ? used[0].id : order.conversation_ids[0];
   }
   const convo = conversationId ? await staff(`/api/conversations/${conversationId}`) : null;
+  // A recorded run being played in the hosted demo (null when the live Agent is answering).
+  const recording = await api("/api/demo").then((info) => info.recorded || null, () => null);
   if (!order && convo && convo.work_order_id) {
     // The Agent opened a work order in this conversation: it's a job now.
     location.replace(`#/work-orders/${convo.work_order_id}/${convo.conversation_id}`);
@@ -81,16 +84,18 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   const entries = convo ? convo.entries : [];
   if (entries.length) {
     for (const entry of entries) {
-      transcript.append(entry.role === "mechanic" ? mechanicTurn(entry.text, entry.images || []) : agentTurn(entry, { order, onReview: reveal }));
+      transcript.append(entry.role === "mechanic" ? mechanicTurn(entry.text, entry.images || [])
+        : agentTurn(entry, { order, onReview: reveal, replay: convo.runtime === "recorded" }));
     }
   } else {
-    transcript.append(emptyHint({ order, prefill, setText: (text) => composer.api.setText(text), attachPhoto: () => composer.api.attachHeroPhoto() }));
+    transcript.append(emptyHint({ order, prefill, recording, setText: (text) => composer.api.setText(text), attachPhoto: () => composer.api.attachHeroPhoto() }));
   }
 
   const composer = composerForm({
     transcript,
     rerender,
     onUnauthorized,
+    recording,
     // A job with no conversation yet starts one when the Mechanic first sends.
     conversationId: async () => {
       if (!currentConvo) {
@@ -118,7 +123,12 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
     location.hash = `#/work-orders/${id}/${conversation_id}`;
   }
 
-  const chat = h("main", { class: "job-chat", id: "job-chat" }, chatHead, transcript, composer);
+  const recordedStrip = recording ? h("div", { class: "recorded-strip", role: "note" },
+    h("span", {}, h("strong", {}, "Recorded run"),
+      ` · ${recording.model === "claude-sonnet-5-5" ? "Claude Sonnet 5.5" : recording.model}'s real turns on this story, recorded ${recordedDate(recording.recorded_on)}. `
+      + "The tool calls run again in your shop; the words are as recorded."),
+    h("button", { type: "button", class: "linkish", onclick: () => explainRecordedRuns({ recordedOn: recording.recorded_on }) }, "More")) : null;
+  const chat = h("main", { class: "job-chat", id: "job-chat" }, chatHead, recordedStrip, transcript, composer);
 
   // --- The work order panel ---
   const panel = h("aside", { class: "job-panel rail", id: "job-panel", "aria-label": order ? `Work order #${id}` : "Work order" });
@@ -176,8 +186,9 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
       nextStepBar(order, {
         onChange: rerender,
         onReviewDraft: reveal,
-        // "Repair done" goes straight to the Agent for the "ready to pick up" message.
-        onFinished: () => composer.api.send(
+        // "Repair done" goes straight to the Agent for the "ready to pick up" message. (A recorded run
+        // sends the same words, from the recording, when the Mechanic presses Play.)
+        onFinished: () => recording ? rerender() : composer.api.send(
           `The repair on work order #${id} is done. Draft ${first} a short message that the bike is ready to pick up and can be paid for from the link.`),
         onAskAgent: (prompt) => { showView("chat"); composer.api.setText(prompt); },
       }),
@@ -327,14 +338,23 @@ export async function jobScreen(app, { orderId = null, conversationId = null, on
   } else {
     transcript.scrollTop = transcript.scrollHeight;
   }
-  if (prefill) composer.api.setText(prefill);
-  if (prefill === HERO) composer.api.attachHeroPhoto();  // the hero story comes with its photo, when the shop has one
-  else if (!entries.length && order) composer.api.setText(`About work order #${id} for ${customer}: `);
+  if (recording) {
+    if (recording.photo) composer.api.attachHeroPhoto();  // the recorded message was sent with the story's photo
+  } else {
+    if (prefill) composer.api.setText(prefill);
+    if (prefill === HERO) composer.api.attachHeroPhoto();  // the hero story comes with its photo, when the shop has one
+    else if (!entries.length && order) composer.api.setText(`About work order #${id} for ${customer}: `);
+  }
   if (order && order.unseen.length) staff(`/api/work-orders/${id}/seen`, { method: "POST" }).catch(() => {});
 }
 
-function emptyHint({ order, prefill, setText, attachPhoto }) {
+function emptyHint({ order, prefill, recording, setText, attachPhoto }) {
   const turn = (...content) => h("div", { class: "turn", "data-hint": "" }, h("div", { class: "speaker" }, ""), h("div", { class: "content" }, ...content));
+  if (recording && recording.next_message && !order) {
+    return turn(
+      h("p", { style: "font-size: 18px" }, "The recorded run is ready. Press Play to watch the Agent's real turn on this story, tool call by tool call."),
+      h("p", { class: "muted" }, "It plays at the speed it ran, about 30 seconds."));
+  }
   if (prefill && !order) {
     return turn(
       h("p", { style: "font-size: 18px" }, `The ${prefill === HERO ? "hero story" : "story"} is waiting in the box below. Press Send and watch the Agent work, tool call by tool call.`),

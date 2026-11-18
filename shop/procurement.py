@@ -9,7 +9,7 @@ import sqlite3
 from dataclasses import asdict, dataclass
 from datetime import date, datetime, timezone
 
-from shop import schedule
+from shop import clock, schedule
 from shop.errors import NotFound, RuleViolation
 from shop.work_orders import ORDERABLE
 
@@ -171,7 +171,7 @@ def set_order_plan(
         if qty > offer["available_qty"]:
             raise RuleViolation(f"{sku}: supplier has {offer['available_qty']}, plan asks for {qty}")
         rows.append((part["id"], supplier_id, qty, offer["lead_time_days"]))
-    promised = schedule.ready_date(today or date.today(), max((r[3] for r in rows), default=0)).isoformat() if rows else None
+    promised = schedule.ready_date(today or clock.today(conn), max((r[3] for r in rows), default=0)).isoformat() if rows else None
     with conn:
         conn.execute("DELETE FROM order_plan_lines WHERE work_order_id = ?", (work_order_id,))
         conn.executemany(

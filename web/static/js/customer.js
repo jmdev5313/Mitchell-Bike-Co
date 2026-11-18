@@ -14,6 +14,7 @@ let busy = false;
 let checkoutLink = null;  // inside the demo stage, when the browser blocks the checkout tab
 let confirmingDecline = false;
 let error = null;
+let canAsk = true;  // false in a recorded run: answering a question needs the live Agent
 
 // Plain words for parts: the Customer never sees part numbers or trade names.
 const PART_WORDS = {
@@ -62,6 +63,7 @@ let current = null;
 function rerender() { if (current) render(current); }
 
 function render(view) {
+  canAsk = view.can_ask !== false;
   current = view;
   workOrderLabel.textContent = `Work order #${view.work_order_id}`;
   document.title = `${titleFor(view)} · Mitchell Bike Co.`;
@@ -133,6 +135,11 @@ function thread(view, { excludeId = null, title = "Messages with the shop" } = {
 
 /** The reply box. A `suggestion` shows as the placeholder and becomes real text on Tab or a tap. */
 function replyForm(placeholder, { suggestion = null } = {}) {
+  if (!canAsk) {
+    return h("div", { class: "reply-closed" },
+      h("strong", {}, "Questions? Message the shop"),
+      h("p", {}, "Not in a recorded run: answering needs the live Agent. You can still approve, decline or pay."));
+  }
   const input = h("input", {
     id: "reply", class: "input", type: "text", name: "body", required: true,
     placeholder: suggestion || placeholder, autocomplete: "off", maxlength: 2000,

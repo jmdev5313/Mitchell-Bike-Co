@@ -3,6 +3,7 @@
 
 import { h, icon, richText, dollars, shortDate } from "./dom.js";
 import { passcode, Unauthorized, HERO_PHOTO } from "./staff.js";
+import { startStory } from "./story.js";
 
 const PHOTO = "M2 4h12v9H2zM5.5 8a1 1 0 100-.01M14 11l-4-4-6 6";
 const CLIP = "M13 7.5l-5.5 5.5a3.2 3.2 0 01-4.5-4.5l6-6a2.2 2.2 0 013 3l-6 6a1.2 1.2 0 01-1.7-1.7L10 4.5";
@@ -39,10 +40,15 @@ export function mechanicTurn(text, images = []) {
         h("figcaption", {}, icon(PHOTO, 14, 1.6), image.illustrative ? ILLUSTRATIVE : "Photo")))) : null));
 }
 
-export function agentTurn(entry, { order = null, onReview = null } = {}) {
+/** "Agent", with a "Replay" tag when the turn is a recorded run's. */
+function agentSpeaker(replay) {
+  return h("div", { class: "speaker" }, "Agent", replay ? [h("br"), h("span", { class: "replay-tag" }, "Replay")] : null);
+}
+
+export function agentTurn(entry, { order = null, onReview = null, replay = false } = {}) {
   const cards = entry.tools.filter((t) => t.message_id).map((t) => draftCard(t.message_id, order, onReview));
   return h("div", { class: "turn" },
-    h("div", { class: "speaker" }, "Agent"),
+    agentSpeaker(replay),
     h("div", { class: "content" }, activityLog(entry.tools), richText(entry.text), cards));
 }
 
@@ -89,10 +95,15 @@ function clock(value) {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-/** The message box. `conversationId` is an async function, so a job can start its conversation on first send. */
-export function composerForm({ conversationId, transcript, rerender, onUnauthorized }) {
+/**
+ * The message box. `conversationId` is an async function, so a job can start its conversation on first send.
+ * In a recorded run (`recording`, from GET /api/demo) the box holds the recording's next message, read-only,
+ * and Send becomes Play.
+ */
+export function composerForm({ conversationId, transcript, rerender, onUnauthorized, recording = null }) {
   const textarea = h("textarea", { id: "msg", class: "textarea", rows: 2, required: true,
-    placeholder: "Message the Agent: what you see and measure…" });
+    placeholder: recording ? "The recording's next message appears here when the shop gets to it."
+      : "Message the Agent: what you see and measure…" });
   const grow = () => { textarea.style.height = "auto"; textarea.style.height = `${Math.min(textarea.scrollHeight + 2, 220)}px`; };
   textarea.addEventListener("input", grow);
   const files = h("input", { type: "file", accept: "image/jpeg,image/png,image/gif,image/webp", multiple: true, class: "visually-hidden", id: "photos", tabindex: "-1" });
@@ -114,7 +125,7 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
         onclick: () => setFiles([...files.files].filter((_, j) => j !== i)) }, "✕"))));
   }
   files.addEventListener("change", drawAttached);
-  const send = h("button", { type: "submit", class: "btn" }, "Send");
+  const send = h("button", { type: "submit", class: "btn" }, recording ? "Play" : "Send");
 
   async function submit(text) {
     if (!text || send.disabled) return;
@@ -131,14 +142,14 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
     transcript.append(mechanicTurn(text, sentImages));
     window.mbcStreaming = true;
     try {
-      await streamTurn(await conversationId(), body, transcript);
+      await streamTurn(await conversationId(), body, transcript, { replay: Boolean(recording) });
       window.mbcStreaming = false;
       rerender();
     } catch (e) {
       window.mbcStreaming = false;
       if (e instanceof Unauthorized) return onUnauthorized();
-      const label = e.notSent ? "Not sent: " : "The turn failed: ";
-      transcript.append(h("p", { class: "notice-refused", role: "alert" }, h("strong", {}, label), e.message));
+      transcript.append(e.notSent ? notSentNotice(e) : h("p", { class: "notice-refused", role: "alert" },
+        h("strong", {}, "The turn failed: "), e.message));
       send.disabled = false;
       textarea.disabled = false;
       textarea.value = text;
@@ -162,15 +173,22 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
         h("button", { type: "button", class: "btn btn-outline", onclick: () => { textarea.value = big.value; grow(); dialog.close(); textarea.focus(); } }, "Back to the small box"),
         h("button", { type: "submit", class: "btn" }, "Send"))));
 
-  const form = h("form", { class: "composer", onsubmit: (event) => { event.preventDefault(); submit(textarea.value.trim()); } },
-    h("label", { class: "lbl visually-hidden", for: "msg" }, "Message the Agent"),  // the box and its Send button say it
+  const form = h("form", { class: `composer${recording ? " is-recorded" : ""}`, onsubmit: (event) => { event.preventDefault(); submit(textarea.value.trim()); } },
+    h("label", { class: "lbl visually-hidden", for: "msg" }, recording ? "Next message in the recording" : "Message the Agent"),  // the box and its button say it
     h("div", { class: "row" },
-      h("button", { type: "button", class: "btn btn-outline attach-btn", "aria-label": "Attach photos", onclick: () => files.click() }, icon(CLIP, 18, 1.4)),
+      recording ? null : h("button", { type: "button", class: "btn btn-outline attach-btn", "aria-label": "Attach photos", onclick: () => files.click() }, icon(CLIP, 18, 1.4)),
       textarea,
-      h("button", { type: "button", class: "btn btn-outline attach-btn", "aria-label": "Open a larger editor", title: "Larger editor",
+      recording ? null : h("button", { type: "button", class: "btn btn-outline attach-btn", "aria-label": "Open a larger editor", title: "Larger editor",
         onclick: () => { big.value = textarea.value; dialog.showModal(); big.focus(); } }, icon(EXPAND, 16, 1.6)),
       send),
-    files, fileNote, dialog);
+    files, fileNote, dialog,
+    recording ? h("p", { class: "recorded-note" }, "In a recorded run the Mechanic's messages are the recorded ones. The live Agent takes your own words.") : null);
+  if (recording) {
+    textarea.readOnly = true;
+    textarea.value = recording.next_message || "";
+    send.disabled = !recording.next_message;
+    requestAnimationFrame(grow);
+  }
   textarea.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) form.requestSubmit();
   });
@@ -180,7 +198,10 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
   form.api = {
     // Text put in the box for the Mechanic (not typed by them) is remembered, so auto-refresh
     // only holds off once they've actually changed it.
-    setText(text) { textarea.value = text; textarea.dataset.prefill = text; grow(); textarea.focus(); textarea.setSelectionRange(text.length, text.length); },
+    setText(text) {
+      if (recording) return;  // a recorded run's box only ever holds the recording's next message
+      textarea.value = text; textarea.dataset.prefill = text; grow(); textarea.focus(); textarea.setSelectionRange(text.length, text.length);
+    },
     send(text) { submit(text); },
     /** Attach the illustrative hero photo, if the shop has one. Returns whether it did. */
     async attachHeroPhoto() {
@@ -197,14 +218,40 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
   return form;
 }
 
+/**
+ * "Not sent", with the reason. When the hosted demo's limits stopped the live Agent mid-story, offer
+ * to play the story again as its recorded run (it restarts in a fresh shop).
+ */
+function notSentNotice(e) {
+  let story = null;
+  try { story = sessionStorage.getItem("mbc-story"); } catch { /* private mode */ }
+  const status = h("span", { class: "small", role: "status" });
+  const again = story && e.status === 429 ? [
+    h("p", { class: "small", style: "margin: 6px 0 0" }, "Everything that doesn't need the Agent still works here: the work order, the Customer's page and payment. "
+      + "To see the Agent's part through to the end, play this story's recorded run. It starts the story again in a fresh shop."),
+    h("button", { type: "button", class: "btn btn-outline", onclick: async (event) => {
+      event.currentTarget.disabled = true;
+      try {
+        await startStory(story, { recorded: true });
+        window.top.location.href = "/demo";
+      } catch (err) {
+        status.textContent = ` Couldn't start it: ${err.message}`;
+        event.currentTarget.disabled = false;
+      }
+    } }, "Start again as a recorded run"), status] : null;
+  return h("div", { class: "notice-refused", role: "alert" },
+    h("p", { style: "margin: 0" }, h("strong", {}, "Not sent: "), e.message), again);
+}
+
 /** POST the message and render the turn's events as they stream in (Server-Sent Events). */
-async function streamTurn(conversationId, form, transcript) {
+async function streamTurn(conversationId, form, transcript, { replay = false } = {}) {
   const tools = [];
   const progress = [];
   const logSlot = h("div");
-  const working = h("div", { class: "working" }, h("span", { class: "pulse", "aria-hidden": "true" }), "The Agent is working…");
+  const working = h("div", { class: "working" }, h("span", { class: "pulse", "aria-hidden": "true" }),
+    replay ? "Replaying the Agent's turn at the speed it ran…" : "The Agent is working…");
   const content = h("div", { class: "content" }, logSlot, working);
-  const turn = h("div", { class: "turn" }, h("div", { class: "speaker" }, "Agent"), content);
+  const turn = h("div", { class: "turn" }, agentSpeaker(replay), content);
   transcript.append(turn);
   const redraw = () => logSlot.replaceChildren(activityLog(tools, progress, { live: true }) || "");
   content.scrollIntoView({ block: "end", behavior: "smooth" });
@@ -218,7 +265,8 @@ async function streamTurn(conversationId, form, transcript) {
     try { detail = (await response.json()).detail || detail; } catch { /* not JSON */ }
     turn.remove();  // the Agent never started
     const error = new Error(detail);
-    error.notSent = response.status === 429 || response.status === 503;  // the demo's limits, or the Agent switched off
+    error.status = response.status;
+    error.notSent = response.status === 429 || response.status === 503 || response.status === 409;  // the demo's limits, the Agent switched off, or not the recording's message
     throw error;
   }
 

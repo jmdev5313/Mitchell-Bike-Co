@@ -1,4 +1,4 @@
-.PHONY: help db seed reset sample photo test servers demo agent agent-check api web evals
+.PHONY: help db seed reset sample photo test servers demo agent agent-check api web evals record
 
 help:
 	@echo "make db      Create the SQLite database from shop/schema.sql"
@@ -13,6 +13,7 @@ help:
 	@echo "make agent-check  Run the hero story against the real model and check the outcome (spends tokens)"
 	@echo "make api     Run the API on http://127.0.0.1:8000 (docs at /docs)"
 	@echo "make web     Run the frontend (not built yet)"
+	@echo "make record  Record a real run of the Agent on each story, for the hosted demo to replay (spends tokens; ARGS=\"--only <key>\")"
 	@echo "make evals   Run the eval suite against the real model, 3 runs per scenario (spends tokens; ARGS=\"--only <key or group> --runs 1\", or --list)"
 
 db:
@@ -61,3 +62,6 @@ web:
 
 evals:
 	uv run python -m evals.suite $(ARGS)
+
+record:
+	uv run python -m demo.record $(ARGS)

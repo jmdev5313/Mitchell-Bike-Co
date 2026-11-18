@@ -5,11 +5,10 @@ Run: python -m mcp_servers.procurement [--http] [--port 8103]
 
 import sqlite3
 from dataclasses import asdict
-from datetime import date
 from typing import Any, TypedDict
 
 from mcp_servers.common import new_server, run, shop_tool
-from shop import procurement, schedule, stock
+from shop import clock, procurement, schedule, stock
 from shop.errors import NotFound
 
 server = new_server(
@@ -49,7 +48,7 @@ def estimate_ready_date(conn: sqlite3.Connection, supplier_ids: list[int] | None
             raise NotFound(f"no supplier with id {supplier_id}")
         lead_times.append(row["lead_time_days"])
         names.append(row["name"])
-    today = date.today()
+    today = clock.today(conn)
     lead = max(lead_times, default=0)
     return {
         "order_date": today.isoformat(),

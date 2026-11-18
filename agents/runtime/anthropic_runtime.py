@@ -30,11 +30,12 @@ BETAS = ["server-side-fallback-2026-07-01", "thinking-display-updates-2026-08-18
 ServerConnector = Callable[[str, AsyncExitStack], Any]
 
 
-async def connect_stdio(conversation_id: str, stack: AsyncExitStack) -> dict[str, Client]:
-    """Launch each shop server as a subprocess for this conversation, as Claude Code does."""
+async def connect_stdio(conversation_id: str, stack: AsyncExitStack, runtime: str = "anthropic") -> dict[str, Client]:
+    """Launch each shop server as a subprocess for this conversation, as Claude Code does.
+    `runtime` labels the audit log's entries (a recorded run's calls say "recorded")."""
     env = {
         "DB_PATH": str(db.db_path()),
-        "AGENT_RUNTIME": "anthropic",
+        "AGENT_RUNTIME": runtime,
         "CONVERSATION_ID": conversation_id,
         "MCP_LOG_LEVEL": "WARNING",
     }
