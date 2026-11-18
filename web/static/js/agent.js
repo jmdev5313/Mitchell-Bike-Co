@@ -219,28 +219,37 @@ export function composerForm({ conversationId, transcript, rerender, onUnauthori
 }
 
 /**
- * "Not sent", with the reason. When the hosted demo's limits stopped the live Agent mid-story, offer
- * to play the story again as its recorded run (it restarts in a fresh shop).
+ * "Not sent", with the reason. When the live Agent can't take the turn (the hosted demo's limits, or
+ * it's switched off), point to recorded runs: a story already being played can start again as its
+ * recorded run (in a fresh shop); otherwise the stories are on the front door.
  */
 function notSentNotice(e) {
   let story = null;
   try { story = sessionStorage.getItem("mbc-story"); } catch { /* private mode */ }
+  const resting = e.status === 429 || e.status === 503;
   const status = h("span", { class: "small", role: "status" });
-  const again = story && e.status === 429 ? [
-    h("p", { class: "small", style: "margin: 6px 0 0" }, "Everything that doesn't need the Agent still works here: the work order, the Customer's page and payment. "
-      + "To see the Agent's part through to the end, play this story's recorded run. It starts the story again in a fresh shop."),
-    h("button", { type: "button", class: "btn btn-outline", onclick: async (event) => {
-      event.currentTarget.disabled = true;
-      try {
-        await startStory(story, { recorded: true });
-        window.top.location.href = "/demo";
-      } catch (err) {
-        status.textContent = ` Couldn't start it: ${err.message}`;
-        event.currentTarget.disabled = false;
-      }
-    } }, "Start again as a recorded run"), status] : null;
+  const again = h("button", { type: "button", class: "btn btn-outline", onclick: async () => {
+    again.disabled = true;
+    try {
+      await startStory(story, { recorded: true });
+      window.top.location.href = "/demo";
+    } catch (err) {
+      status.textContent = ` Couldn't start it: ${err.message}`;
+      again.disabled = false;
+    }
+  } }, "Start again as a recorded run");
+  let offer = null;
+  if (resting && story) {
+    offer = [
+      h("p", { class: "small", style: "margin: 6px 0 0" }, "Everything that doesn't need the Agent still works here: the work order, the Customer's page and payment. "
+        + "To see the Agent's part through to the end, play this story's recorded run. It starts the story again in a fresh shop."),
+      again, status];
+  } else if (resting) {
+    offer = h("p", { class: "small", style: "margin: 6px 0 0" }, "You can still play any repair story with a recorded run of the real Agent: its tool calls run for real in your shop. ",
+      h("a", { href: "/#choose-title", target: "_top" }, "Choose a story →"));
+  }
   return h("div", { class: "notice-refused", role: "alert" },
-    h("p", { style: "margin: 0" }, h("strong", {}, "Not sent: "), e.message), again);
+    h("p", { style: "margin: 0" }, h("strong", {}, "Not sent: "), e.message), offer);
 }
 
 /** POST the message and render the turn's events as they stream in (Server-Sent Events). */
