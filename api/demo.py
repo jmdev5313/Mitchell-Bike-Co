@@ -12,6 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, status
 
+from api import sandboxes
 from demo.sample import create_sample
 from demo.stories import BY_KEY, STORIES
 from shop import db, messages
@@ -67,10 +68,14 @@ def _sample_link(conn) -> str | None:
         """SELECT l.token FROM customer_links l JOIN work_orders w ON w.id = l.work_order_id
            WHERE w.status NOT IN ('paid', 'declined') ORDER BY w.id DESC LIMIT 1"""
     ).fetchone()
-    return row["token"] if row else None
+    return sandboxes.public_token(row["token"]) if row else None
 
 
 REPAIR = ("approved", "awaiting_parts", "scheduled", "in_progress", "done")
+
+
+NO_STORY = {"step": 1, "whose": "mechanic", "work_order_id": None, "customer_token": None,
+            "customer": None, "next_step": None, "action": None, "total_cents": None, "status": None}
 
 
 def story(conn) -> dict[str, Any]:
@@ -89,8 +94,7 @@ def story(conn) -> dict[str, Any]:
            ORDER BY w.id DESC LIMIT 1"""
     ).fetchone()
     if row is None:
-        return {"step": 1, "whose": "mechanic", "work_order_id": None, "customer_token": None,
-                "customer": None, "next_step": None, "action": None, "total_cents": None, "status": None}
+        return dict(NO_STORY)
     status = row["status"]
     step_info = next_step(conn, row["id"], status)
     thread = messages.list_messages(conn, row["id"])
@@ -112,7 +116,8 @@ def story(conn) -> dict[str, Any]:
     whose = "nobody" if step == 6 else "customer" if step_info["waiting_on"] == "customer" else "mechanic"
     return {
         "step": step, "whose": whose, "status": status, "work_order_id": row["id"],
-        "customer": row["name"], "customer_token": row["token"], "total_cents": row["quoted_total_cents"],
+        "customer": row["name"], "total_cents": row["quoted_total_cents"],
+        "customer_token": sandboxes.public_token(row["token"]) if row["token"] else None,
         "next_step": step_info["text"], "action": (step_info.get("action") or {}).get("kind"),
     }
 
@@ -129,7 +134,10 @@ def _told_ready(conn, work_order_id: int, thread) -> bool:
 def demo_status() -> dict[str, Any]:
     """What the front door shows. The passcode and sample link are only given out in demo mode."""
     info: dict[str, Any] = {"demo_mode": demo_mode(), "latest_eval": latest_eval()}
-    if demo_mode():
+    if demo_mode() and sandboxes.enabled() and sandboxes.current_key() is None:
+        # A visitor without a sandbox yet: nothing to show, and looking doesn't make one.
+        info.update(staff_passcode=os.environ.get("STAFF_PASSCODE") or None, customer_token=None, story=dict(NO_STORY))
+    elif demo_mode():
         conn = db.connect()
         try:
             info["staff_passcode"] = os.environ.get("STAFF_PASSCODE") or None
@@ -146,7 +154,7 @@ def _require_demo_mode(action: str) -> None:
 
 
 async def _reset(request: Request) -> None:
-    await request.app.state.agent_pool.close_all()  # open conversations would point at deleted rows
+    await request.app.state.agent_pool.close_database()  # open conversations would point at deleted rows
     from shop import seed
 
     conn = db.connect()
@@ -215,4 +223,4 @@ def sample() -> dict[str, Any]:
         order, token, _ = create_sample(conn, source="the front door")
     finally:
         conn.close()
-    return {"work_order_id": order, "customer_token": token}
+    return {"work_order_id": order, "customer_token": sandboxes.public_token(token)}

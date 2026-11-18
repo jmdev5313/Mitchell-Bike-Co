@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
 
+from api import sandboxes
 from api.deps import get_db, get_stripe, public_base_url
 from shop import customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
@@ -85,7 +86,8 @@ def customer_view(conn: sqlite3.Connection, work_order_id: int) -> dict[str, Any
 
 
 def _work_order(conn: sqlite3.Connection, token: str) -> int:
-    return customer_links.work_order_for(conn, token)
+    """The work order behind a link token as the Customer has it (in the hosted demo, prefixed with its sandbox)."""
+    return customer_links.work_order_for(conn, sandboxes.bare_token(token))
 
 
 def _record_visit(conn: sqlite3.Connection, token: str, work_order_id: int) -> None:
@@ -110,7 +112,7 @@ def _record_visit(conn: sqlite3.Connection, token: str, work_order_id: int) -> N
 def view(token: str, conn: sqlite3.Connection = Depends(get_db)) -> dict[str, Any]:
     """The Customer's view of their work order: the thread, the quote, and where it stands."""
     work_order_id = _work_order(conn, token)
-    _record_visit(conn, token, work_order_id)
+    _record_visit(conn, sandboxes.bare_token(token), work_order_id)
     return customer_view(conn, work_order_id)
 
 

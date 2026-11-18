@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
+from api import sandboxes
 from api.deps import get_db, require_staff
 from shop import customer_links, events, flow, garage, messages, payments, procurement
 from shop import work_orders as wo
@@ -116,7 +117,7 @@ def work_order_detail(conn: sqlite3.Connection, work_order_id: int) -> dict[str,
         "purchase_orders": procurement.list_purchase_orders(conn, work_order_id),
         "order_plan": procurement.order_plan(conn, work_order_id),
         "payments": [asdict(p) for p in payments.list_payments(conn, work_order_id)],
-        "customer_link_token": link["token"] if link else None,
+        "customer_link_token": sandboxes.public_token(link["token"]) if link else None,
         "next_step": next_step(conn, work_order_id, order["status"]),
         "history": events.history(conn, work_order_id),
         "unseen": events.unseen(conn, work_order_id),
@@ -180,7 +181,7 @@ def send_draft(message_id: int, conn: sqlite3.Connection = Depends(get_db)) -> d
     cents = sent.quoted_total_cents
     what = f"the ${cents // 100:,}.{cents % 100:02d} quote" if cents is not None else "a message"
     events.record(conn, sent.work_order_id, "mechanic", "message_sent", f"Sent {name} {what}")
-    return {"message": asdict(sent), "customer_link_token": customer_links.link_token(conn, sent.work_order_id)}
+    return {"message": asdict(sent), "customer_link_token": sandboxes.public_token(customer_links.link_token(conn, sent.work_order_id))}
 
 
 @router.post("/purchase-orders/{po_id}/receive")
