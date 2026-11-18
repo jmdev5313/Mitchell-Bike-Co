@@ -205,7 +205,13 @@ export const HERO = "Emma Clark's gravel bike is on the stand. Gears skip under 
 
 /** Open a fresh conversation (reusing an unused one) with the hero message waiting in the box. */
 export async function startWithAgent() {
-  try { sessionStorage.setItem("mbc-prefill", HERO); } catch { /* private mode */ }
+  // The demo stage leaves the chosen story's opening message here; otherwise it's the hero story.
+  let message = HERO;
+  try {
+    message = sessionStorage.getItem("mbc-story-message") || HERO;
+    sessionStorage.removeItem("mbc-story-message");
+    sessionStorage.setItem("mbc-prefill", message);
+  } catch { /* private mode */ }
   const unused = (await staff("/api/conversations")).find((c) => c.turns === 0 && !c.work_order_id);
   const id = unused ? unused.id : (await staff("/api/conversations", { method: "POST" })).conversation_id;
   if (location.hash === `#/agent/${id}`) window.dispatchEvent(new HashChangeEvent("hashchange"));

@@ -16,7 +16,7 @@ make reset                # create the database and load the seed data
 make api                  # then open http://127.0.0.1:8000
 ```
 
-In demo mode the front door opens the demo stage (**Play both sides at once**): the workshop at full width, Emma's phone in a **Customer POV** overlay that flashes when it's her turn, and a guide that says whose turn it is and rings the next button. It also has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
+In demo mode the front door opens the demo stage (**Experience working alongside an AI agent**): pick one of six repair stories, then play it with the workshop at full width, the Customer's phone in a **Customer POV** overlay that flashes when it's their turn, and a guide that says whose turn it is and rings the next button. It also has **Be the Mechanic** (signed in automatically in demo mode), **Be the Customer** (Emma's private link, once the quote is sent), **Reset the demo**, **Generate a sample quote** (to try the Customer's side without the Agent), and the latest eval result. Each Agent turn costs a few cents. For a two-window walkthrough, see the [demo script](docs/demo-script.md).
 
 ## What to look for
 
@@ -107,4 +107,4 @@ Work is split into milestones, each defined by what it delivers rather than how 
 | M6 | Web frontend: front door, Mechanic workspace with live activity log and history, Customer page | Done |
 | M7 | Demo flow: the Agent on the work order screen, a demo stage with a Customer POV overlay, reset without a sample, a photo on the hero message | Done |
 | M5 | Eval suite: scenarios across compatibility, diagnosis, guardrails and procurement, three runs each, judged by the shop's state | Done |
-| M8 | Pick a bike: six repair stories, each an eval, with a picker and story cards on the demo stage | In progress |
+| M8 | Pick a bike: six repair stories, each an eval, with a picker and story cards on the demo stage, and an About page | Done |
