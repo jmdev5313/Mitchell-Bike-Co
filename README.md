@@ -86,7 +86,7 @@ The Mechanic reviews and sends it. Emma approves that exact amount from her priv
 - `shop/` holds the business rules and the database (SQLite). It has no AI code, and every rule is unit-tested without spending tokens.
 - `mcp_servers/` exposes the shop as three MCP servers (catalog, work orders, procurement) on the official Python SDK. Every tool call is written to an audit log and, when it touches a work order, to that work order's history. The Agent gets no tool to send a message or approve a quote.
 - `agents/` holds the Agent: its prompt (`agents/prompts/service_agent.md`) and a small runtime interface, so the agent platform can be swapped. The Anthropic runtime runs Claude Sonnet 5.5 against the three servers and stores each conversation exactly as sent.
-- `api/` is the HTTP API (FastAPI): the Mechanic's endpoints behind a passcode, including the Agent chat (each turn streams its tool calls live over Server-Sent Events), the Customer's endpoints behind their private link, and Stripe Checkout in test mode.
+- `api/` is the HTTP API (FastAPI): the Mechanic's endpoints behind a passcode, including the Agent chat (each turn streams its tool calls live over Server-Sent Events), the Customer's endpoints behind their private link, and Stripe Checkout in test mode, with its webhook.
 - `web/` is the frontend in plain HTML, CSS and JavaScript, served by the API with no build step: the front door (`/`), the Mechanic's workspace (`/workshop`), and the Customer's page (`/c/{token}`).
 - `evals/` measures the Agent: fifteen scenarios in `evals/scenarios/`, each judged by the shop's state (see "Measured, not assumed" above). `make agent-check` still plays just the hero story.
 
@@ -123,7 +123,7 @@ To deploy your own copy (the app name, region and keys are yours):
 
 1. `fly auth login`, then `fly launch --no-deploy` in this folder. It reads `fly.toml`; if the name `mitchell-bike-co` is taken, pick another and change `PUBLIC_BASE_URL` to match.
 2. `fly volumes create data --size 1 --region iad` for the visitors' shops and the budget ledger.
-3. `fly secrets set ANTHROPIC_API_KEY=… STAFF_PASSCODE=… STRIPE_SECRET_KEY=sk_test_… TURNSTILE_SITE_KEY=… TURNSTILE_SECRET_KEY=… CLIENT_HASH_SALT=…` (an API key from its own Anthropic workspace with a spend limit, a new passcode, a Stripe **test** key, a Cloudflare Turnstile widget for the app's hostname, and any long random string).
+3. `fly secrets set ANTHROPIC_API_KEY=… STAFF_PASSCODE=… STRIPE_SECRET_KEY=sk_test_… STRIPE_WEBHOOK_SECRET=whsec_… TURNSTILE_SITE_KEY=… TURNSTILE_SECRET_KEY=… CLIENT_HASH_SALT=…` (an API key from its own Anthropic workspace with a spend limit, a new passcode, a Stripe **test** key and the signing secret of a test-mode webhook endpoint for `/api/stripe/webhook`, a Cloudflare Turnstile widget for the app's hostname, and any long random string).
 4. `fly deploy`.
 
 After that, every merge to `main` deploys itself: the GitHub workflow runs the tests and, if they pass, runs `flyctl deploy` with a Fly deploy token stored as the `FLY_API_TOKEN` repository secret (`fly launch` offers to set it; `fly tokens create deploy` makes one).

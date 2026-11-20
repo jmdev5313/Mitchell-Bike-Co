@@ -3,6 +3,10 @@
 A payment is started (for example, when the customer opens a Stripe checkout)
 and completed when the money is confirmed. The amount is always the locked
 quote: nothing else can be charged.
+
+A pending payment whose checkout ended unpaid is abandoned (status 'failed'), and
+a second payment that lands after the repair is already paid is a duplicate, to be
+refunded (status 'refunded'). Neither ever touches the work order.
 """
 
 import sqlite3
@@ -67,6 +71,42 @@ def complete_payment(conn: sqlite3.Connection, payment_id: int, amount_received_
             (datetime.now(timezone.utc).isoformat(timespec="seconds"), payment_id),
         )
         conn.execute("UPDATE work_orders SET status = 'paid' WHERE id = ?", (wo["id"],))
+    return get_payment(conn, payment_id)
+
+
+def abandon_payment(conn: sqlite3.Connection, payment_id: int) -> Payment:
+    """A pending payment's checkout ended without the money (it expired, or the payment failed)."""
+    payment = get_payment(conn, payment_id)
+    if payment.status != "pending":
+        raise RuleViolation(f"payment {payment_id} is {payment.status}, not pending")
+    with conn:
+        conn.execute("UPDATE payments SET status = 'failed' WHERE id = ?", (payment_id,))
+    return get_payment(conn, payment_id)
+
+
+def is_duplicate(conn: sqlite3.Connection, payment_id: int) -> bool:
+    """Whether a pending payment is for a work order that another payment has already paid."""
+    payment = get_payment(conn, payment_id)
+    if payment.status != "pending":
+        return False
+    other = conn.execute(
+        "SELECT 1 FROM payments WHERE work_order_id = ? AND status = 'paid' AND id != ?",
+        (payment.work_order_id, payment_id),
+    ).fetchone()
+    return other is not None
+
+
+def refund_duplicate(conn: sqlite3.Connection, payment_id: int, amount_refunded_cents: int) -> Payment:
+    """A duplicate payment was refunded in full: record it. The work order stays paid by the first payment."""
+    payment = get_payment(conn, payment_id)
+    if not is_duplicate(conn, payment_id):
+        raise RuleViolation(f"payment {payment_id} is not a duplicate of a paid one: it can't be refunded as one")
+    if amount_refunded_cents != payment.amount_cents:
+        raise RuleViolation(
+            f"refunded {amount_refunded_cents} cents, but the payment is for {payment.amount_cents}"
+        )
+    with conn:
+        conn.execute("UPDATE payments SET status = 'refunded' WHERE id = ?", (payment_id,))
     return get_payment(conn, payment_id)
 
 

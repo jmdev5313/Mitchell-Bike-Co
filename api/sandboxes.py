@@ -15,6 +15,7 @@ Which requests get a sandbox (only /api/ touches the database; pages and static 
 - /api/customer/<key>.<token>/...: the link's sandbox, or 404 if there isn't one.
 - GET /api/health, /api/demo and /api/demo/stories: the visitor's sandbox if they have
   one, else none. Looking at the front door doesn't make a sandbox.
+- POST /api/stripe/webhook: none here; the handler finds the sandbox named in the event.
 - everything else: the visitor's sandbox, made fresh if they have none or theirs expired
   (up to NEW_SANDBOXES_PER_HOUR per network; see api/guards.py).
 """
@@ -39,6 +40,7 @@ KEY = re.compile(r"[0-9a-f]{32}")
 SEPARATOR = "."  # never in a link token, which is URL-safe base64
 TEMPLATE = "template.db"
 NO_SANDBOX_NEEDED = {"/api/health", "/api/demo", "/api/demo/stories"}  # GET only
+CHOOSES_ITS_OWN = {"/api/stripe/webhook"}  # Stripe's events name their sandbox in the session's metadata
 
 _current: ContextVar[str | None] = ContextVar("sandbox_key", default=None)
 
@@ -111,6 +113,11 @@ def sweep(now: float | None = None) -> list[str]:
     return gone
 
 
+def existing(key: str | None) -> Path | None:
+    """The sandbox with this key, if the key is well formed and the sandbox still exists."""
+    return path_for(key) if key and KEY.fullmatch(key) and path_for(key).exists() else None
+
+
 def public_token(token: str) -> str:
     """A Customer link token as it leaves the API: in sandbox mode, prefixed with its sandbox."""
     key = current_key()
@@ -129,7 +136,7 @@ def _link_key(path: str) -> str | None:
     parts = path.split("/")  # "", "api", "customer", "<key>.<token>", ...
     token = parts[3] if len(parts) > 3 else ""
     key = token.split(SEPARATOR, 1)[0] if SEPARATOR in token else ""
-    return key if KEY.fullmatch(key) and path_for(key).exists() else None
+    return key if existing(key) else None
 
 
 def _cookie_key(headers: list[tuple[bytes, bytes]]) -> str | None:
@@ -159,7 +166,8 @@ class SandboxMiddleware:
 
     async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
         path = scope.get("path", "")
-        if scope["type"] != "http" or not enabled() or not path.startswith("/api/"):
+        if (scope["type"] != "http" or not enabled() or not path.startswith("/api/")
+                or path in CHOOSES_ITS_OWN):
             await self.app(scope, receive, send)
             return
 

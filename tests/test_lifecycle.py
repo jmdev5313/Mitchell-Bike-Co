@@ -115,6 +115,30 @@ def test_abandoned_checkouts_do_not_block_payment(conn, done):
     assert retry.id != abandoned.id
 
 
+def test_an_abandoned_checkout_can_be_closed_but_not_a_paid_one(conn, done):
+    abandoned = payments.start_payment(conn, done, "cs_test_abandoned")
+    assert payments.abandon_payment(conn, abandoned.id).status == "failed"
+    paid = payments.start_payment(conn, done, "cs_test_paid")
+    payments.complete_payment(conn, paid.id, HERO_QUOTE)
+    with pytest.raises(RuleViolation, match="paid, not pending"):
+        payments.abandon_payment(conn, paid.id)
+
+
+def test_only_a_duplicate_of_a_paid_payment_is_refunded_as_one(conn, done):
+    first = payments.start_payment(conn, done, "cs_test_first")
+    second = payments.start_payment(conn, done, "cs_test_second")
+    assert not payments.is_duplicate(conn, second.id)
+    with pytest.raises(RuleViolation, match="not a duplicate"):
+        payments.refund_duplicate(conn, second.id, HERO_QUOTE)
+    payments.complete_payment(conn, first.id, HERO_QUOTE)
+    assert payments.is_duplicate(conn, second.id) and not payments.is_duplicate(conn, first.id)
+    with pytest.raises(RuleViolation, match="refunded 100 cents"):
+        payments.refund_duplicate(conn, second.id, 100)
+    assert payments.refund_duplicate(conn, second.id, HERO_QUOTE).status == "refunded"
+    assert wo.status(conn, done) == "paid"
+    assert [p.status for p in payments.list_payments(conn, done)] == ["paid", "refunded"]
+
+
 def test_customer_links(conn, quoted):
     token = customer_links.link_token(conn, quoted)
     assert len(token) >= 32
