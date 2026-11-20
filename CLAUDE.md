@@ -52,5 +52,5 @@ A fictional bike shop where an AI Agent works alongside the Mechanic, over MCP. 
 
 - In documentation, name people by persona, capitalized: **Customer**, **Mechanic**, **Agent** (see the README). Seed data keeps realistic names.
 - Record each significant choice in `docs/decisions.md`: what was decided, what was rejected, and why.
-- Secrets live in `.env` (gitignored). Stripe keys are test mode only: `api.deps.get_stripe` refuses anything but `sk_test_`/`rk_test_`. A payment is only recorded after the server retrieves the checkout session from Stripe and sees it paid; never trust the browser's redirect alone.
+- Secrets live in `.env` (gitignored). Stripe keys are test mode only: `api.deps.get_stripe` refuses anything but `sk_test_`/`rk_test_`. A payment is only recorded after the server retrieves the checkout session from Stripe and sees it paid; never trust the browser's redirect alone. The webhook (`api/stripe_webhook.py`) verifies the signature and then settles through the same retrieve, never from the event body. A repair has at most one open checkout; a duplicate payment is refunded, never kept.
 - Unedited photos go in `data/photos/raw/` (gitignored); commit cropped copies only.

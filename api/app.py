@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from agents import config
-from api import conversations, customer, demo, sandboxes, staff
+from api import conversations, customer, demo, sandboxes, staff, stripe_webhook
 from api.agent_pool import AgentPool, default_factory
 from shop.errors import NotFound, RuleViolation
 
@@ -47,6 +47,7 @@ app.include_router(staff.router)
 app.include_router(conversations.router)
 app.include_router(customer.router)
 app.include_router(demo.router)
+app.include_router(stripe_webhook.router)
 
 # The web pages: plain HTML, CSS and JavaScript in web/, no build step.
 WEB = Path(__file__).resolve().parent.parent / "web"
